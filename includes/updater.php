@@ -62,5 +62,33 @@ function if_reviews_init_update_checker() {
 	if ( $api && method_exists( $api, 'enableReleaseAssets' ) ) {
 		$api->enableReleaseAssets( '/if-reviews\.zip/i' );
 	}
+
+	add_filter( 'puc_request_info_result-if-reviews', 'if_reviews_fix_banner_sizes' );
 }
 add_action( 'init', 'if_reviews_init_update_checker' );
+
+/**
+ * The library labels assets/banner-772x250.png "high" and the 1544x500
+ * one "low", the reverse of what WordPress expects (low = 772, high =
+ * 1544). Swap them so the details window picks the right size.
+ *
+ * @param object|null $info Plugin info from the update checker.
+ * @return object|null
+ */
+function if_reviews_fix_banner_sizes( $info ) {
+
+	if ( ! is_object( $info ) || empty( $info->banners ) || ! is_array( $info->banners ) ) {
+		return $info;
+	}
+
+	$banners = $info->banners;
+
+	if ( isset( $banners['high'] ) && false !== strpos( $banners['high'], '772x250' ) ) {
+		$low             = isset( $banners['low'] ) ? $banners['low'] : $banners['high'];
+		$banners['low']  = $banners['high'];
+		$banners['high'] = $low;
+		$info->banners   = $banners;
+	}
+
+	return $info;
+}

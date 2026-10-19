@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.0
+Stable tag: 2.2.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -167,6 +167,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.2.1 =
+* Added a plugin icon and banner, shown on update notices and in the "View details" window from this version onwards.
+* The Reviews admin menu now uses the plugin's own mark instead of a generic star.
 
 = 2.2.0 =
 * New: **"Leave us a review" buttons**. Display Settings has a new section with one row per platform (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Other): paste your review-page link, optionally change the button text, and the buttons appear under the widget. Off by default. Each row explains where to find that platform's direct review link.

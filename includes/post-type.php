@@ -10,6 +10,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 }
 
 /**
+ * The plugin mark (speech bubble with a star) as a data URI for the admin
+ * menu. Single colour so WordPress can tint it to the admin colour scheme.
+ *
+ * @return string
+ */
+function if_reviews_menu_icon() {
+
+	$svg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256">'
+		. '<path fill="black" fill-rule="evenodd" d="M60 36H196A36 36 0 0 1 232 72V156A36 36 0 0 1 196 192H108L64 232V192H60A36 36 0 0 1 24 156V72A36 36 0 0 1 60 36ZM128 66L140.4 98.5L175.2 100.2L148 122.1L157 155.7L128 136.5L99 155.7L108 122.1L80.8 100.2L115.6 98.5Z"/>'
+		. '</svg>';
+
+	return 'data:image/svg+xml;base64,' . base64_encode( $svg );
+}
+
+/**
  * Register the post type.
  */
 function if_register_reviews_post_type() {
@@ -50,7 +65,7 @@ function if_register_reviews_post_type() {
 
 			// Only the title; every other field lives in the meta box.
 			'supports'          => array( 'title' ),
-			'menu_icon'         => 'dashicons-star-filled',
+			'menu_icon'         => if_reviews_menu_icon(),
 			'capability_type'   => 'post',
 			'map_meta_cap'      => true,
 		)

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1544 500" width="1544" height="500">
+  <title>WP Reviews</title>
+  <rect width="1544" height="500" fill="#1e293b"/>
+  <g transform="translate(120 110) scale(1.1)">
+    <path fill="#f5a623" fill-rule="evenodd" d="M68 52H188A28 28 0 0 1 216 80V152A28 28 0 0 1 188 180H108L72 214V180H68A28 28 0 0 1 40 152V80A28 28 0 0 1 68 52ZM128 76L138 102.2L166 103.6L144.2 121.3L151.5 148.4L128 133L104.5 148.4L111.8 121.3L90 103.6L118 102.2Z"/>
+  </g>
+  <text x="430" y="262" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="118" font-weight="700" fill="#ffffff" letter-spacing="-2">WP Reviews</text>
+  <text x="436" y="340" font-family="Inter, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif" font-size="42" fill="#cbd5e1">Honest customer reviews, under your control.</text>
+</svg>

@@ -1,5 +1,7 @@
 # WP Reviews
 
+<img src="assets/banner-1544x500.png" alt="WP Reviews: honest customer reviews, under your control" width="772">
+
 A small WordPress plugin for showing the reviews your business has already received, on your own site, under your own control.
 
 You enter each review by hand in wp-admin: reviewer name, date, star rating, review text and where it was originally left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or anywhere else). The `[if_reviews]` shortcode renders them as a card grid, a list or a carousel, with the overall rating, review count and a plain statement of where the reviews came from.
