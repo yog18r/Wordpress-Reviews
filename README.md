@@ -41,6 +41,7 @@ Consumer protection law in many countries (the Australian Consumer Law, the US F
 - **CSV import and export** with a template, fraction-to-stars conversion (8/10 → 4 stars) and duplicate skipping.
 - **A block for the block editor** with a live preview, plus the shortcode for widgets and templates.
 - **Optional link to the original review** on each card, and an opt-in minimum-rating filter that hides low ratings from the cards while still counting them in the header.
+- **"Leave us a review" buttons** to your review page on each platform, with guidance on finding the direct links. Off by default; also available on their own via `[if_reviews_buttons]`.
 - **Styling from a settings screen**: colours, corner radius and a cycling avatar palette with automatic contrast.
 - **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, no external requests.
 - **Automatic updates** from this repository's releases.
@@ -69,6 +70,8 @@ Requires WordPress 6.3+ and PHP 7.4+.
 | `[if_reviews order="highest"]` | `newest` (default), `oldest`, `highest`, `random` |
 | `[if_reviews show_header="no"]` | Cards only |
 | `[if_reviews title="What our clients say"]` | Custom header title |
+| `[if_reviews buttons="yes"]` | Force the "Leave us a review" buttons on, or `"no"` to hide them |
+| `[if_reviews_buttons heading="-"]` | The buttons on their own; `heading` overrides or removes (`-`) the heading |
 
 Source keys: `direct`, `google`, `facebook`, `trustpilot`, `yelp`, `productreview`, `other`.
 
@@ -111,6 +114,7 @@ includes/post-type.php  the if_review post type and its admin list
 includes/meta-box.php   the Review Details meta box and save handler
 includes/settings.php   Reviews → Display Settings
 includes/shortcode.php  [if_reviews]: data, header, layouts
+includes/cta.php        "Leave us a review" buttons and [if_reviews_buttons]
 includes/block.php      the Reviews block (renders through the shortcode)
 includes/import-export.php  Reviews → Import / Export (CSV)
 includes/enqueue.php    front-end assets and settings-driven CSS
@@ -128,7 +132,7 @@ readme.txt              WordPress.org-format readme, FAQ and changelog
 2. Commit, then tag and push:
 
    ```bash
-   git tag v2.1.1 && git push origin main --tags
+   git tag v2.2.1 && git push origin main --tags
    ```
 
 3. The [release workflow](.github/workflows/release.yml) checks the three version numbers match the tag, lints the PHP, builds `if-reviews.zip` (everything except the files in `.distignore`) and publishes a GitHub Release with that version's changelog as the notes. Sites running the plugin see the update within twelve hours, or immediately after "Check again" on the Updates screen.

@@ -133,6 +133,46 @@ function if_reviews_register_settings() {
 		add_settings_field( $key, $field['label'], 'if_reviews_render_field', 'if-reviews-settings', 'if_reviews_display_section', $field );
 	}
 
+	/* "Leave us a review" buttons ---------------------------------- */
+
+	add_settings_section(
+		'if_reviews_cta_section',
+		__( '"Leave us a review" buttons', 'if-reviews' ),
+		function () {
+			echo '<p>' . esc_html__( 'Optional buttons under the widget that take visitors straight to your review page on each platform. Off by default. Add a link for every platform you want a button for; the buttons can also be placed on their own with the [if_reviews_buttons] shortcode.', 'if-reviews' ) . '</p>';
+		},
+		'if-reviews-settings'
+	);
+
+	$cta_fields = array(
+		'cta_enabled' => array(
+			'type'        => 'checkbox',
+			'label'       => __( 'Show buttons', 'if-reviews' ),
+			'text'        => __( 'Show the buttons under the reviews widget', 'if-reviews' ),
+			'description' => __( 'Only platforms with a link below get a button. Override per instance with buttons="yes" or "no" on the shortcode, or the block option.', 'if-reviews' ),
+		),
+		'cta_heading' => array(
+			'type'        => 'text',
+			'label'       => __( 'Heading above the buttons', 'if-reviews' ),
+			'placeholder' => __( 'Had a good experience? Leave us a review.', 'if-reviews' ),
+			'description' => __( 'Blank uses the text shown as the placeholder. Enter a single hyphen (-) for no heading.', 'if-reviews' ),
+		),
+		'cta_new_tab' => array(
+			'type'  => 'checkbox',
+			'label' => __( 'Open in a new tab', 'if-reviews' ),
+			'text'  => __( 'Open the review page in a new browser tab so visitors keep your site open', 'if-reviews' ),
+		),
+		'cta_links'   => array(
+			'type'  => 'cta_links',
+			'label' => __( 'Platforms', 'if-reviews' ),
+		),
+	);
+
+	foreach ( $cta_fields as $key => $field ) {
+		$field['key'] = $key;
+		add_settings_field( $key, $field['label'], 'if_reviews_render_field', 'if-reviews-settings', 'if_reviews_cta_section', $field );
+	}
+
 	/* Appearance --------------------------------------------------- */
 
 	add_settings_section(
@@ -281,6 +321,60 @@ function if_reviews_render_field( $args ) {
 			<?php
 			break;
 
+		case 'cta_links':
+			$links = is_array( $value ) ? $value : array();
+			?>
+			<table class="widefat striped if-cta-table" style="max-width: 900px;">
+				<thead>
+					<tr>
+						<th style="width: 22%;"><?php esc_html_e( 'Platform', 'if-reviews' ); ?></th>
+						<th style="width: 28%;"><?php esc_html_e( 'Button text', 'if-reviews' ); ?></th>
+						<th><?php esc_html_e( 'Link to your review page', 'if-reviews' ); ?></th>
+					</tr>
+				</thead>
+				<tbody>
+					<?php foreach ( if_reviews_get_sources() as $source_key => $source ) : ?>
+						<?php
+						if ( 'direct' === $source_key ) {
+							continue;
+						}
+
+						$row_text = isset( $links[ $source_key ]['text'] ) ? $links[ $source_key ]['text'] : '';
+						$row_url  = isset( $links[ $source_key ]['url'] ) ? $links[ $source_key ]['url'] : '';
+						$row_name = $name . '[' . $source_key . ']';
+						$row_id   = $id . '-' . $source_key;
+						$default  = ( 'other' === $source_key )
+							? __( 'Leave a review', 'if-reviews' )
+							/* translators: %s: platform name */
+							: sprintf( __( 'Review us on %s', 'if-reviews' ), $source['label'] );
+						?>
+						<tr>
+							<td>
+								<label for="<?php echo esc_attr( $row_id ); ?>-url" style="display:inline-flex;align-items:center;gap:6px;font-weight:600;">
+									<?php echo if_reviews_source_icon_html( if_reviews_get_source( $source_key ) ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- sanitised with wp_kses. ?>
+									<?php echo esc_html( $source['label'] ); ?>
+								</label>
+							</td>
+							<td>
+								<input type="text" class="widefat" id="<?php echo esc_attr( $row_id ); ?>-text" name="<?php echo esc_attr( $row_name ); ?>[text]" value="<?php echo esc_attr( $row_text ); ?>" placeholder="<?php echo esc_attr( $default ); ?>">
+							</td>
+							<td>
+								<input type="url" class="widefat" id="<?php echo esc_attr( $row_id ); ?>-url" name="<?php echo esc_attr( $row_name ); ?>[url]" value="<?php echo esc_attr( $row_url ); ?>" placeholder="https://">
+								<details class="if-help">
+									<summary><?php esc_html_e( 'Where do I find this link?', 'if-reviews' ); ?></summary>
+									<p><?php echo esc_html( if_reviews_cta_help( $source_key ) ); ?></p>
+								</details>
+							</td>
+						</tr>
+					<?php endforeach; ?>
+				</tbody>
+			</table>
+			<p class="description">
+				<?php esc_html_e( 'Leave the link blank for any platform you do not want a button for. Blank button text uses the placeholder shown.', 'if-reviews' ); ?>
+			</p>
+			<?php
+			break;
+
 		case 'avatar':
 			$colors = array_filter( array_map( 'trim', explode( ',', (string) $value ) ) );
 			?>
@@ -345,6 +439,8 @@ function if_reviews_render_settings_page() {
 				<tr><td><code>[if_reviews order="highest"]</code></td><td><?php esc_html_e( 'Sort order: newest, oldest, highest, random.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews show_header="no"]</code></td><td><?php esc_html_e( 'Cards only, no summary header.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews title="What our clients say"]</code></td><td><?php esc_html_e( 'Custom header title for this instance.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews buttons="yes"]</code></td><td><?php esc_html_e( 'Force the "Leave us a review" buttons on (or "no" to hide them) for this instance.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews_buttons]</code></td><td><?php esc_html_e( 'The "Leave us a review" buttons on their own, anywhere. Add heading="..." for a different heading or heading="-" for none.', 'if-reviews' ); ?></td></tr>
 			</tbody>
 		</table>
 
@@ -375,6 +471,16 @@ function if_reviews_settings_assets( $hook ) {
 
 	wp_enqueue_style( 'wp-color-picker' );
 	wp_enqueue_script( 'wp-color-picker' );
+
+	wp_add_inline_style(
+		'common',
+		'.if-cta-table td{vertical-align:top}'
+		. '.if-cta-table .if-source-icon{width:16px;height:16px;color:#646970}'
+		. '.if-help{margin-top:6px}'
+		. '.if-help summary{cursor:pointer;font-size:12px;color:#2271b1}'
+		. '.if-help summary:hover{color:#135e96}'
+		. '.if-help p{margin:4px 0 0;font-size:12px;color:#646970;max-width:520px}'
+	);
 
 	wp_add_inline_script(
 		'wp-color-picker',

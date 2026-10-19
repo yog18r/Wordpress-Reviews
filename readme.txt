@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.1
+Stable tag: 2.2.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -40,6 +40,7 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **CSV import and export**: bring in years of reviews from a spreadsheet in one go (ratings such as 8/10 are converted, duplicates are skipped) and download everything as a backup.
 * **A block for the block editor** with a live preview and all the display options in the sidebar, alongside the `[if_reviews]` shortcode for widgets and templates.
 * **Optional link to the original review** on each card, and an opt-in setting to hide reviews below a chosen star rating (they still count in the header).
+* **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you add a link.
 * **Styling without CSS**: accent, card, border and text colours, corner radius and a cycling avatar colour palette, all from a settings screen. Avatar text colour is picked automatically for contrast.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no external requests, no tracking.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
@@ -63,12 +64,18 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews order="highest"]` — `newest` (default), `oldest`, `highest` or `random`.
 * `[if_reviews show_header="no"]` — cards only.
 * `[if_reviews title="What our clients say"]` — custom header title.
+* `[if_reviews buttons="yes"]` — force the "Leave us a review" buttons on (or `"no"` to hide them) for this instance.
+* `[if_reviews_buttons]` — the buttons on their own. `heading="..."` changes the heading; `heading="-"` removes it.
 
 The settings screen shows this reference with the list of source keys.
 
 = Block =
 
 In the block editor, add the **Reviews** block (search "reviews" in the inserter). The preview is rendered by the same code as the front end. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. The block supports wide and full alignment.
+
+= "Leave us a review" buttons =
+
+Reviews → Display Settings → "Leave us a review" buttons. Tick "Show buttons", then paste the link to your review page for each platform you use; the row's "Where do I find this link?" note explains how to get the direct link for Google, Facebook, Trustpilot, Yelp and ProductReview.com.au. Button text defaults to "Review us on Google" and so on, and can be changed per platform. The buttons appear under the widget, open in a new tab by default, and can also be placed anywhere on their own with `[if_reviews_buttons]`.
 
 = Import and export =
 
@@ -127,6 +134,10 @@ Reviews → Import / Export. Download the template, fill it in (one review per r
 
 Yes. Each review has an optional URL field. When set, the card shows a "View on Google" (or Facebook, etc.) link that opens in a new tab. On Google, open the review, use its three-dot menu and choose "Share review" to copy a link. Turn the links off site-wide in Display Settings if you prefer.
 
+= How do I get more reviews? =
+
+Turn on the "Leave us a review" buttons in Display Settings and paste your review links. The Google link in particular (from "Ask for reviews" in Google Business Profile) opens the review form directly, which removes most of the friction. Put `[if_reviews_buttons]` on a thank-you page or in your footer as well.
+
 = Can I show only my Google reviews in one place and everything elsewhere? =
 
 Yes: `[if_reviews source="google"]` on one page and `[if_reviews]` on another. Each instance calculates its own header from the reviews it includes.
@@ -157,8 +168,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
-= 2.1.1 =
-* Renamed to **WP Reviews**. Only the display name changes: the plugin folder (`if-reviews`), the `[if_reviews]` shortcode, the block, the settings and all stored reviews are untouched, and updates continue as before.
+= 2.2.0 =
+* New: **"Leave us a review" buttons**. Display Settings has a new section with one row per platform (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Other): paste your review-page link, optionally change the button text, and the buttons appear under the widget. Off by default. Each row explains where to find that platform's direct review link.
+* New: `[if_reviews_buttons]` shortcode to place the buttons on their own, plus a `buttons="yes|no"` attribute and a block option to override per instance.
+* Changed: renamed to **WP Reviews**. Only the display name changes: the plugin folder (`if-reviews`), the `[if_reviews]` shortcode, the block, the settings and all stored reviews are untouched, and updates continue as before.
 
 = 2.1.0 =
 * New: **CSV import and export** under Reviews → Import / Export, with a downloadable template. Ratings such as 4/5 or 8/10 are converted to stars, platform names are matched to sources, common date formats are accepted, and rows matching an existing review are skipped.
@@ -195,8 +208,8 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Upgrade Notice ==
 
-= 2.1.1 =
-The plugin is now called WP Reviews. Nothing else changes; your reviews, settings, shortcodes and blocks carry over.
+= 2.2.0 =
+The plugin is now called WP Reviews, and can show "Leave us a review" buttons (off until you add links in Display Settings). Your reviews, settings, shortcodes and blocks carry over.
 
 = 2.1.0 =
 Adds CSV import/export, a block, review links, "Read more" and an optional minimum-rating filter. All off or neutral by default; nothing changes on your site until you use them.

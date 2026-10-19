@@ -206,10 +206,13 @@ function if_reviews_shortcode( $atts = array() ) {
 			'source'      => '',
 			'show_header' => $options['show_header'],
 			'title'       => $options['header_title'],
+			'buttons'     => $options['cta_enabled'],
 		),
 		$atts,
 		'if_reviews'
 	);
+
+	$show_buttons = if_reviews_to_bool( $atts['buttons'] );
 
 	$layout      = array_key_exists( $atts['layout'], if_reviews_get_layouts() ) ? $atts['layout'] : 'grid';
 	$order       = array_key_exists( $atts['order'], if_reviews_get_orders() ) ? $atts['order'] : 'newest';
@@ -332,6 +335,12 @@ function if_reviews_shortcode( $atts = array() ) {
 			<?php endif; ?>
 
 		<?php endif; ?>
+
+		<?php
+		if ( $show_buttons ) {
+			if_reviews_render_cta( $options );
+		}
+		?>
 
 	</div>
 

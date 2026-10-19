@@ -406,17 +406,77 @@
 }
 
 /* ------------------------------------------------------------------
+ * "Leave us a review" buttons
+ * ---------------------------------------------------------------- */
+
+.if-review-cta {
+  margin: 28px 0 0;
+  text-align: center;
+}
+
+.if-buttons-only .if-review-cta {
+  margin-top: 0;
+}
+
+.if-cta-heading {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.if-cta-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+}
+
+.if-cta-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--if-border-color, #d6d6d6);
+  border-radius: 999px;
+  background: var(--if-card-bg-color, #fff);
+  color: var(--if-text-color, #4b5563);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-decoration: none;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.if-cta-button:hover,
+.if-cta-button:focus-visible {
+  border-color: var(--if-accent-color, #f5a623);
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+  color: var(--if-text-color, #4b5563);
+  text-decoration: none;
+}
+
+.if-cta-button .if-source-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--if-meta-color, #6b7280);
+}
+
+/* ------------------------------------------------------------------
  * Motion preferences
  * ---------------------------------------------------------------- */
 
 @media (prefers-reduced-motion: reduce) {
   .if-review-card,
   .if-carousel-btn,
-  .if-show-more {
+  .if-show-more,
+  .if-cta-button {
     transition: none;
   }
 
-  .if-review-card:hover {
+  .if-review-card:hover,
+  .if-cta-button:hover {
     transform: none;
   }
 

@@ -75,6 +75,10 @@ function if_reviews_render_block( $attributes ) {
 		$atts['title'] = $attributes['title'];
 	}
 
+	if ( ! empty( $attributes['showButtons'] ) ) {
+		$atts['buttons'] = $attributes['showButtons'];
+	}
+
 	$html = if_reviews_shortcode( $atts );
 
 	if ( '' === $html ) {

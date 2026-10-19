@@ -52,6 +52,12 @@ function if_reviews_default_options() {
 		'excerpt_length'    => 0,
 		'show_review_links' => 1,
 
+		// "Leave us a review" buttons. Off by default; one row per platform.
+		'cta_enabled' => 0,
+		'cta_heading' => '',
+		'cta_new_tab' => 1,
+		'cta_links'   => array(),
+
 		// Data.
 		'delete_on_uninstall' => 0,
 	);
@@ -210,6 +216,42 @@ function if_reviews_sanitize_options( $input ) {
 	}
 
 	$output['show_review_links'] = isset( $input['show_review_links'] ) ? if_reviews_to_bool( $input['show_review_links'] ) : 0;
+
+	/* "Leave us a review" buttons -------------------------------- */
+
+	$output['cta_enabled'] = isset( $input['cta_enabled'] ) ? if_reviews_to_bool( $input['cta_enabled'] ) : 0;
+	$output['cta_new_tab'] = isset( $input['cta_new_tab'] ) ? if_reviews_to_bool( $input['cta_new_tab'] ) : 0;
+	$output['cta_heading'] = isset( $input['cta_heading'] ) ? sanitize_text_field( $input['cta_heading'] ) : '';
+
+	$links = array();
+
+	if ( ! empty( $input['cta_links'] ) && is_array( $input['cta_links'] ) ) {
+
+		$sources = if_reviews_get_sources();
+
+		foreach ( $input['cta_links'] as $key => $row ) {
+
+			$key = sanitize_key( $key );
+
+			if ( 'direct' === $key || ! isset( $sources[ $key ] ) || ! is_array( $row ) ) {
+				continue;
+			}
+
+			$url  = if_reviews_sanitize_url( isset( $row['url'] ) ? $row['url'] : '' );
+			$text = sanitize_text_field( isset( $row['text'] ) ? $row['text'] : '' );
+
+			if ( '' === $url && '' === $text ) {
+				continue;
+			}
+
+			$links[ $key ] = array(
+				'url'  => $url,
+				'text' => $text,
+			);
+		}
+	}
+
+	$output['cta_links'] = $links;
 
 	/* Data ------------------------------------------------------ */
 

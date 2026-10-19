@@ -81,7 +81,11 @@ function if_reviews_maybe_enqueue_assets() {
 		return;
 	}
 
-	if ( has_shortcode( $post->post_content, 'if_reviews' ) || has_block( 'if-reviews/reviews', $post ) ) {
+	if (
+		has_shortcode( $post->post_content, 'if_reviews' )
+		|| has_shortcode( $post->post_content, 'if_reviews_buttons' )
+		|| has_block( 'if-reviews/reviews', $post )
+	) {
 		if_reviews_enqueue_assets();
 	}
 }

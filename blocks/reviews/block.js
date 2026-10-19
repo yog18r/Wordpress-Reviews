@@ -108,6 +108,13 @@
 							help: __('Blank for automatic ("Google Reviews" when every review is from Google, "Reviews" otherwise).', 'if-reviews'),
 							onChange: function (value) { set({ title: value }); }
 						}),
+						el(SelectControl, {
+							label: __('"Leave us a review" buttons', 'if-reviews'),
+							value: a.showButtons,
+							options: yesNo,
+							help: __('Buttons appear only for platforms that have a link in Display Settings.', 'if-reviews'),
+							onChange: function (value) { set({ showButtons: value }); }
+						}),
 						el(TextControl, {
 							label: __('Only these sources', 'if-reviews'),
 							value: a.source,
