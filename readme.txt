@@ -1,10 +1,10 @@
-=== IF Reviews ===
+=== WP Reviews ===
 Contributors: yog18r
 Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.1.0
+Stable tag: 2.1.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,9 +12,9 @@ Show the reviews your business has already received, on your own site: per-revie
 
 == Description ==
 
-IF Reviews is a small, dependency-free way to display customer reviews on a WordPress site. You enter each review by hand in wp-admin: the reviewer's name, the date, a star rating, the review text, and where it was originally left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode then renders them as a card grid, a list or a carousel, with the overall rating, review count and a plain statement of where the reviews came from at the top.
+WP Reviews is a small, dependency-free way to display customer reviews on a WordPress site. You enter each review by hand in wp-admin: the reviewer's name, the date, a star rating, the review text, and where it was originally left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode then renders them as a card grid, a list or a carousel, with the overall rating, review count and a plain statement of where the reviews came from at the top.
 
-**IF Reviews is a manual import tool.** It does not connect to Google, Facebook or any other service. Nothing is fetched and nothing is sent. Every review on your site is one you typed or pasted in yourself, which also means it keeps working if a platform changes its API, its pricing or its terms.
+**WP Reviews is a manual import tool.** It does not connect to Google, Facebook or any other service. Nothing is fetched and nothing is sent. Every review on your site is one you typed or pasted in yourself, which also means it keeps working if a platform changes its API, its pricing or its terms.
 
 = Use it honestly =
 
@@ -28,7 +28,7 @@ The plugin is built around one principle: the summary your visitors see should b
 
 There is an opt-in setting to hide reviews below a star rating automatically. It is off by default, and it works exactly like hiding by hand: those reviews stay in WordPress and still count toward the average and the review count in the header. It changes which cards are shown, never the maths.
 
-Consumer protection law in many countries, including the Australian Consumer Law, the United States FTC rule on consumer reviews and the United Kingdom's Digital Markets, Competition and Consumers Act, treats fabricated, edited or selectively presented reviews as misleading conduct. IF Reviews gives you the means to present reviews properly. Using it truthfully is your responsibility.
+Consumer protection law in many countries, including the Australian Consumer Law, the United States FTC rule on consumer reviews and the United Kingdom's Digital Markets, Competition and Consumers Act, treats fabricated, edited or selectively presented reviews as misleading conduct. WP Reviews gives you the means to present reviews properly. Using it truthfully is your responsibility.
 
 = Features =
 
@@ -157,6 +157,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.1.1 =
+* Renamed to **WP Reviews**. Only the display name changes: the plugin folder (`if-reviews`), the `[if_reviews]` shortcode, the block, the settings and all stored reviews are untouched, and updates continue as before.
+
 = 2.1.0 =
 * New: **CSV import and export** under Reviews → Import / Export, with a downloadable template. Ratings such as 4/5 or 8/10 are converted to stars, platform names are matched to sources, common date formats are accepted, and rows matching an existing review are skipped.
 * New: a **Reviews block** for the block editor with a live preview and every display option in the sidebar. Options left at "Default" follow Display Settings.
@@ -191,6 +194,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.1.1 =
+The plugin is now called WP Reviews. Nothing else changes; your reviews, settings, shortcodes and blocks carry over.
 
 = 2.1.0 =
 Adds CSV import/export, a block, review links, "Read more" and an optional minimum-rating filter. All off or neutral by default; nothing changes on your site until you use them.

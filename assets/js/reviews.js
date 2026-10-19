@@ -1,5 +1,5 @@
 /**
- * IF Reviews front-end behaviour.
+ * WP Reviews front-end behaviour.
  *
  * Two small features, no dependencies:
  *  - "Show more" reveals cards that were rendered with the `hidden` attribute.

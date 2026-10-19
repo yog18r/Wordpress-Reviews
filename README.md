@@ -1,10 +1,10 @@
-# IF Reviews
+# WP Reviews
 
 A small WordPress plugin for showing the reviews your business has already received, on your own site, under your own control.
 
 You enter each review by hand in wp-admin: reviewer name, date, star rating, review text and where it was originally left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or anywhere else). The `[if_reviews]` shortcode renders them as a card grid, a list or a carousel, with the overall rating, review count and a plain statement of where the reviews came from.
 
-**IF Reviews is a manual import tool.** It does not connect to any review platform. Nothing is fetched, nothing is sent, and it keeps working whatever the platforms do with their APIs, pricing or terms.
+**WP Reviews is a manual import tool.** It does not connect to any review platform. Nothing is fetched, nothing is sent, and it keeps working whatever the platforms do with their APIs, pricing or terms.
 
 - Latest release and download: [Releases](https://github.com/yog18r/Wordpress-Reviews/releases)
 - WordPress-style readme with the full FAQ and changelog: [readme.txt](readme.txt)

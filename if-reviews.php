@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       IF Reviews
+ * Plugin Name:       WP Reviews
  * Plugin URI:        https://github.com/yog18r/Wordpress-Reviews
  * Description:       Manually curated customer reviews with per-review source badges, an honest summary header, grid / list / carousel layouts, CSV import/export, a block and an [if_reviews] shortcode.
- * Version:           2.1.0
+ * Version:           2.1.1
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:            yog18r
@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  * Update URI:        https://github.com/yog18r/Wordpress-Reviews
  *
- * IF Reviews is free software: you can redistribute it and/or modify it
+ * WP Reviews is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 2 of the License, or (at your
  * option) any later version. See LICENSE for the full text.
@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IF_REVIEWS_VERSION', '2.1.0' );
+define( 'IF_REVIEWS_VERSION', '2.1.1' );
 define( 'IF_REVIEWS_FILE', __FILE__ );
 define( 'IF_REVIEWS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'IF_REVIEWS_URL', plugin_dir_url( __FILE__ ) );

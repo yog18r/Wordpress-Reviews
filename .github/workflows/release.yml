@@ -64,5 +64,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" if-reviews.zip \
-            --title "IF Reviews $GITHUB_REF_NAME" \
+            --title "WP Reviews $GITHUB_REF_NAME" \
             --notes-file RELEASE_NOTES.md
