@@ -1,0 +1,13 @@
+# Files excluded from the release zip (used by .github/workflows/release.yml).
+/.git
+/.github
+/build
+/.gitignore
+/.gitattributes
+/.distignore
+/.editorconfig
+/README.md
+/CONTRIBUTING.md
+/*.zip
+.DS_Store
+Thumbs.db

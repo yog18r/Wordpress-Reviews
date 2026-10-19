@@ -1,0 +1,12 @@
+# Build output from the release workflow or a local build.
+/build/
+*.zip
+
+# OS noise.
+.DS_Store
+Thumbs.db
+
+# Editors.
+/.idea/
+/.vscode/
+*.swp

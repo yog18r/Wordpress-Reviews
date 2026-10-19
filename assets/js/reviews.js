@@ -1,0 +1,106 @@
+/**
+ * IF Reviews front-end behaviour.
+ *
+ * Two small features, no dependencies:
+ *  - "Show more" reveals cards that were rendered with the `hidden` attribute.
+ *  - Carousel previous/next buttons scroll the card track.
+ */
+(function () {
+	'use strict';
+
+	function initShowMore(wrap) {
+		var button = wrap.querySelector('.if-show-more');
+
+		if (!button) {
+			return;
+		}
+
+		button.addEventListener('click', function () {
+			var step = parseInt(button.getAttribute('data-step'), 10) || 6;
+			var hidden = wrap.querySelectorAll('.if-review-card[hidden]');
+			var i;
+
+			for (i = 0; i < hidden.length && i < step; i++) {
+				hidden[i].removeAttribute('hidden');
+			}
+
+			// Keyboard users land on the first newly revealed card.
+			if (hidden.length) {
+				hidden[0].setAttribute('tabindex', '-1');
+				hidden[0].focus({ preventScroll: true });
+			}
+
+			if (wrap.querySelectorAll('.if-review-card[hidden]').length === 0) {
+				button.parentNode.removeChild(button);
+			}
+		});
+	}
+
+	function initCarousel(wrap) {
+		if (!wrap.classList.contains('if-layout-carousel')) {
+			return;
+		}
+
+		var track = wrap.querySelector('.if-cards');
+		var prev = wrap.querySelector('.if-carousel-prev');
+		var next = wrap.querySelector('.if-carousel-next');
+		var frame = null;
+
+		if (!track || !prev || !next) {
+			return;
+		}
+
+		function stepSize() {
+			var card = track.querySelector('.if-review-card:not([hidden])');
+			var styles = window.getComputedStyle(track);
+			var gap = parseFloat(styles.columnGap) || parseFloat(styles.gap) || 0;
+
+			return card ? card.getBoundingClientRect().width + gap : track.clientWidth;
+		}
+
+		function update() {
+			var max = track.scrollWidth - track.clientWidth - 1;
+
+			prev.disabled = track.scrollLeft <= 0;
+			next.disabled = track.scrollLeft >= max;
+			wrap.classList.toggle('if-carousel-scrollable', max > 0);
+		}
+
+		prev.addEventListener('click', function () {
+			track.scrollBy({ left: -stepSize(), behavior: 'smooth' });
+		});
+
+		next.addEventListener('click', function () {
+			track.scrollBy({ left: stepSize(), behavior: 'smooth' });
+		});
+
+		track.addEventListener('scroll', function () {
+			if (frame) {
+				return;
+			}
+			frame = window.requestAnimationFrame(function () {
+				frame = null;
+				update();
+			});
+		}, { passive: true });
+
+		window.addEventListener('resize', update);
+		update();
+	}
+
+	function init() {
+		var wraps = document.querySelectorAll('.if-reviews-wrap');
+		var i;
+
+		for (i = 0; i < wraps.length; i++) {
+			initShowMore(wraps[i]);
+			initCarousel(wraps[i]);
+		}
+	}
+
+	if (document.readyState === 'loading') {
+		document.addEventListener('DOMContentLoaded', init);
+	} else {
+		init();
+	}
+})();
