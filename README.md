@@ -9,6 +9,18 @@ You enter each review by hand in wp-admin: reviewer name, date, star rating, rev
 - Latest release and download: [Releases](https://github.com/yog18r/Wordpress-Reviews/releases)
 - WordPress-style readme with the full FAQ and changelog: [readme.txt](readme.txt)
 
+<img src="assets/screenshots/screenshot-1.png" alt="The default grid layout: a summary header reading 4.3 stars, 7 reviews from Google, Tripadvisor, direct feedback, and Facebook, above six review cards with avatar initials, dates and source badges" width="693">
+
+*The default grid. The header is calculated from every review, including hidden ones, and names each source the reviews came from.*
+
+<img src="assets/screenshots/screenshot-2.png" alt="The carousel layout: the same header above a horizontal row of review cards with previous and next buttons" width="693">
+
+*`[if_reviews layout="carousel"]` for sites with many reviews.*
+
+<img src="assets/screenshots/screenshot-3.png" alt="The Reviews list in wp-admin with reviewer, rating, source, review date and shown columns, a source filter and bulk actions" width="800">
+
+*The Reviews screen in wp-admin: sortable rating and date, a source filter, and bulk actions to re-tag or hide many reviews at once.*
+
 ## Use it honestly
 
 The plugin is arranged so the easy path is also the truthful one.

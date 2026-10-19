@@ -8,6 +8,7 @@
 /.editorconfig
 /README.md
 /CONTRIBUTING.md
+/assets/screenshots
 /*.zip
 .DS_Store
 Thumbs.db
