@@ -41,6 +41,8 @@ function if_review_details_callback( $post ) {
 	$display       = get_post_meta( $post->ID, '_if_display_on_website', true );
 	$source_key    = get_post_meta( $post->ID, '_if_source', true );
 	$source_label  = get_post_meta( $post->ID, '_if_source_label', true );
+	$review_url    = get_post_meta( $post->ID, '_if_review_url', true );
+	$options       = if_reviews_get_options();
 
 	// Reviews created before these fields existed keep sensible values.
 	if ( '' === $display ) {
@@ -57,6 +59,22 @@ function if_review_details_callback( $post ) {
 	?>
 
 	<div class="if-review-fields" style="max-width: 800px;">
+
+		<?php if ( if_reviews_is_auto_hidden( $rating, $options ) ) : ?>
+			<div class="notice notice-warning inline" style="margin: 0 0 16px;">
+				<p>
+					<?php
+					echo esc_html(
+						sprintf(
+							/* translators: %d: minimum star rating from settings */
+							__( 'This review is hidden from the website automatically because Display Settings hides reviews rated below %d stars. It still counts toward the overall rating.', 'if-reviews' ),
+							(int) $options['min_rating']
+						)
+					);
+					?>
+				</p>
+			</div>
+		<?php endif; ?>
 
 		<div class="if-field">
 			<label for="if_reviewer_name">
@@ -143,6 +161,23 @@ function if_review_details_callback( $post ) {
 			>
 			<p class="description">
 				<?php esc_html_e( 'Shown on the badge when Source is "Other".', 'if-reviews' ); ?>
+			</p>
+		</div>
+
+		<div class="if-field">
+			<label for="if_review_url">
+				<strong><?php esc_html_e( 'Link to the original review (optional)', 'if-reviews' ); ?></strong>
+			</label>
+			<input
+				type="url"
+				id="if_review_url"
+				name="if_review_url"
+				value="<?php echo esc_attr( $review_url ); ?>"
+				placeholder="https://"
+				style="width: 100%; max-width: 600px;"
+			>
+			<p class="description">
+				<?php esc_html_e( 'When set, the card shows a "View on Google" style link so visitors can check the original. On Google, open the review, click the three-dot menu and choose "Share review" to get its link.', 'if-reviews' ); ?>
 			</p>
 		</div>
 
@@ -298,6 +333,12 @@ function if_save_review_details( $post_id ) {
 
 	if ( isset( $_POST['if_source_label'] ) ) {
 		update_post_meta( $post_id, '_if_source_label', sanitize_text_field( wp_unslash( $_POST['if_source_label'] ) ) );
+	}
+
+	/* Link to the original review ---------------------------------- */
+
+	if ( isset( $_POST['if_review_url'] ) ) {
+		update_post_meta( $post_id, '_if_review_url', if_reviews_sanitize_url( wp_unslash( $_POST['if_review_url'] ) ) );
 	}
 
 	/* Review text -------------------------------------------------- */

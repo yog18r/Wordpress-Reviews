@@ -4,11 +4,11 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.0.0
+Stable tag: 2.1.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Show the reviews your business has already received, on your own site, with per-review source badges, an honest summary header and grid, list or carousel layouts.
+Show the reviews your business has already received, on your own site: per-review source badges, an honest summary header, grid, list or carousel layouts, CSV import, and a block.
 
 == Description ==
 
@@ -24,6 +24,9 @@ The plugin is built around one principle: the summary your visitors see should b
 * **Hide, don't delete.** Each review has a "Display this review on the website" checkbox. Untick it to keep a review off the cards. It stays in WordPress and still counts toward the average and the count, so a 4.6 remains a 4.6 whether or not the two-star review is visible.
 * **Label sources accurately.** Only mark a review as a Google review if it was left on Google. If every review came from Google the header reads "Google Reviews"; if they came from several places it says so, for example "24 reviews from Google, Facebook, and direct feedback".
 * **Copy, don't edit.** Paste review text exactly as the reviewer wrote it, and use the same form of their name they used publicly.
+* **Link to the original.** Each review can carry a link to where it was left, shown as "View on Google" on the card, so visitors can check it for themselves.
+
+There is an opt-in setting to hide reviews below a star rating automatically. It is off by default, and it works exactly like hiding by hand: those reviews stay in WordPress and still count toward the average and the review count in the header. It changes which cards are shown, never the maths.
 
 Consumer protection law in many countries, including the Australian Consumer Law, the United States FTC rule on consumer reviews and the United Kingdom's Digital Markets, Competition and Consumers Act, treats fabricated, edited or selectively presented reviews as misleading conduct. IF Reviews gives you the means to present reviews properly. Using it truthfully is your responsibility.
 
@@ -33,7 +36,10 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **Per-review source** with a small badge on each card. Built in: Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Direct and Other (with your own label). Developers can add more with a filter.
 * **Honest summary header**: average rating with fractionally filled stars, total count, and an automatic description of the sources. Set your own title if you prefer ("What our clients say").
 * **Three layouts**: grid (1 to 4 columns), list, and a touch-friendly carousel with previous/next buttons.
-* **Built for many reviews**: show a limited number with a "Show more" button, sort by newest, oldest, highest or random, filter by source, and manage the admin list with sortable columns, a source filter and bulk actions.
+* **Built for many reviews**: show a limited number with a "Show more" button, cut long reviews with "Read more" at a length you choose, sort by newest, oldest, highest or random, filter by source, and manage the admin list with sortable columns, a source filter and bulk actions.
+* **CSV import and export**: bring in years of reviews from a spreadsheet in one go (ratings such as 8/10 are converted, duplicates are skipped) and download everything as a backup.
+* **A block for the block editor** with a live preview and all the display options in the sidebar, alongside the `[if_reviews]` shortcode for widgets and templates.
+* **Optional link to the original review** on each card, and an opt-in setting to hide reviews below a chosen star rating (they still count in the header).
 * **Styling without CSS**: accent, card, border and text colours, corner radius and a cycling avatar colour palette, all from a settings screen. Avatar text colour is picked automatically for contrast.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no external requests, no tracking.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
@@ -60,6 +66,14 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 
 The settings screen shows this reference with the list of source keys.
 
+= Block =
+
+In the block editor, add the **Reviews** block (search "reviews" in the inserter). The preview is rendered by the same code as the front end. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. The block supports wide and full alignment.
+
+= Import and export =
+
+Reviews → Import / Export. Export downloads every review, including hidden ones and drafts, as a UTF-8 CSV. Import takes a CSV with a header row; only `reviewer_name` and `rating` are required, and the other columns are `review_date`, `review_text`, `source`, `source_label`, `review_url`, `display` and `status`. A template is available on the screen. Ratings written as fractions (4/5, 8/10) are converted to stars, platform names are matched to sources, and rows that match an existing review are skipped so a corrected file can be re-imported safely.
+
 = Updates =
 
 The plugin checks the project's GitHub releases and offers new versions on the Plugins and Updates screens, exactly like a plugin from the WordPress.org directory. No account or token is needed. To opt out, add `add_filter( 'if_reviews_update_checker_enabled', '__return_false' );` to a small plugin or your theme.
@@ -73,7 +87,7 @@ The plugin checks the project's GitHub releases and offers new versions on the P
 * `if_reviews_show_more_label` — label of the "Show more" button.
 * `if_reviews_update_checker_enabled` — disable GitHub update checks.
 
-Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label` and `_if_display_on_website` ('1' or '0'). Settings live in one option, `if_reviews_options`.
+Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url` and `_if_display_on_website` ('1' or '0'). Settings live in one option, `if_reviews_options`.
 
 Source code, issues and releases: https://github.com/yog18r/Wordpress-Reviews
 
@@ -100,6 +114,18 @@ Edit the review and untick "Display this review on the website". It disappears f
 = Why does the header say "Reviews" and not "Google Reviews"? =
 
 The header names a platform only when every review in that shortcode came from it. Reviews created before version 2.0 have no source recorded and are treated as "Direct". Select them on the Reviews list and use the bulk action "Set source: Google" (or whichever applies).
+
+= Can I hide every review below a certain rating automatically? =
+
+Yes, if you choose to. Reviews → Display Settings → "Automatically hide low ratings" is off by default. Turn it on and reviews rated below your chosen number of stars disappear from the cards, while still counting toward the average and the review count in the header, just like reviews you hide by hand. The Reviews list marks them "Auto-hidden". Be aware that showing only your best reviews while advertising an average is the kind of thing consumer regulators look at; the header stays truthful, but the choice is yours.
+
+= How do I import reviews from a spreadsheet? =
+
+Reviews → Import / Export. Download the template, fill it in (one review per row, header row kept), and upload it. Only the reviewer name and rating are required. Dates are best as YYYY-MM-DD; ratings may be 1 to 5 or a fraction such as 8/10. Rows matching an existing review are skipped, so you can fix and re-import a file without creating duplicates.
+
+= Can I link each review to the original? =
+
+Yes. Each review has an optional URL field. When set, the card shows a "View on Google" (or Facebook, etc.) link that opens in a new tab. On Google, open the review, use its three-dot menu and choose "Share review" to copy a link. Turn the links off site-wide in Display Settings if you prefer.
 
 = Can I show only my Google reviews in one place and everything elsewhere? =
 
@@ -131,6 +157,14 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.1.0 =
+* New: **CSV import and export** under Reviews → Import / Export, with a downloadable template. Ratings such as 4/5 or 8/10 are converted to stars, platform names are matched to sources, common date formats are accepted, and rows matching an existing review are skipped.
+* New: a **Reviews block** for the block editor with a live preview and every display option in the sidebar. Options left at "Default" follow Display Settings.
+* New: optional **link to the original review** per review, shown as "View on Google" (or the relevant platform) on the card. Can be switched off in Display Settings.
+* New: **"Read more"** for long reviews. Set a character length in Display Settings; longer reviews are cut at a word boundary with a button to expand.
+* New: opt-in **automatic hiding of low ratings** (Display Settings → "Automatically hide low ratings"). Off by default. Hidden reviews still count toward the header's average and count, and are marked "Auto-hidden" in the Reviews list and on their edit screen.
+* Improved: styles load in the head on pages that contain the block, not only the shortcode.
+
 = 2.0.0 =
 * New: per-review **Source** (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Direct, Other with a custom label), shown as a badge on each card. Developers can add sources with the `if_reviews_sources` filter.
 * New: the summary header describes the reviews honestly. It names a platform only when every review came from it, and lists the mix otherwise. The hardcoded Google logo and "Google Reviews" text have been removed.
@@ -157,6 +191,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.1.0 =
+Adds CSV import/export, a block, review links, "Read more" and an optional minimum-rating filter. All off or neutral by default; nothing changes on your site until you use them.
 
 = 2.0.0 =
 The header no longer shows a Google logo, and says "Google Reviews" only when every review is marked as a Google review. After updating, go to Reviews, select your existing reviews and use the bulk action "Set source: Google" (or the platform that applies). Existing reviews, settings and your shortcodes otherwise carry over unchanged.

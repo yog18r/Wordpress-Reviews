@@ -37,7 +37,10 @@ Consumer protection law in many countries (the Australian Consumer Law, the US F
 - **Reviews** screen in wp-admin with name, date, rating, source, text and a show/hide toggle. Sortable columns, a source filter and bulk actions for sites with many reviews.
 - **Per-review source badges.** Built in: Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Direct, Other (custom label). Add more with a filter.
 - **Honest summary header** with fractionally filled stars and an automatic description of the sources, or your own title.
-- **Three layouts**: grid (1 to 4 columns), list, carousel. Limit the count with a "Show more" button. Sort newest, oldest, highest or random.
+- **Three layouts**: grid (1 to 4 columns), list, carousel. Limit the count with a "Show more" button, cut long reviews with "Read more". Sort newest, oldest, highest or random.
+- **CSV import and export** with a template, fraction-to-stars conversion (8/10 → 4 stars) and duplicate skipping.
+- **A block for the block editor** with a live preview, plus the shortcode for widgets and templates.
+- **Optional link to the original review** on each card, and an opt-in minimum-rating filter that hides low ratings from the cards while still counting them in the header.
 - **Styling from a settings screen**: colours, corner radius and a cycling avatar palette with automatic contrast.
 - **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, no external requests.
 - **Automatic updates** from this repository's releases.
@@ -69,6 +72,12 @@ Requires WordPress 6.3+ and PHP 7.4+.
 
 Source keys: `direct`, `google`, `facebook`, `trustpilot`, `yelp`, `productreview`, `other`.
 
+In the block editor, add the **Reviews** block instead. Its sidebar has the same options; anything left at "Default" follows Display Settings.
+
+## Importing reviews
+
+Reviews → Import / Export. Download the template, fill one review per row, upload. Only `reviewer_name` and `rating` are required; `review_date`, `review_text`, `source`, `source_label`, `review_url`, `display` and `status` are optional. Rows that match an existing review (same name, date and text) are skipped, so a corrected file can be re-imported. Export gives you the same format back as a backup.
+
 ## Updates
 
 The plugin bundles [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (MIT) and watches this repository's releases. New versions show up on the Plugins screen like any other plugin. To opt out on a site:
@@ -90,7 +99,7 @@ Filters:
 | `if_reviews_show_more_label` | Label of the "Show more" button |
 | `if_reviews_update_checker_enabled` | Disable GitHub update checks |
 
-Data model: post type `if_review`; meta `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1–5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_display_on_website` (`'1'`/`'0'`); one option `if_reviews_options`.
+Data model: post type `if_review`; meta `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1–5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_display_on_website` (`'1'`/`'0'`); one option `if_reviews_options`.
 
 Layout of the repository:
 
@@ -102,8 +111,11 @@ includes/post-type.php  the if_review post type and its admin list
 includes/meta-box.php   the Review Details meta box and save handler
 includes/settings.php   Reviews → Display Settings
 includes/shortcode.php  [if_reviews]: data, header, layouts
+includes/block.php      the Reviews block (renders through the shortcode)
+includes/import-export.php  Reviews → Import / Export (CSV)
 includes/enqueue.php    front-end assets and settings-driven CSS
 includes/updater.php    GitHub release update checks
+blocks/reviews/         block.json, block.js (plain JS, no build step)
 assets/                 reviews.css, reviews.js (no dependencies)
 vendor/                 Plugin Update Checker (MIT)
 uninstall.php           cleanup on delete
@@ -116,7 +128,7 @@ readme.txt              WordPress.org-format readme, FAQ and changelog
 2. Commit, then tag and push:
 
    ```bash
-   git tag v2.0.1 && git push origin main --tags
+   git tag v2.1.1 && git push origin main --tags
    ```
 
 3. The [release workflow](.github/workflows/release.yml) checks the three version numbers match the tag, lints the PHP, builds `if-reviews.zip` (everything except the files in `.distignore`) and publishes a GitHub Release with that version's changelog as the notes. Sites running the plugin see the update within twelve hours, or immediately after "Check again" on the Updates screen.

@@ -131,12 +131,17 @@ function if_reviews_admin_column_content( $column, $post_id ) {
 			break;
 
 		case 'if_shown':
-			$shown = get_post_meta( $post_id, '_if_display_on_website', true );
-			$shown = ( '' === $shown || '1' === $shown );
+			$shown  = get_post_meta( $post_id, '_if_display_on_website', true );
+			$shown  = ( '' === $shown || '1' === $shown );
+			$rating = (int) get_post_meta( $post_id, '_if_rating', true );
 
-			echo $shown
-				? esc_html__( 'Yes', 'if-reviews' )
-				: '<span class="if-admin-hidden">' . esc_html__( 'Hidden', 'if-reviews' ) . '</span>';
+			if ( if_reviews_is_auto_hidden( $rating ) ) {
+				echo '<span class="if-admin-hidden" title="' . esc_attr__( 'Hidden by the minimum rating in Display Settings', 'if-reviews' ) . '">' . esc_html__( 'Auto-hidden', 'if-reviews' ) . '</span>';
+			} elseif ( ! $shown ) {
+				echo '<span class="if-admin-hidden">' . esc_html__( 'Hidden', 'if-reviews' ) . '</span>';
+			} else {
+				esc_html_e( 'Yes', 'if-reviews' );
+			}
 			break;
 	}
 }

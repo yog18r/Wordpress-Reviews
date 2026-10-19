@@ -36,6 +36,36 @@
 		});
 	}
 
+	function initReadMore(wrap) {
+		var buttons = wrap.querySelectorAll('.if-read-more');
+		var i;
+
+		function bind(button) {
+			var paragraph = button.parentNode;
+			var rest = paragraph.querySelector('.if-text-rest');
+			var ellipsis = paragraph.querySelector('.if-text-ellipsis');
+
+			if (!rest) {
+				return;
+			}
+
+			button.addEventListener('click', function () {
+				var expanded = button.getAttribute('aria-expanded') === 'true';
+
+				rest.hidden = expanded;
+				if (ellipsis) {
+					ellipsis.hidden = !expanded;
+				}
+				button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
+				button.textContent = expanded ? button.getAttribute('data-more') : button.getAttribute('data-less');
+			});
+		}
+
+		for (i = 0; i < buttons.length; i++) {
+			bind(buttons[i]);
+		}
+	}
+
 	function initCarousel(wrap) {
 		if (!wrap.classList.contains('if-layout-carousel')) {
 			return;
@@ -94,6 +124,7 @@
 
 		for (i = 0; i < wraps.length; i++) {
 			initShowMore(wraps[i]);
+			initReadMore(wraps[i]);
 			initCarousel(wraps[i]);
 		}
 	}

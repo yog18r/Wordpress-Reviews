@@ -37,7 +37,9 @@ function if_reviews_register_assets() {
 		)
 	);
 }
-add_action( 'wp_enqueue_scripts', 'if_reviews_register_assets', 5 );
+// On init (not wp_enqueue_scripts) so the block editor can reference the
+// style handle from block.json as well.
+add_action( 'init', 'if_reviews_register_assets', 5 );
 
 /**
  * Enqueue the assets plus the settings-driven inline CSS. Safe to call
@@ -75,7 +77,11 @@ function if_reviews_maybe_enqueue_assets() {
 
 	$post = get_post();
 
-	if ( $post instanceof WP_Post && has_shortcode( $post->post_content, 'if_reviews' ) ) {
+	if ( ! $post instanceof WP_Post ) {
+		return;
+	}
+
+	if ( has_shortcode( $post->post_content, 'if_reviews' ) || has_block( 'if-reviews/reviews', $post ) ) {
 		if_reviews_enqueue_assets();
 	}
 }

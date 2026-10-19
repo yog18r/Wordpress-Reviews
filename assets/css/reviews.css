@@ -333,6 +333,48 @@
   overflow-wrap: anywhere;
 }
 
+/* "Read more" inside a long review */
+.if-text-rest[hidden],
+.if-text-ellipsis[hidden] {
+  display: none;
+}
+
+.if-read-more {
+  display: inline;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--if-meta-color, #6b7280);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.if-read-more:hover,
+.if-read-more:focus-visible {
+  color: var(--if-text-color, #4b5563);
+}
+
+/* Link to the original review */
+.if-review-link {
+  margin: 10px 0 0;
+  font-size: 13px;
+}
+
+.if-review-link a {
+  color: var(--if-meta-color, #6b7280);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.if-review-link a:hover,
+.if-review-link a:focus-visible {
+  color: var(--if-text-color, #4b5563);
+}
+
 /* ------------------------------------------------------------------
  * "Show more" button
  * ---------------------------------------------------------------- */

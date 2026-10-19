@@ -39,6 +39,7 @@ function if_reviews_get_reviews() {
 	// One query for all the meta instead of one per field per review.
 	update_meta_cache( 'post', $ids );
 
+	$options = if_reviews_get_options();
 	$reviews = array();
 
 	foreach ( $ids as $id ) {
@@ -59,17 +60,23 @@ function if_reviews_get_reviews() {
 			$timestamp = (int) get_post_timestamp( $id );
 		}
 
+		// Reviews created before the checkbox existed stay visible.
+		$manual_display = ( '' === $display || '1' === $display );
+		$auto_hidden    = if_reviews_is_auto_hidden( $rating, $options );
+
 		$reviews[] = array(
-			'id'        => $id,
-			'name'      => $name,
-			'initials'  => if_reviews_get_initials( $name ),
-			'date'      => $date,
-			'timestamp' => (int) $timestamp,
-			'rating'    => $rating,
-			'text'      => (string) get_post_meta( $id, '_if_review_text', true ),
-			// Reviews created before the checkbox existed stay visible.
-			'display'   => ( '' === $display || '1' === $display ),
-			'source'    => if_reviews_get_review_source( $id ),
+			'id'             => $id,
+			'name'           => $name,
+			'initials'       => if_reviews_get_initials( $name ),
+			'date'           => $date,
+			'timestamp'      => (int) $timestamp,
+			'rating'         => $rating,
+			'text'           => (string) get_post_meta( $id, '_if_review_text', true ),
+			'url'            => if_reviews_sanitize_url( get_post_meta( $id, '_if_review_url', true ) ),
+			'display'        => $manual_display && ! $auto_hidden,
+			'manual_display' => $manual_display,
+			'auto_hidden'    => $auto_hidden,
+			'source'         => if_reviews_get_review_source( $id ),
 		);
 	}
 
@@ -480,7 +487,33 @@ function if_reviews_render_card( $review, $options, $hidden = false ) {
 			<?php if_reviews_render_stars( $review['rating'], 'if-stars if-stars-small', 0 ); ?>
 		</div>
 
-		<p class="if-review-text"><?php echo esc_html( $review['text'] ); ?></p>
+		<?php
+		list( $short, $rest ) = if_reviews_split_text( $review['text'], (int) $options['excerpt_length'] );
+
+		if ( '' === $rest ) :
+			?>
+			<p class="if-review-text"><?php echo esc_html( $review['text'] ); ?></p>
+			<?php
+		else :
+			// Kept on one line on purpose: the text uses white-space: pre-line,
+			// so a newline between these spans would render as a line break.
+			?>
+			<p class="if-review-text if-has-more"><span class="if-text-short"><?php echo esc_html( $short ); ?></span><span class="if-text-ellipsis" aria-hidden="true">…</span><span class="if-text-rest" hidden><?php echo esc_html( $rest ); ?></span> <button type="button" class="if-read-more" aria-expanded="false" data-more="<?php esc_attr_e( 'Read more', 'if-reviews' ); ?>" data-less="<?php esc_attr_e( 'Read less', 'if-reviews' ); ?>"><?php esc_html_e( 'Read more', 'if-reviews' ); ?></button></p>
+			<?php
+		endif;
+
+		if ( $options['show_review_links'] && '' !== $review['url'] ) :
+			$link_label = ( 'direct' === $source['key'] )
+				? __( 'View original review', 'if-reviews' )
+				/* translators: %s: platform name, e.g. Google */
+				: sprintf( __( 'View on %s', 'if-reviews' ), $source['label'] );
+			?>
+			<p class="if-review-link">
+				<a href="<?php echo esc_url( $review['url'] ); ?>" target="_blank" rel="noopener">
+					<?php echo esc_html( $link_label ); ?><span aria-hidden="true"> ↗</span><span class="if-sr-only"> <?php esc_html_e( '(opens in a new tab)', 'if-reviews' ); ?></span>
+				</a>
+			</p>
+		<?php endif; ?>
 
 	</article>
 

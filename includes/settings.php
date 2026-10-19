@@ -101,6 +101,31 @@ function if_reviews_register_settings() {
 			'label'   => __( 'Order', 'if-reviews' ),
 			'choices' => if_reviews_get_orders(),
 		),
+		'excerpt_length'    => array(
+			'type'        => 'number',
+			'label'       => __( '"Read more" after (characters)', 'if-reviews' ),
+			'min'         => 0,
+			'max'         => 5000,
+			'description' => __( '0 always shows the full text. Otherwise long reviews are cut at a word boundary near this many characters with a "Read more" button (minimum 40; try 280).', 'if-reviews' ),
+		),
+		'show_review_links' => array(
+			'type'        => 'checkbox',
+			'label'       => __( 'Review links', 'if-reviews' ),
+			'text'        => __( 'Show a "View on Google" style link on reviews that have a URL', 'if-reviews' ),
+			'description' => __( 'Set the URL on each review. Links open in a new tab and let visitors check the original.', 'if-reviews' ),
+		),
+		'min_rating'        => array(
+			'type'        => 'select',
+			'label'       => __( 'Automatically hide low ratings', 'if-reviews' ),
+			'choices'     => array(
+				0 => __( 'Off: show every review you have not hidden yourself', 'if-reviews' ),
+				2 => __( 'Hide reviews rated below 2 stars', 'if-reviews' ),
+				3 => __( 'Hide reviews rated below 3 stars', 'if-reviews' ),
+				4 => __( 'Hide reviews rated below 4 stars', 'if-reviews' ),
+				5 => __( 'Hide reviews rated below 5 stars', 'if-reviews' ),
+			),
+			'description' => __( 'Opt-in. Reviews hidden this way are treated exactly like reviews you hide by hand: they stay in WordPress and still count toward the overall rating and review count in the header, so the summary remains truthful.', 'if-reviews' ),
+		),
 	);
 
 	foreach ( $display_fields as $key => $field ) {
@@ -174,7 +199,16 @@ function if_reviews_register_settings() {
 	add_settings_section(
 		'if_reviews_data_section',
 		__( 'Data', 'if-reviews' ),
-		'__return_null',
+		function () {
+			$url = admin_url( 'edit.php?post_type=if_review&page=if-reviews-import-export' );
+			echo '<p>' . wp_kses_post(
+				sprintf(
+					/* translators: %s: link to the Import / Export screen */
+					__( 'To add many reviews at once or take a backup, use <a href="%s">Import / Export</a>.', 'if-reviews' ),
+					esc_url( $url )
+				)
+			) . '</p>';
+		},
 		'if-reviews-settings'
 	);
 

@@ -45,6 +45,12 @@ function if_reviews_default_options() {
 		'limit'             => 0,
 		'show_more'         => 1,
 		'order'             => 'newest',
+		// 0 = off; otherwise reviews rated below this many stars are hidden
+		// from the cards (they still count in the header).
+		'min_rating'        => 0,
+		// 0 = always show full text; otherwise characters before "Read more".
+		'excerpt_length'    => 0,
+		'show_review_links' => 1,
 
 		// Data.
 		'delete_on_uninstall' => 0,
@@ -190,6 +196,21 @@ function if_reviews_sanitize_options( $input ) {
 		? max( 0, min( 500, absint( $input['limit'] ) ) )
 		: $defaults['limit'];
 
+	$min_rating = isset( $input['min_rating'] ) ? absint( $input['min_rating'] ) : 0;
+
+	$output['min_rating'] = ( $min_rating >= 2 && $min_rating <= 5 ) ? $min_rating : 0;
+
+	$output['excerpt_length'] = isset( $input['excerpt_length'] )
+		? max( 0, min( 5000, absint( $input['excerpt_length'] ) ) )
+		: $defaults['excerpt_length'];
+
+	// Anything under 40 characters would be silly; treat it as "off".
+	if ( $output['excerpt_length'] > 0 && $output['excerpt_length'] < 40 ) {
+		$output['excerpt_length'] = 0;
+	}
+
+	$output['show_review_links'] = isset( $input['show_review_links'] ) ? if_reviews_to_bool( $input['show_review_links'] ) : 0;
+
 	/* Data ------------------------------------------------------ */
 
 	$output['delete_on_uninstall'] = isset( $input['delete_on_uninstall'] ) ? if_reviews_to_bool( $input['delete_on_uninstall'] ) : 0;
@@ -329,6 +350,70 @@ function if_reviews_format_date( $date ) {
 	$format = apply_filters( 'if_reviews_date_format', 'F Y' );
 
 	return wp_date( $format, $dt->getTimestamp(), wp_timezone() );
+}
+
+/**
+ * Whether a rating falls under the "hide reviews rated below" setting.
+ *
+ * @param int        $rating  1..5.
+ * @param array|null $options Plugin options (loaded if omitted).
+ * @return bool
+ */
+function if_reviews_is_auto_hidden( $rating, $options = null ) {
+
+	if ( null === $options ) {
+		$options = if_reviews_get_options();
+	}
+
+	$min = isset( $options['min_rating'] ) ? (int) $options['min_rating'] : 0;
+
+	return $min > 0 && (int) $rating < $min;
+}
+
+/**
+ * Split review text for "Read more": the first part ends on a word
+ * boundary near $length characters; the rest is revealed on demand.
+ *
+ * @param string $text   Full text.
+ * @param int    $length Characters to show initially (0 = never split).
+ * @return array{0:string,1:string} [visible, remainder]; remainder '' when not split.
+ */
+function if_reviews_split_text( $text, $length ) {
+
+	$text   = (string) $text;
+	$length = (int) $length;
+
+	// Don't bother splitting when the remainder would be tiny.
+	if ( $length <= 0 || mb_strlen( $text ) <= $length + 40 ) {
+		return array( $text, '' );
+	}
+
+	$cut = $length;
+
+	// Walk back to the last whitespace, but not past half the length.
+	$slice = mb_substr( $text, 0, $length );
+
+	if ( preg_match( '/^(.*)\s\S*$/su', $slice, $m ) && mb_strlen( $m[1] ) >= $length / 2 ) {
+		$cut = mb_strlen( $m[1] );
+	}
+
+	return array(
+		rtrim( mb_substr( $text, 0, $cut ) ),
+		mb_substr( $text, $cut ),
+	);
+}
+
+/**
+ * Validate and normalise a review URL. Only http(s) is accepted.
+ *
+ * @param string $url Raw URL.
+ * @return string Clean URL or ''.
+ */
+function if_reviews_sanitize_url( $url ) {
+
+	$url = esc_url_raw( trim( (string) $url ), array( 'http', 'https' ) );
+
+	return $url ? $url : '';
 }
 
 /**
