@@ -157,19 +157,24 @@ function if_reviews_sanitize_options( $input ) {
 		? max( 0, min( 60, absint( $input['border_radius'] ) ) )
 		: $defaults['border_radius'];
 
-	// Avatar colours: comma-separated hex list, each validated,
-	// empty/invalid entries dropped.
+	// Avatar colours. The settings screen submits one field per swatch
+	// (avatar_colors_list[]); older code and the CSV of settings may still
+	// send the comma-separated string. Both are stored as the string.
 	$avatar_colors = array();
+	$raw_colors    = array();
 
-	if ( ! empty( $input['avatar_colors'] ) ) {
+	if ( isset( $input['avatar_colors_list'] ) && is_array( $input['avatar_colors_list'] ) ) {
+		$raw_colors = $input['avatar_colors_list'];
+	} elseif ( ! empty( $input['avatar_colors'] ) ) {
+		$raw_colors = explode( ',', (string) $input['avatar_colors'] );
+	}
 
-		foreach ( explode( ',', (string) $input['avatar_colors'] ) as $hex ) {
+	foreach ( $raw_colors as $hex ) {
 
-			$hex = sanitize_hex_color( '#' . ltrim( trim( $hex ), '#' ) );
+		$hex = sanitize_hex_color( '#' . ltrim( trim( (string) $hex ), '#' ) );
 
-			if ( $hex ) {
-				$avatar_colors[] = ltrim( $hex, '#' );
-			}
+		if ( $hex ) {
+			$avatar_colors[] = ltrim( $hex, '#' );
 		}
 	}
 
@@ -447,6 +452,51 @@ function if_reviews_avatar_index( $seed, $count ) {
 
 	// crc32() is signed on 32-bit PHP builds.
 	return (int) ( abs( $hash ) % $count );
+}
+
+/**
+ * Assign an avatar colour index to each review in display order.
+ *
+ * Every review starts from its name-based colour, so people keep the same
+ * colour across pages. When that colour was used by one of the cards
+ * immediately before it (as many as there are grid columns), the review
+ * moves to the next colour instead, so neighbouring avatars never match
+ * while the palette has enough colours.
+ *
+ * @param array[] $reviews Review arrays in display order.
+ * @param array   $options Plugin options.
+ * @param int     $window  How many preceding cards count as neighbours.
+ * @return array<int, int> Review ID => palette index.
+ */
+function if_reviews_assign_avatar_colors( $reviews, $options, $window = 1 ) {
+
+	$count    = count( if_reviews_get_avatar_colors( $options ) );
+	$window   = max( 1, (int) $window );
+	$recent   = array();
+	$assigned = array();
+
+	foreach ( $reviews as $review ) {
+
+		$index = if_reviews_avatar_index( $review['name'], $count );
+
+		if ( $count > 1 ) {
+			$tries = 0;
+			while ( in_array( $index, $recent, true ) && $tries < $count ) {
+				$index = ( $index + 1 ) % $count;
+				$tries++;
+			}
+		}
+
+		$assigned[ $review['id'] ] = $index;
+
+		$recent[] = $index;
+
+		if ( count( $recent ) > $window ) {
+			array_shift( $recent );
+		}
+	}
+
+	return $assigned;
 }
 
 /**

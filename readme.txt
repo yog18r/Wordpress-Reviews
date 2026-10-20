@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.0
+Stable tag: 2.3.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -167,7 +167,7 @@ A carousel keeps the page short: `[if_reviews layout="carousel"]`. If you prefer
 
 = Can I change the colours to match my site? =
 
-Yes. Reviews → Display Settings has colour pickers for the stars, card background, border and text, a corner-radius field and a comma-separated list of avatar colours that cycles across the cards.
+Yes. Reviews → Display Settings has colour pickers for the stars, card background, border and text, a corner-radius field and a list of avatar colour swatches you can add to or remove from. Each reviewer takes a colour from their name, and neighbouring cards are kept from matching.
 
 = What happens to my reviews if I delete the plugin? =
 
@@ -186,6 +186,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.3.1 =
+* Improved: avatar colours in Display Settings are now a list of swatches with a colour picker, an "Add colour" button and a remove link per colour, instead of a comma-separated text field. Saved data is unchanged.
+* Improved: neighbouring avatars no longer share a colour. Each reviewer still takes their colour from their name; where that would match one of the cards immediately before it (one row's worth in a grid), the next colour in the palette is used for that card.
 
 = 2.3.0 =
 * New: **review categories**. Tag reviews by service or product under Reviews → Categories, then show a subset with `category="slug"` on the shortcode or block. The header describes that subset. Categories have an admin filter, a list column and a CSV column.
@@ -236,6 +240,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.3.1 =
+Colour-picker swatches for avatar colours and no more matching avatars side by side. A few avatars may shift to a neighbouring colour once.
 
 = 2.3.0 =
 Adds review categories, a Featured Review block, a Rating Badge block, numbered pagination, pinned reviews, carousel autoplay and a plugin icon. Avatar colours now follow the reviewer's name, so some avatars may change colour once. Everything else carries over.

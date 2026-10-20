@@ -364,6 +364,14 @@ function if_reviews_shortcode( $atts = array() ) {
 		$displayed = array_slice( $displayed, 0, $limit );
 	}
 
+	// Neighbour-aware avatar colours: in a grid the card above is a
+	// neighbour too, so look back one row; in a list or carousel, one card.
+	$avatar_colors = if_reviews_assign_avatar_colors( $displayed, $options, 'grid' === $layout ? $columns : 1 );
+
+	foreach ( $displayed as $i => $review ) {
+		$displayed[ $i ]['avatar_index'] = isset( $avatar_colors[ $review['id'] ] ) ? $avatar_colors[ $review['id'] ] : null;
+	}
+
 	if_reviews_enqueue_assets();
 
 	static $instance = 0;
@@ -612,7 +620,11 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 	$badge  = if_reviews_source_has_badge( $source );
 	$date   = if_reviews_format_date( $review['date'] );
 
-	$avatar_class = 'if-avatar if-avatar-color-' . if_reviews_avatar_index( $review['name'], count( if_reviews_get_avatar_colors( $options ) ) );
+	$avatar_index = isset( $review['avatar_index'] ) && null !== $review['avatar_index']
+		? (int) $review['avatar_index']
+		: if_reviews_avatar_index( $review['name'], count( if_reviews_get_avatar_colors( $options ) ) );
+
+	$avatar_class = 'if-avatar if-avatar-color-' . $avatar_index;
 
 	$card_class = 'if-review-card';
 

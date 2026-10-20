@@ -383,16 +383,30 @@ function if_reviews_render_field( $args ) {
 			break;
 
 		case 'avatar':
-			$colors = array_filter( array_map( 'trim', explode( ',', (string) $value ) ) );
+			$colors    = if_reviews_get_avatar_colors( $options );
+			$list_name = IF_REVIEWS_OPTION_KEY . '[avatar_colors_list][]';
 			?>
-			<input type="text" class="regular-text" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="4285f4,34a853,ea4335,fbbc04">
-			<div style="margin-top:8px; display:flex; gap:6px; flex-wrap:wrap;">
-				<?php foreach ( $colors as $hex ) : ?>
-					<span style="display:inline-block;width:24px;height:24px;border-radius:50%;border:1px solid #ccc;background:linear-gradient(135deg,#<?php echo esc_attr( ltrim( $hex, '#' ) ); ?>,<?php echo esc_attr( if_reviews_darken_hex( $hex, 0.15 ) ); ?>);"></span>
-				<?php endforeach; ?>
+			<div class="if-swatches" id="<?php echo esc_attr( $id ); ?>">
+				<div class="if-swatch-list">
+					<?php foreach ( $colors as $hex ) : ?>
+						<div class="if-swatch-row">
+							<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="#<?php echo esc_attr( $hex ); ?>">
+							<button type="button" class="button-link if-swatch-remove" aria-label="<?php esc_attr_e( 'Remove this colour', 'if-reviews' ); ?>"><?php esc_html_e( 'Remove', 'if-reviews' ); ?></button>
+						</div>
+					<?php endforeach; ?>
+				</div>
+				<template class="if-swatch-template">
+					<div class="if-swatch-row">
+						<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="">
+						<button type="button" class="button-link if-swatch-remove" aria-label="<?php esc_attr_e( 'Remove this colour', 'if-reviews' ); ?>"><?php esc_html_e( 'Remove', 'if-reviews' ); ?></button>
+					</div>
+				</template>
+				<p style="margin:8px 0 0;">
+					<button type="button" class="button if-swatch-add"><?php esc_html_e( 'Add colour', 'if-reviews' ); ?></button>
+				</p>
 			</div>
 			<p class="description">
-				<?php esc_html_e( 'Comma-separated hex codes (no # needed). Avatars cycle through these colours in order. Text colour on each avatar is chosen automatically for contrast.', 'if-reviews' ); ?>
+				<?php esc_html_e( 'Each reviewer takes a colour from their name, so the same person is always the same colour. Where that would put two matching avatars next to each other, the next colour in the list is used instead. Text on each avatar is chosen automatically for contrast. Remove every colour to restore the defaults.', 'if-reviews' ); ?>
 			</p>
 			<?php
 			break;
@@ -492,12 +506,44 @@ function if_reviews_settings_assets( $hook ) {
 		. '.if-help summary{cursor:pointer;font-size:12px;color:#2271b1}'
 		. '.if-help summary:hover{color:#135e96}'
 		. '.if-help p{margin:4px 0 0;font-size:12px;color:#646970;max-width:520px}'
+		. '.if-swatch-row{display:flex;align-items:flex-start;gap:12px;margin:0 0 8px}'
+		. '.if-swatch-row .wp-picker-container{flex:0 0 auto}'
+		. '.if-swatch-remove{margin-top:6px;color:#b32d2e}'
+		. '.if-swatch-remove:hover{color:#8a1f20}'
 	);
 
-	wp_add_inline_script(
-		'wp-color-picker',
-		'jQuery(function($){ $(".if-reviews-color-picker").wpColorPicker(); });'
-	);
+	$js = <<<'JS'
+jQuery(function ($) {
+	function initPickers(scope) {
+		$(scope).find('.if-reviews-color-picker').each(function () {
+			if (!$(this).closest('.wp-picker-container').length) {
+				$(this).wpColorPicker();
+			}
+		});
+	}
+
+	initPickers(document);
+
+	$('.if-swatches').each(function () {
+		var box = $(this);
+		var list = box.find('.if-swatch-list');
+		var template = box.find('.if-swatch-template');
+
+		box.on('click', '.if-swatch-add', function () {
+			var row = $(template.html());
+			list.append(row);
+			initPickers(row);
+			row.find('.wp-color-result').trigger('click');
+		});
+
+		box.on('click', '.if-swatch-remove', function () {
+			$(this).closest('.if-swatch-row').remove();
+		});
+	});
+});
+JS;
+
+	wp_add_inline_script( 'wp-color-picker', $js );
 }
 add_action( 'admin_enqueue_scripts', 'if_reviews_settings_assets' );
 
