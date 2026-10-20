@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.2.1
+Stable tag: 2.3.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -41,6 +41,8 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **A block for the block editor** with a live preview and all the display options in the sidebar, alongside the `[if_reviews]` shortcode for widgets and templates.
 * **Optional link to the original review** on each card, and an opt-in setting to hide reviews below a chosen star rating (they still count in the header).
 * **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you add a link.
+* **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
+* **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
 * **Styling without CSS**: accent, card, border and text colours, corner radius and a cycling avatar colour palette, all from a settings screen. Avatar text colour is picked automatically for contrast.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no external requests, no tracking.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
@@ -65,13 +67,26 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews show_header="no"]` — cards only.
 * `[if_reviews title="What our clients say"]` — custom header title.
 * `[if_reviews buttons="yes"]` — force the "Leave us a review" buttons on (or `"no"` to hide them) for this instance.
+* `[if_reviews category="mortgages"]` — only reviews in a category (by slug; comma-separate several). The header describes that subset.
+* `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated widget per page.
+* `[if_reviews layout="carousel" autoplay="6"]` — the carousel moves on every six seconds; `0` disables it.
+* `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review.
+* `[if_reviews_rating]` — inline "★★★★★ 4.8 from 120 reviews" badge. Accepts `source` and `category`; `stars="no"` or `count="no"` trims it.
 * `[if_reviews_buttons]` — the buttons on their own. `heading="..."` changes the heading; `heading="-"` removes it.
 
 The settings screen shows this reference with the list of source keys.
 
-= Block =
+= Blocks =
 
-In the block editor, add the **Reviews** block (search "reviews" in the inserter). The preview is rendered by the same code as the front end. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. The block supports wide and full alignment.
+In the block editor there are three blocks, all previewed with the same code that renders the front end:
+
+* **Reviews**: the widget. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. Supports wide and full alignment.
+* **Featured Review**: pick one review from a list to show it on its own as a highlighted quote.
+* **Rating Badge**: the compact "4.8 from 120 reviews" line, with optional source and category filters.
+
+= Categories, pinning and pagination =
+
+Under Reviews → Categories, create categories such as "Mortgage advice" or "Insurance" and tick them on each review. Then `[if_reviews category="mortgage-advice"]` (or the block's "Only these categories") shows just those reviews, with a header that describes that subset honestly. Tick "Pin to the top" on a review to keep it first whatever the sort order; the Reviews list has Pin and Unpin bulk actions. For sites with many reviews, `paginate="12"` replaces the "Show more" button with numbered pages that can be linked to and crawled.
 
 = "Leave us a review" buttons =
 
@@ -94,7 +109,7 @@ The plugin checks the project's GitHub releases and offers new versions on the P
 * `if_reviews_show_more_label` — label of the "Show more" button.
 * `if_reviews_update_checker_enabled` — disable GitHub update checks.
 
-Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url` and `_if_display_on_website` ('1' or '0'). Settings live in one option, `if_reviews_options`.
+Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_pinned` and `_if_display_on_website` ('1' or '0'), plus the `if_review_category` taxonomy. Settings live in one option, `if_reviews_options`.
 
 Source code, issues and releases: https://github.com/yog18r/Wordpress-Reviews
 
@@ -134,6 +149,10 @@ Reviews → Import / Export. Download the template, fill it in (one review per r
 
 Yes. Each review has an optional URL field. When set, the card shows a "View on Google" (or Facebook, etc.) link that opens in a new tab. On Google, open the review, use its three-dot menu and choose "Share review" to copy a link. Turn the links off site-wide in Display Settings if you prefer.
 
+= Can I show different reviews on different pages? =
+
+Yes. Give reviews categories (Reviews → Categories) and use `category="slug"` on the shortcode or the block's "Only these categories" field. Each page gets its own subset and its own honest header. The source filter works the same way, and the two can be combined.
+
 = How do I get more reviews? =
 
 Turn on the "Leave us a review" buttons in Display Settings and paste your review links. The Google link in particular (from "Ask for reviews" in Google Business Profile) opens the review form directly, which removes most of the friction. Put `[if_reviews_buttons]` on a thank-you page or in your footer as well.
@@ -168,9 +187,15 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
-= 2.2.1 =
-* Added a plugin icon and banner, shown on update notices and in the "View details" window from this version onwards.
-* The Reviews admin menu now uses the plugin's own mark instead of a generic star.
+= 2.3.0 =
+* New: **review categories**. Tag reviews by service or product under Reviews → Categories, then show a subset with `category="slug"` on the shortcode or block. The header describes that subset. Categories have an admin filter, a list column and a CSV column.
+* New: **Featured Review** block and `[if_review id="42"]` shortcode: one review on its own as a highlighted quote.
+* New: **Rating Badge** block and `[if_reviews_rating]` shortcode: a compact "★★★★★ 4.8 from 120 reviews" badge for headers, footers and calls to action, with optional source and category filters.
+* New: **numbered pagination** with `paginate="12"` (and the block's "Reviews per page"), as an alternative to the "Show more" button for large sets.
+* New: **pinned reviews**. Tick "Pin to the top" on a review (or use the bulk action) to keep it first whatever the sort order.
+* New: **carousel autoplay** (Display Settings or `autoplay="6"`), with a pause button, pausing on hover and focus, and disabled for visitors who prefer reduced motion.
+* Changed: avatar colours are now chosen from the reviewer's name, so the same person gets the same colour everywhere, including after "Show more" and in the featured block.
+* Added a plugin icon and banner, shown on update notices and in the "View details" window from this version onwards, and the plugin's own mark in the admin menu.
 
 = 2.2.0 =
 * New: **"Leave us a review" buttons**. Display Settings has a new section with one row per platform (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, Other): paste your review-page link, optionally change the button text, and the buttons appear under the widget. Off by default. Each row explains where to find that platform's direct review link.
@@ -211,6 +236,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.3.0 =
+Adds review categories, a Featured Review block, a Rating Badge block, numbered pagination, pinned reviews, carousel autoplay and a plugin icon. Avatar colours now follow the reviewer's name, so some avatars may change colour once. Everything else carries over.
 
 = 2.2.0 =
 The plugin is now called WP Reviews, and can show "Leave us a review" buttons (off until you add links in Display Settings). Your reviews, settings, shortcodes and blocks carry over.

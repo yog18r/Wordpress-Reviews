@@ -24,6 +24,8 @@ function if_reviews_csv_columns() {
 		'source'        => __( 'google, facebook, trustpilot, yelp, productreview, direct or other. A platform name such as "Google" also works; an unknown name becomes "Other" with that name as its label. Blank means direct.', 'if-reviews' ),
 		'source_label'  => __( 'Platform name shown on the badge when source is "other". Optional.', 'if-reviews' ),
 		'review_url'    => __( 'Link to the original review. Optional.', 'if-reviews' ),
+		'categories'    => __( 'Category names separated by | (vertical bar), e.g. Mortgages|Insurance. Created if they do not exist. Optional.', 'if-reviews' ),
+		'pinned'        => __( 'yes to pin the review to the top. Blank means no.', 'if-reviews' ),
 		'display'       => __( 'yes or no. Blank means yes.', 'if-reviews' ),
 		'status'        => __( 'publish or draft. Blank means publish.', 'if-reviews' ),
 	);
@@ -53,6 +55,11 @@ function if_reviews_csv_aliases() {
 		'visible'       => 'display',
 		'show'          => 'display',
 		'shown'         => 'display',
+		'category'      => 'categories',
+		'tags'          => 'categories',
+		'service'       => 'categories',
+		'pin'           => 'pinned',
+		'featured'      => 'pinned',
 	);
 }
 
@@ -238,6 +245,7 @@ function if_reviews_write_csv( $out ) {
 
 		$display = get_post_meta( $id, '_if_display_on_website', true );
 		$source  = (string) get_post_meta( $id, '_if_source', true );
+		$terms   = get_the_terms( $id, 'if_review_category' );
 
 		$row = array(
 			'reviewer_name' => get_post_meta( $id, '_if_reviewer_name', true ),
@@ -247,6 +255,8 @@ function if_reviews_write_csv( $out ) {
 			'source'        => '' === $source ? 'direct' : $source,
 			'source_label'  => get_post_meta( $id, '_if_source_label', true ),
 			'review_url'    => get_post_meta( $id, '_if_review_url', true ),
+			'categories'    => is_array( $terms ) ? implode( '|', wp_list_pluck( $terms, 'name' ) ) : '',
+			'pinned'        => ( '1' === get_post_meta( $id, '_if_pinned', true ) ) ? 'yes' : 'no',
 			'display'       => ( '' === $display || '1' === $display ) ? 'yes' : 'no',
 			'status'        => get_post_status( $id ),
 		);
@@ -271,8 +281,8 @@ function if_reviews_handle_csv_template() {
 	$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
 	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '\\' );
-	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://maps.app.goo.gl/example', 'yes', 'publish' ), ',', '"', '\\' );
-	fputcsv( $out, array( 'Sam Lee', '2026-06-02', '8/10', 'Very helpful through a complicated process.', 'Tripadvisor', '', '', 'yes', 'publish' ), ',', '"', '\\' );
+	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://maps.app.goo.gl/example', 'Mortgages', 'yes', 'yes', 'publish' ), ',', '"', '\\' );
+	fputcsv( $out, array( 'Sam Lee', '2026-06-02', '8/10', 'Very helpful through a complicated process.', 'Tripadvisor', '', '', 'Insurance|Mortgages', '', 'yes', 'publish' ), ',', '"', '\\' );
 
 	fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	exit;
@@ -494,7 +504,14 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 
 		$url     = if_reviews_sanitize_url( $get( 'review_url' ) );
 		$display = if_reviews_parse_yes_no( $get( 'display' ), true ) ? '1' : '0';
+		$pinned  = if_reviews_parse_yes_no( $get( 'pinned' ), false ) ? '1' : '0';
 		$status  = ( 'draft' === strtolower( trim( $get( 'status' ) ) ) ) ? 'draft' : 'publish';
+
+		$category_names = array_values(
+			array_filter(
+				array_map( 'sanitize_text_field', array_map( 'trim', preg_split( '/[|;]/', $get( 'categories' ) ) ) )
+			)
+		);
 
 		if ( $skip_duplicates ) {
 
@@ -522,6 +539,7 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 					'_if_source_label'       => 'other' === $source_key ? $source_label : '',
 					'_if_review_url'         => $url,
 					'_if_display_on_website' => $display,
+					'_if_pinned'             => $pinned,
 				),
 			),
 			true
@@ -531,6 +549,11 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 			/* translators: 1: CSV line number, 2: error message */
 			$errors[] = sprintf( __( 'Line %1$d: %2$s', 'if-reviews' ), $line, $post_id->get_error_message() );
 			continue;
+		}
+
+		if ( ! empty( $category_names ) ) {
+			// Names are matched to existing terms or created.
+			wp_set_object_terms( $post_id, $category_names, 'if_review_category' );
 		}
 
 		$imported++;

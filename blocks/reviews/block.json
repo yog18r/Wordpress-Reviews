@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "if-reviews/reviews",
-	"version": "2.2.1",
+	"version": "2.3.0",
 	"title": "Reviews",
 	"category": "widgets",
 	"icon": "star-filled",
@@ -18,7 +18,10 @@
 		"source": { "type": "string", "default": "" },
 		"showHeader": { "type": "string", "default": "" },
 		"title": { "type": "string", "default": "" },
-		"showButtons": { "type": "string", "default": "" }
+		"showButtons": { "type": "string", "default": "" },
+		"category": { "type": "string", "default": "" },
+		"paginate": { "type": "number", "default": 0 },
+		"autoplay": { "type": "number", "default": -1 }
 	},
 	"supports": {
 		"align": [ "wide", "full" ],

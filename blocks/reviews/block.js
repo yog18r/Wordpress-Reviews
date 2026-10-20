@@ -80,6 +80,24 @@
 							options: yesNo,
 							onChange: function (value) { set({ showMore: value }); }
 						}),
+						el(TextControl, {
+							label: __('Reviews per page', 'if-reviews'),
+							type: 'number',
+							min: 0,
+							value: a.paginate ? String(a.paginate) : '',
+							help: __('Numbered pages instead of "Show more". Blank or 0 for none. Use one paginated block per page.', 'if-reviews'),
+							onChange: function (value) { set({ paginate: Math.max(0, parseInt(value, 10) || 0) }); }
+						}),
+						el(TextControl, {
+							label: __('Carousel autoplay (seconds)', 'if-reviews'),
+							type: 'number',
+							min: 0,
+							value: a.autoplay < 0 ? '' : String(a.autoplay),
+							help: __('Blank uses the default. 0 turns autoplay off. Carousel layout only.', 'if-reviews'),
+							onChange: function (value) {
+								set({ autoplay: value === '' ? -1 : Math.max(0, parseInt(value, 10) || 0) });
+							}
+						}),
 						el(SelectControl, {
 							label: __('Order', 'if-reviews'),
 							value: a.order,
@@ -120,6 +138,12 @@
 							value: a.source,
 							help: __('Source keys, comma-separated, e.g. google,facebook. Blank shows all. The header then describes only those sources.', 'if-reviews'),
 							onChange: function (value) { set({ source: value }); }
+						}),
+						el(TextControl, {
+							label: __('Only these categories', 'if-reviews'),
+							value: a.category,
+							help: __('Category slugs, comma-separated, e.g. mortgages. Blank shows all.', 'if-reviews'),
+							onChange: function (value) { set({ category: value }); }
 						})
 					)
 				),

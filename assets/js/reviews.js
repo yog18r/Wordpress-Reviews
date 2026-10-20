@@ -116,6 +116,86 @@
 
 		window.addEventListener('resize', update);
 		update();
+
+		initAutoplay(wrap, track, stepSize);
+	}
+
+	function initAutoplay(wrap, track, stepSize) {
+		var seconds = parseInt(wrap.getAttribute('data-autoplay'), 10) || 0;
+		var button = wrap.querySelector('.if-carousel-pause');
+		var reduced = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+		var timer = null;
+		var userPaused = false;
+		var engaged = false;
+
+		if (seconds <= 0 || reduced) {
+			if (button) {
+				button.parentNode.removeChild(button);
+			}
+			return;
+		}
+
+		function tick() {
+			var max = track.scrollWidth - track.clientWidth - 1;
+
+			if (track.scrollLeft >= max) {
+				track.scrollTo({ left: 0, behavior: 'smooth' });
+			} else {
+				track.scrollBy({ left: stepSize(), behavior: 'smooth' });
+			}
+		}
+
+		function stop() {
+			if (timer) {
+				window.clearInterval(timer);
+				timer = null;
+			}
+		}
+
+		function start() {
+			if (timer || userPaused || engaged || document.hidden) {
+				return;
+			}
+			timer = window.setInterval(tick, seconds * 1000);
+		}
+
+		wrap.addEventListener('mouseenter', function () { engaged = true; stop(); });
+		wrap.addEventListener('mouseleave', function () { engaged = false; start(); });
+		wrap.addEventListener('focusin', function (event) {
+			if (event.target !== button) {
+				engaged = true;
+				stop();
+			}
+		});
+		wrap.addEventListener('focusout', function (event) {
+			if (!wrap.contains(event.relatedTarget)) {
+				engaged = false;
+				start();
+			}
+		});
+		document.addEventListener('visibilitychange', function () {
+			if (document.hidden) {
+				stop();
+			} else {
+				start();
+			}
+		});
+
+		if (button) {
+			button.addEventListener('click', function () {
+				userPaused = !userPaused;
+				button.setAttribute('aria-pressed', userPaused ? 'true' : 'false');
+				button.setAttribute('aria-label', userPaused ? button.getAttribute('data-label-play') : button.getAttribute('data-label-pause'));
+				wrap.classList.toggle('if-autoplay-paused', userPaused);
+				if (userPaused) {
+					stop();
+				} else {
+					start();
+				}
+			});
+		}
+
+		start();
 	}
 
 	function init() {

@@ -70,6 +70,36 @@ function if_register_reviews_post_type() {
 			'map_meta_cap'      => true,
 		)
 	);
+
+	// Categories: tag reviews by service or product and show the matching
+	// subset on each page with category="..." on the shortcode or block.
+	register_taxonomy(
+		'if_review_category',
+		'if_review',
+		array(
+			'labels'            => array(
+				'name'          => _x( 'Review Categories', 'taxonomy general name', 'if-reviews' ),
+				'singular_name' => _x( 'Review Category', 'taxonomy singular name', 'if-reviews' ),
+				'menu_name'     => __( 'Categories', 'if-reviews' ),
+				'all_items'     => __( 'All Categories', 'if-reviews' ),
+				'edit_item'     => __( 'Edit Category', 'if-reviews' ),
+				'update_item'   => __( 'Update Category', 'if-reviews' ),
+				'add_new_item'  => __( 'Add New Category', 'if-reviews' ),
+				'new_item_name' => __( 'New Category Name', 'if-reviews' ),
+				'search_items'  => __( 'Search Categories', 'if-reviews' ),
+				'not_found'     => __( 'No categories found.', 'if-reviews' ),
+			),
+			'description'       => __( 'Group reviews by service or product, e.g. "Mortgage advice", then show a category on its own page.', 'if-reviews' ),
+			'public'            => false,
+			'show_ui'           => true,
+			'show_in_menu'      => true,
+			'show_admin_column' => true,
+			'show_in_rest'      => false,
+			'hierarchical'      => true,
+			'rewrite'           => false,
+			'query_var'         => false,
+		)
+	);
 }
 add_action( 'init', 'if_register_reviews_post_type' );
 
@@ -96,6 +126,7 @@ function if_reviews_admin_columns( $columns ) {
 			$new['if_source']      = __( 'Source', 'if-reviews' );
 			$new['if_review_date'] = __( 'Review date', 'if-reviews' );
 			$new['if_shown']       = __( 'Shown', 'if-reviews' );
+			$new['if_pinned']      = __( 'Pinned', 'if-reviews' );
 		}
 
 		$new[ $key ] = $label;
@@ -158,6 +189,12 @@ function if_reviews_admin_column_content( $column, $post_id ) {
 				esc_html_e( 'Yes', 'if-reviews' );
 			}
 			break;
+
+		case 'if_pinned':
+			echo ( '1' === get_post_meta( $post_id, '_if_pinned', true ) )
+				? esc_html__( 'Pinned', 'if-reviews' )
+				: '<span class="if-admin-hidden">&mdash;</span>';
+			break;
 	}
 }
 add_action( 'manage_if_review_posts_custom_column', 'if_reviews_admin_column_content', 10, 2 );
@@ -201,6 +238,22 @@ function if_reviews_admin_source_filter( $post_type ) {
 		<?php endforeach; ?>
 	</select>
 	<?php
+	$category = isset( $_GET['if_review_category'] ) ? sanitize_title( wp_unslash( $_GET['if_review_category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	wp_dropdown_categories(
+		array(
+			'taxonomy'        => 'if_review_category',
+			'name'            => 'if_review_category',
+			'id'              => 'if-filter-category',
+			'show_option_all' => __( 'All categories', 'if-reviews' ),
+			'hide_empty'      => false,
+			'hide_if_empty'   => true,
+			'value_field'     => 'slug',
+			'selected'        => $category,
+			'hierarchical'    => true,
+			'orderby'         => 'name',
+		)
+	);
 }
 add_action( 'restrict_manage_posts', 'if_reviews_admin_source_filter' );
 
@@ -253,6 +306,20 @@ function if_reviews_admin_list_query( $query ) {
 
 		$query->set( 'meta_query', $meta_query );
 	}
+
+	$category = isset( $_GET['if_review_category'] ) ? sanitize_title( wp_unslash( $_GET['if_review_category'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+
+	if ( '' !== $category && '0' !== $category ) {
+
+		$tax_query   = (array) $query->get( 'tax_query' );
+		$tax_query[] = array(
+			'taxonomy' => 'if_review_category',
+			'field'    => 'slug',
+			'terms'    => $category,
+		);
+
+		$query->set( 'tax_query', $tax_query );
+	}
 }
 add_action( 'pre_get_posts', 'if_reviews_admin_list_query' );
 
@@ -275,8 +342,10 @@ function if_reviews_bulk_actions( $actions ) {
 		$actions[ 'if_source_' . $key ] = sprintf( __( 'Set source: %s', 'if-reviews' ), $source['label'] );
 	}
 
-	$actions['if_show'] = __( 'Show on website', 'if-reviews' );
-	$actions['if_hide'] = __( 'Hide from website', 'if-reviews' );
+	$actions['if_show']  = __( 'Show on website', 'if-reviews' );
+	$actions['if_hide']  = __( 'Hide from website', 'if-reviews' );
+	$actions['if_pin']   = __( 'Pin to the top', 'if-reviews' );
+	$actions['if_unpin'] = __( 'Unpin', 'if-reviews' );
 
 	return $actions;
 }
@@ -314,6 +383,15 @@ function if_reviews_handle_bulk_actions( $redirect, $action, $post_ids ) {
 		foreach ( $post_ids as $post_id ) {
 			if ( current_user_can( 'edit_post', $post_id ) ) {
 				update_post_meta( $post_id, '_if_display_on_website', 'if_show' === $action ? '1' : '0' );
+				$changed++;
+			}
+		}
+
+	} elseif ( 'if_pin' === $action || 'if_unpin' === $action ) {
+
+		foreach ( $post_ids as $post_id ) {
+			if ( current_user_can( 'edit_post', $post_id ) ) {
+				update_post_meta( $post_id, '_if_pinned', 'if_pin' === $action ? '1' : '0' );
 				$changed++;
 			}
 		}

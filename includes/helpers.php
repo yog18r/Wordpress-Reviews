@@ -51,6 +51,8 @@ function if_reviews_default_options() {
 		// 0 = always show full text; otherwise characters before "Read more".
 		'excerpt_length'    => 0,
 		'show_review_links' => 1,
+		// Seconds between automatic carousel moves; 0 = off.
+		'carousel_autoplay' => 0,
 
 		// "Leave us a review" buttons. Off by default; one row per platform.
 		'cta_enabled' => 0,
@@ -216,6 +218,10 @@ function if_reviews_sanitize_options( $input ) {
 	}
 
 	$output['show_review_links'] = isset( $input['show_review_links'] ) ? if_reviews_to_bool( $input['show_review_links'] ) : 0;
+
+	$output['carousel_autoplay'] = isset( $input['carousel_autoplay'] )
+		? max( 0, min( 60, absint( $input['carousel_autoplay'] ) ) )
+		: 0;
 
 	/* "Leave us a review" buttons -------------------------------- */
 
@@ -392,6 +398,55 @@ function if_reviews_format_date( $date ) {
 	$format = apply_filters( 'if_reviews_date_format', 'F Y' );
 
 	return wp_date( $format, $dt->getTimestamp(), wp_timezone() );
+}
+
+/**
+ * The avatar palette from settings as a list of validated hex colours
+ * (without '#').
+ *
+ * @param array|null $options Plugin options (loaded if omitted).
+ * @return string[]
+ */
+function if_reviews_get_avatar_colors( $options = null ) {
+
+	if ( null === $options ) {
+		$options = if_reviews_get_options();
+	}
+
+	$colors = array();
+
+	foreach ( explode( ',', (string) $options['avatar_colors'] ) as $hex ) {
+
+		$hex = ltrim( trim( $hex ), '#' );
+
+		if ( ctype_xdigit( $hex ) && in_array( strlen( $hex ), array( 3, 6 ), true ) ) {
+			$colors[] = $hex;
+		}
+	}
+
+	return $colors;
+}
+
+/**
+ * Pick a palette index from the reviewer's name, so the same person always
+ * gets the same avatar colour wherever their review appears.
+ *
+ * @param string $seed  Reviewer name.
+ * @param int    $count Number of palette entries.
+ * @return int 0-based index.
+ */
+function if_reviews_avatar_index( $seed, $count ) {
+
+	$count = (int) $count;
+
+	if ( $count < 1 ) {
+		return 0;
+	}
+
+	$hash = crc32( mb_strtolower( trim( (string) $seed ) ) );
+
+	// crc32() is signed on 32-bit PHP builds.
+	return (int) ( abs( $hash ) % $count );
 }
 
 /**

@@ -42,6 +42,7 @@ function if_review_details_callback( $post ) {
 	$source_key    = get_post_meta( $post->ID, '_if_source', true );
 	$source_label  = get_post_meta( $post->ID, '_if_source_label', true );
 	$review_url    = get_post_meta( $post->ID, '_if_review_url', true );
+	$pinned        = get_post_meta( $post->ID, '_if_pinned', true );
 	$options       = if_reviews_get_options();
 
 	// Reviews created before these fields existed keep sensible values.
@@ -212,6 +213,22 @@ function if_review_details_callback( $post ) {
 			</p>
 		</div>
 
+		<div class="if-field">
+			<label for="if_pinned" style="display:flex;align-items:center;gap:8px;">
+				<input
+					type="checkbox"
+					id="if_pinned"
+					name="if_pinned"
+					value="1"
+					<?php checked( $pinned, '1' ); ?>
+				>
+				<strong style="margin:0;"><?php esc_html_e( 'Pin to the top', 'if-reviews' ); ?></strong>
+			</label>
+			<p class="description" style="margin-left:24px;">
+				<?php esc_html_e( 'Pinned reviews are shown before all others, whatever the sort order.', 'if-reviews' ); ?>
+			</p>
+		</div>
+
 	</div>
 
 	<?php
@@ -350,6 +367,10 @@ function if_save_review_details( $post_id ) {
 	/* Display on website ------------------------------------------- */
 
 	update_post_meta( $post_id, '_if_display_on_website', isset( $_POST['if_display_on_website'] ) ? '1' : '0' );
+
+	/* Pinned ------------------------------------------------------- */
+
+	update_post_meta( $post_id, '_if_pinned', isset( $_POST['if_pinned'] ) ? '1' : '0' );
 
 	/* Convenience: use the reviewer name as the title when none given */
 

@@ -44,6 +44,8 @@ Consumer protection law in many countries (the Australian Consumer Law, the US F
 - **A block for the block editor** with a live preview, plus the shortcode for widgets and templates.
 - **Optional link to the original review** on each card, and an opt-in minimum-rating filter that hides low ratings from the cards while still counting them in the header.
 - **"Leave us a review" buttons** to your review page on each platform, with guidance on finding the direct links. Off by default; also available on their own via `[if_reviews_buttons]`.
+- **Categories** to show the right reviews on each page, **pinned reviews**, **numbered pagination** and **carousel autoplay** for large sets.
+- **Featured Review** and **Rating Badge** blocks and shortcodes for landing pages, headers and footers.
 - **Styling from a settings screen**: colours, corner radius and a cycling avatar palette with automatic contrast.
 - **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, no external requests.
 - **Automatic updates** from this repository's releases.
@@ -73,11 +75,16 @@ Requires WordPress 6.3+ and PHP 7.4+.
 | `[if_reviews show_header="no"]` | Cards only |
 | `[if_reviews title="What our clients say"]` | Custom header title |
 | `[if_reviews buttons="yes"]` | Force the "Leave us a review" buttons on, or `"no"` to hide them |
+| `[if_reviews category="mortgages"]` | Only reviews in a category (slug; comma-separate several) |
+| `[if_reviews paginate="12"]` | Numbered pages instead of "Show more"; one paginated widget per page |
+| `[if_reviews layout="carousel" autoplay="6"]` | Carousel that advances every six seconds (`0` = off) |
+| `[if_review id="42"]` | One review as a featured quote |
+| `[if_reviews_rating]` | Inline "★★★★★ 4.8 from 120 reviews" badge; `stars="no"`, `count="no"`, `source`, `category` |
 | `[if_reviews_buttons heading="-"]` | The buttons on their own; `heading` overrides or removes (`-`) the heading |
 
 Source keys: `direct`, `google`, `facebook`, `trustpilot`, `yelp`, `productreview`, `other`.
 
-In the block editor, add the **Reviews** block instead. Its sidebar has the same options; anything left at "Default" follows Display Settings.
+In the block editor, use the **Reviews**, **Featured Review** and **Rating Badge** blocks instead. The Reviews block's sidebar has the same options as the shortcode; anything left at "Default" follows Display Settings.
 
 ## Importing reviews
 
@@ -115,13 +122,14 @@ includes/sources.php    source registry and badge icons
 includes/post-type.php  the if_review post type and its admin list
 includes/meta-box.php   the Review Details meta box and save handler
 includes/settings.php   Reviews → Display Settings
-includes/shortcode.php  [if_reviews]: data, header, layouts
+includes/shortcode.php  [if_reviews]: data, header, layouts, pagination
+includes/snippets.php   [if_review] featured quote and [if_reviews_rating] badge
 includes/cta.php        "Leave us a review" buttons and [if_reviews_buttons]
-includes/block.php      the Reviews block (renders through the shortcode)
+includes/block.php      the three blocks (rendered through the shortcodes)
 includes/import-export.php  Reviews → Import / Export (CSV)
 includes/enqueue.php    front-end assets and settings-driven CSS
 includes/updater.php    GitHub release update checks
-blocks/reviews/         block.json, block.js (plain JS, no build step)
+blocks/                 reviews, featured, rating: block.json + block.js (plain JS, no build step)
 assets/                 reviews.css, reviews.js (no dependencies)
 vendor/                 Plugin Update Checker (MIT)
 uninstall.php           cleanup on delete
@@ -134,7 +142,7 @@ readme.txt              WordPress.org-format readme, FAQ and changelog
 2. Commit, then tag and push:
 
    ```bash
-   git tag v2.2.1 && git push origin main --tags
+   git tag v2.3.1 && git push origin main --tags
    ```
 
 3. The [release workflow](.github/workflows/release.yml) checks the three version numbers match the tag, lints the PHP, builds `if-reviews.zip` (everything except the files in `.distignore`) and publishes a GitHub Release with that version's changelog as the notes. Sites running the plugin see the update within twelve hours, or immediately after "Check again" on the Updates screen.

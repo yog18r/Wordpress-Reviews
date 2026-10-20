@@ -406,6 +406,125 @@
 }
 
 /* ------------------------------------------------------------------
+ * Carousel autoplay pause / resume button
+ * ---------------------------------------------------------------- */
+
+.if-carousel-pause .if-icon-play {
+  display: none;
+}
+
+.if-autoplay-paused .if-carousel-pause .if-icon-play {
+  display: block;
+}
+
+.if-autoplay-paused .if-carousel-pause .if-icon-pause {
+  display: none;
+}
+
+/* ------------------------------------------------------------------
+ * Featured review ([if_review] / Featured Review block)
+ * ---------------------------------------------------------------- */
+
+.if-featured .if-featured-card {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 28px 32px;
+}
+
+.if-featured .if-featured-card .if-avatar {
+  width: 52px;
+  height: 52px;
+  font-size: 17px;
+}
+
+.if-featured .if-featured-card .if-review-text {
+  font-size: 17px;
+  line-height: 1.7;
+}
+
+.if-featured .if-featured-card:hover {
+  transform: none;
+}
+
+/* ------------------------------------------------------------------
+ * Inline rating badge ([if_reviews_rating] / Rating Badge block)
+ * ---------------------------------------------------------------- */
+
+.if-rating-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.if-rating-badge .if-stars {
+  font-size: 16px;
+}
+
+.if-rating-count {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--if-meta-color, #6b7280);
+}
+
+/* ------------------------------------------------------------------
+ * Pagination
+ * ---------------------------------------------------------------- */
+
+.if-pagination {
+  margin: 24px 0 0;
+}
+
+.if-pagination ul.page-numbers {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.if-pagination ul.page-numbers li {
+  margin: 0;
+}
+
+.if-pagination .page-numbers {
+  display: inline-block;
+  min-width: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--if-border-color, #d6d6d6);
+  border-radius: 999px;
+  background: var(--if-card-bg-color, #fff);
+  color: var(--if-text-color, #4b5563);
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  text-align: center;
+  text-decoration: none;
+  transition: border-color 0.2s ease;
+}
+
+.if-pagination a.page-numbers:hover,
+.if-pagination a.page-numbers:focus-visible {
+  border-color: var(--if-accent-color, #f5a623);
+  color: var(--if-text-color, #4b5563);
+}
+
+.if-pagination .page-numbers.current {
+  border-color: var(--if-accent-color, #f5a623);
+  background: var(--if-accent-color, #f5a623);
+  color: #1f2937;
+}
+
+.if-pagination .page-numbers.dots {
+  border: 0;
+  background: none;
+}
+
+/* ------------------------------------------------------------------
  * "Leave us a review" buttons
  * ---------------------------------------------------------------- */
 

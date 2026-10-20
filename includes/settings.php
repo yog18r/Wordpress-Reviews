@@ -101,6 +101,13 @@ function if_reviews_register_settings() {
 			'label'   => __( 'Order', 'if-reviews' ),
 			'choices' => if_reviews_get_orders(),
 		),
+		'carousel_autoplay' => array(
+			'type'        => 'number',
+			'label'       => __( 'Carousel autoplay (seconds)', 'if-reviews' ),
+			'min'         => 0,
+			'max'         => 60,
+			'description' => __( '0 is off. Otherwise the carousel moves on by one card every so many seconds, pausing while a visitor hovers or focuses it, with a pause button. Visitors who prefer reduced motion never get autoplay.', 'if-reviews' ),
+		),
 		'excerpt_length'    => array(
 			'type'        => 'number',
 			'label'       => __( '"Read more" after (characters)', 'if-reviews' ),
@@ -439,6 +446,11 @@ function if_reviews_render_settings_page() {
 				<tr><td><code>[if_reviews order="highest"]</code></td><td><?php esc_html_e( 'Sort order: newest, oldest, highest, random.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews show_header="no"]</code></td><td><?php esc_html_e( 'Cards only, no summary header.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews title="What our clients say"]</code></td><td><?php esc_html_e( 'Custom header title for this instance.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews category="mortgages"]</code></td><td><?php esc_html_e( 'Only reviews in one category (by slug; comma-separate several). The header then describes that subset.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews paginate="12"]</code></td><td><?php esc_html_e( 'Numbered pages of twelve instead of a "Show more" button. Use one paginated widget per page.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews layout="carousel" autoplay="6"]</code></td><td><?php esc_html_e( 'Carousel that moves on every six seconds (0 to disable).', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote. The ID is in the address bar when editing the review.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews_rating]</code></td><td><?php esc_html_e( 'Inline badge: "★★★★★ 4.8 from 120 reviews". Accepts source and category; stars="no" or count="no" trims it.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews buttons="yes"]</code></td><td><?php esc_html_e( 'Force the "Leave us a review" buttons on (or "no" to hide them) for this instance.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_buttons]</code></td><td><?php esc_html_e( 'The "Leave us a review" buttons on their own, anywhere. Add heading="..." for a different heading or heading="-" for none.', 'if-reviews' ); ?></td></tr>
 			</tbody>

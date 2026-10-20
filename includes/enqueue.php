@@ -81,11 +81,27 @@ function if_reviews_maybe_enqueue_assets() {
 		return;
 	}
 
-	if (
-		has_shortcode( $post->post_content, 'if_reviews' )
-		|| has_shortcode( $post->post_content, 'if_reviews_buttons' )
-		|| has_block( 'if-reviews/reviews', $post )
-	) {
+	$shortcodes = array( 'if_reviews', 'if_reviews_buttons', 'if_review', 'if_reviews_rating' );
+	$blocks     = array( 'if-reviews/reviews', 'if-reviews/featured', 'if-reviews/rating' );
+	$found      = false;
+
+	foreach ( $shortcodes as $tag ) {
+		if ( has_shortcode( $post->post_content, $tag ) ) {
+			$found = true;
+			break;
+		}
+	}
+
+	if ( ! $found ) {
+		foreach ( $blocks as $block ) {
+			if ( has_block( $block, $post ) ) {
+				$found = true;
+				break;
+			}
+		}
+	}
+
+	if ( $found ) {
 		if_reviews_enqueue_assets();
 	}
 }
@@ -109,22 +125,12 @@ function if_reviews_build_dynamic_css() {
 	$css .= '--if-meta-color:' . esc_attr( $options['meta_color'] ) . ';';
 	$css .= '}';
 
-	// Avatar colour cycle, generated to match however many colours were set.
-	$colors = array_values( array_filter( array_map( 'trim', explode( ',', (string) $options['avatar_colors'] ) ) ) );
-	$total  = count( $colors );
-
-	foreach ( $colors as $index => $hex ) {
-
-		$hex = ltrim( $hex, '#' );
-
-		if ( ! ctype_xdigit( $hex ) || ! in_array( strlen( $hex ), array( 3, 6 ), true ) ) {
-			continue;
-		}
-
+	// One class per palette colour. Each card picks its class from a hash
+	// of the reviewer's name (see if_reviews_avatar_index()).
+	foreach ( if_reviews_get_avatar_colors( $options ) as $index => $hex ) {
 		$css .= sprintf(
-			'.if-reviews-wrap .if-review-card:nth-child(%1$dn+%2$d) .if-avatar{background:linear-gradient(135deg,#%3$s,%4$s);color:%5$s;}',
-			$total,
-			$index + 1,
+			'.if-reviews-wrap .if-avatar-color-%1$d{background:linear-gradient(135deg,#%2$s,%3$s);color:%4$s;}',
+			$index,
 			$hex,
 			if_reviews_darken_hex( $hex, 0.15 ),
 			if_reviews_contrast_text( $hex )

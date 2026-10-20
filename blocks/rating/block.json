@@ -1,0 +1,24 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "if-reviews/rating",
+	"version": "2.3.0",
+	"title": "Rating Badge",
+	"category": "widgets",
+	"icon": "star-half",
+	"description": "A compact \"4.8 from 120 reviews\" badge for headers, footers and calls to action.",
+	"keywords": [ "rating", "reviews", "stars", "badge" ],
+	"textdomain": "if-reviews",
+	"attributes": {
+		"source": { "type": "string", "default": "" },
+		"category": { "type": "string", "default": "" },
+		"showStars": { "type": "boolean", "default": true },
+		"showCount": { "type": "boolean", "default": true }
+	},
+	"supports": {
+		"anchor": true,
+		"html": false
+	},
+	"editorScript": "file:./block.js",
+	"style": "if-reviews-style"
+}

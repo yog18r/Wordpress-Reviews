@@ -3,7 +3,7 @@
  * Plugin Name:       WP Reviews
  * Plugin URI:        https://github.com/yog18r/Wordpress-Reviews
  * Description:       Manually curated customer reviews with per-review source badges, an honest summary header, grid / list / carousel layouts, CSV import/export, a block and an [if_reviews] shortcode.
- * Version:           2.2.1
+ * Version:           2.3.0
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:            yog18r
@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IF_REVIEWS_VERSION', '2.2.1' );
+define( 'IF_REVIEWS_VERSION', '2.3.0' );
 define( 'IF_REVIEWS_FILE', __FILE__ );
 define( 'IF_REVIEWS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'IF_REVIEWS_URL', plugin_dir_url( __FILE__ ) );
@@ -45,6 +45,7 @@ require_once IF_REVIEWS_PATH . 'includes/enqueue.php';
 require_once IF_REVIEWS_PATH . 'includes/post-type.php';
 require_once IF_REVIEWS_PATH . 'includes/meta-box.php';
 require_once IF_REVIEWS_PATH . 'includes/shortcode.php';
+require_once IF_REVIEWS_PATH . 'includes/snippets.php';
 require_once IF_REVIEWS_PATH . 'includes/cta.php';
 require_once IF_REVIEWS_PATH . 'includes/block.php';
 require_once IF_REVIEWS_PATH . 'includes/import-export.php';

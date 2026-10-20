@@ -1,0 +1,22 @@
+{
+	"$schema": "https://schemas.wp.org/trunk/block.json",
+	"apiVersion": 3,
+	"name": "if-reviews/featured",
+	"version": "2.3.0",
+	"title": "Featured Review",
+	"category": "widgets",
+	"icon": "format-quote",
+	"description": "One review on its own as a highlighted quote, for landing pages and sidebars.",
+	"keywords": [ "review", "testimonial", "quote" ],
+	"textdomain": "if-reviews",
+	"attributes": {
+		"reviewId": { "type": "number", "default": 0 }
+	},
+	"supports": {
+		"align": [ "wide", "full" ],
+		"anchor": true,
+		"html": false
+	},
+	"editorScript": "file:./block.js",
+	"style": "if-reviews-style"
+}
