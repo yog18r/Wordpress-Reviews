@@ -96,7 +96,9 @@ Reviews → Import / Export. Download the template, fill one review per row, upl
 
 Reviews → Google import. Optional, off by default, and built on a Google Cloud project you own: the plugin contacts Google only once you connect it, and nothing passes through a third-party server.
 
-Why a Cloud project? Plugins that import Google reviews "without an API key" run the request through their own servers, which read your public Maps page, and cap the free tier because that service is their product. This plugin uses Google's Business Profile API instead. It returns every review and allows storing them, but Google approves access per project, so there is one-off setup: a verified profile at least 60 days old that lists your site, a Cloud project, an access request Google reviews by hand, three APIs enabled, and an OAuth client with the redirect URI the screen shows. The screen walks through each step.
+Why a Cloud project? Plugins that import Google reviews "without an API key" run the request through their own servers, which read your public Maps page, and cap the free tier because that service is their product. This plugin uses Google's Business Profile API instead. It returns every review and allows storing them, but Google approves access per project, so there is one-off setup: a verified profile at least 60 days old that lists your site, a Cloud project, an access request Google reviews by hand, three APIs enabled, a consent screen, and an OAuth client with the redirect URI the screen shows. The screen walks through each step.
+
+To keep the connection from expiring: a Workspace account sets the consent screen audience to Internal; a personal Google account chooses External and clicks "Publish app", since Google expires a Testing app's authorisation every 7 days. If a Workspace administrator restricts third-party apps or enforces Google Cloud session re-authentication, they mark the app Trusted under Admin console → Security → API controls and tick "Exempt trusted apps" in Google Cloud session control.
 
 How the sync behaves:
 

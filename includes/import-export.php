@@ -146,6 +146,17 @@ function if_reviews_render_import_export_page() {
 			<?php esc_html_e( 'Upload a CSV with a header row. Only reviewer_name and rating are required. Each row becomes a new review; nothing existing is modified.', 'if-reviews' ); ?>
 			<a href="<?php echo esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=if_reviews_csv_template' ), 'if_reviews_csv_template' ) ); ?>"><?php esc_html_e( 'Download a template', 'if-reviews' ); ?></a>
 		</p>
+		<p class="description" style="max-width: 760px;">
+			<?php
+			echo wp_kses_post(
+				sprintf(
+					/* translators: %s: link to the Google import page */
+					__( 'Have a Google Business Profile? You can also connect it and import every Google review directly, using your own Google Cloud project: see %s. It is optional and off until you set it up.', 'if-reviews' ),
+					'<a href="' . esc_url( admin_url( 'edit.php?post_type=if_review&page=if-reviews-google' ) ) . '">' . esc_html__( 'Reviews → Google import', 'if-reviews' ) . '</a>'
+				)
+			);
+			?>
+		</p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
 			<input type="hidden" name="action" value="if_reviews_import">
 			<?php wp_nonce_field( 'if_reviews_import' ); ?>

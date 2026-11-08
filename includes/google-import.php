@@ -254,17 +254,47 @@ function if_reviews_google_render_page() {
 			<p style="max-width: 760px;">
 				<?php esc_html_e( 'Google only lets approved projects read Business Profile reviews, so this needs about an hour of one-off setup on Google\'s side, plus a wait for their approval. You do it once per site.', 'if-reviews' ); ?>
 			</p>
-			<details class="if-help" style="max-width: 760px; margin-bottom: 16px;">
-				<summary><?php esc_html_e( 'How to get a Client ID and Client Secret', 'if-reviews' ); ?></summary>
+			<details class="if-help if-setup-guide" style="max-width: 760px; margin-bottom: 16px;" <?php echo $has_creds ? '' : 'open'; ?>>
+				<summary><?php esc_html_e( 'How to get a Client ID and Client Secret (six steps)', 'if-reviews' ); ?></summary>
 				<ol>
-					<li><?php esc_html_e( 'Your Google Business Profile must be verified and at least 60 days old, and must list this website.', 'if-reviews' ); ?></li>
-					<li><?php echo wp_kses_post( __( 'Create a project at <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a>, signed in as an owner or manager of the profile. Note the project number from the dashboard.', 'if-reviews' ) ); ?></li>
-					<li><?php echo wp_kses_post( __( 'Request access with <a href="https://support.google.com/business/contact/api_default" target="_blank" rel="noopener">Google\'s Business Profile API form</a> ("Application for Basic API Access"). Approval takes from a few days to a few weeks; until then the APIs do not appear in your project.', 'if-reviews' ) ); ?></li>
-					<li><?php esc_html_e( 'Once approved, in "APIs & Services → Library" enable: My Business Account Management API, My Business Business Information API and Google My Business API.', 'if-reviews' ); ?></li>
-					<li><?php esc_html_e( 'In "OAuth consent screen" choose External (or Internal for a Workspace account), fill in the app name and your email, add the scope business.manage, and add your own Google account as a test user. Keep the app in Testing; it only needs to work for you.', 'if-reviews' ); ?></li>
-					<li><?php esc_html_e( 'In "Credentials" create an OAuth client ID of type Web application and paste the redirect URI below into "Authorised redirect URIs". Copy the Client ID and Client Secret into the fields here.', 'if-reviews' ); ?></li>
+					<li>
+						<strong><?php esc_html_e( 'Check you qualify.', 'if-reviews' ); ?></strong>
+						<?php esc_html_e( 'Google requires a Business Profile that is verified, at least 60 days old and lists this website. Do every step below signed in to the Google account that owns or manages that profile.', 'if-reviews' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Create a Cloud project.', 'if-reviews' ); ?></strong>
+						<?php echo wp_kses_post( __( 'At <a href="https://console.cloud.google.com/" target="_blank" rel="noopener">console.cloud.google.com</a> create a new project (any name). Note the <em>project number</em> shown on its dashboard.', 'if-reviews' ) ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Ask Google for Business Profile API access.', 'if-reviews' ); ?></strong>
+						<?php echo wp_kses_post( __( 'Fill in <a href="https://support.google.com/business/contact/api_default" target="_blank" rel="noopener">Google\'s access request form</a>, choosing "Application for Basic API Access", with the project number and the email address that owns or manages the profile. Google reviews requests by hand; allow anything from a few days to a few weeks. You can check progress in the project under "IAM & Admin → Quotas": a quota of 0 for the Business Profile APIs means not yet approved, 300 means approved. Until then the APIs below do not exist in your project.', 'if-reviews' ) ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Enable three APIs.', 'if-reviews' ); ?></strong>
+						<?php esc_html_e( 'Once approved, open "APIs & Services → Library" and enable each of: My Business Account Management API, My Business Business Information API, and Google My Business API.', 'if-reviews' ); ?>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Set up the consent screen so the connection does not expire.', 'if-reviews' ); ?></strong>
+						<?php esc_html_e( 'Open "Google Auth Platform" (older consoles call it "OAuth consent screen"). Give the app a name, your email as the support and contact address, and under "Data access" add the scope https://www.googleapis.com/auth/business.manage. Then choose the audience that matches your account:', 'if-reviews' ); ?>
+						<ul>
+							<li><?php echo wp_kses_post( __( '<strong>Google Workspace account</strong> (your email is on your own domain): choose <strong>Internal</strong>. Nothing else is needed; the app never shows a warning and the connection does not expire.', 'if-reviews' ) ); ?></li>
+							<li><?php echo wp_kses_post( __( '<strong>Personal Google account</strong> (gmail.com): choose <strong>External</strong>, then on the Audience page click <strong>Publish app</strong> and confirm. Do not leave the app in "Testing": Google deliberately expires a Testing app\'s authorisation after 7 days, and you would have to reconnect every week. Publishing does not require Google\'s verification review for your own use; the only effect is a one-time "Google hasn\'t verified this app" screen when you connect, which you pass with Advanced → Go to (your app name).', 'if-reviews' ) ); ?></li>
+						</ul>
+					</li>
+					<li>
+						<strong><?php esc_html_e( 'Create the credentials.', 'if-reviews' ); ?></strong>
+						<?php esc_html_e( 'Under "Clients" (or "Credentials → Create credentials → OAuth client ID") choose "Web application", and paste the redirect URI shown below into "Authorised redirect URIs", exactly as shown. Google then displays the Client ID and Client Secret; copy both into the fields below and save.', 'if-reviews' ); ?>
+					</li>
 				</ol>
-				<p class="description"><?php esc_html_e( 'An app left in Testing has its authorisation expire after 7 days unless it uses a Workspace account. Publishing the app (without Google verification) removes that limit; the plugin tells you when a reconnect is needed either way.', 'if-reviews' ); ?></p>
+				<h4 style="margin: 16px 0 6px;"><?php esc_html_e( 'If your Google account is managed by a Workspace administrator', 'if-reviews' ); ?></h4>
+				<p class="description" style="max-width: 720px;">
+					<?php esc_html_e( 'Two Workspace policies can get in the way: an API controls setting that blocks unapproved apps, and a Google Cloud session policy that can force a fresh sign-in every few hours (16 hours is a common setting). Marking this app as trusted deals with both. An administrator does this in the Admin console:', 'if-reviews' ); ?>
+				</p>
+				<ol>
+					<li><?php esc_html_e( 'Security → Access and data control → API controls → "Manage Third-Party App Access" → "Add app" → search by the Client ID from step 6 → select it → set access to Trusted for the organisation (or the unit the connecting account belongs to) → save.', 'if-reviews' ); ?></li>
+					<li><?php esc_html_e( 'Security → Access and data control → Google Cloud session control: if "Require reauthentication" is turned on, tick "Exempt trusted apps" and save. (That policy is written for apps that request Google Cloud scopes; this plugin asks only for Business Profile access, so it should not be affected, but exempting trusted apps removes any doubt.)', 'if-reviews' ); ?></li>
+				</ol>
+				<p class="description"><?php esc_html_e( 'If a connection does stop working, this page says so and offers a reconnect; nothing is lost in the meantime.', 'if-reviews' ); ?></p>
 			</details>
 
 			<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
@@ -295,7 +325,7 @@ function if_reviews_google_render_page() {
 
 			<h2 style="margin-top: 32px;"><?php esc_html_e( 'Step 2: Connect', 'if-reviews' ); ?></h2>
 			<?php if ( $has_creds ) : ?>
-				<p style="max-width: 760px;"><?php esc_html_e( 'You will be sent to Google to sign in as the profile\'s owner or manager and allow this site to read its reviews. Google shows an "unverified app" warning for apps in Testing; it is your own app, so continue past it.', 'if-reviews' ); ?></p>
+				<p style="max-width: 760px;"><?php esc_html_e( 'You will be sent to Google to sign in as the profile\'s owner or manager and allow this site to read its reviews. If Google shows "Google hasn\'t verified this app", that is your own app from step 5: click Advanced, then "Go to" your app name, and continue.', 'if-reviews' ); ?></p>
 				<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
 					<input type="hidden" name="action" value="if_reviews_google_connect">
 					<?php wp_nonce_field( 'if_reviews_google_connect' ); ?>
@@ -1782,6 +1812,10 @@ function if_reviews_google_assets( $hook ) {
 		. '.if-google-wrap .if-help summary:hover{color:#135e96}'
 		. '.if-google-wrap .if-help ol{margin:10px 0 0 1.4em}'
 		. '.if-google-wrap .if-help li{margin-bottom:8px}'
+		. '.if-google-wrap .if-setup-guide{background:#fff;border:1px solid #dcdcde;border-radius:4px;padding:12px 16px}'
+		. '.if-google-wrap .if-setup-guide[open] summary{margin-bottom:6px}'
+		. '.if-google-wrap .if-setup-guide ol ul{list-style:disc;margin:6px 0 0 1.2em}'
+		. '.if-google-wrap .if-setup-guide ol ul li{margin-bottom:6px}'
 		. '.if-google-wrap .if-google-preview td{vertical-align:top}'
 		. '.if-google-wrap .if-google-preview select{max-width:100%}'
 	);
