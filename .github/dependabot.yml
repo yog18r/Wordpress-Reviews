@@ -1,0 +1,13 @@
+# Keeps the actions used by the release and lint workflows current.
+# Dependabot opens a pull request when one of them has a new major
+# version; merging it is the only maintenance needed.
+#
+# The plugin's own runtime dependency (vendor/plugin-update-checker) is a
+# vendored copy, not a package, so it is not tracked here. Watch
+# https://github.com/YahnisElsts/plugin-update-checker/releases for that.
+version: 2
+updates:
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
