@@ -31,6 +31,7 @@ The plugin is arranged so the easy path is also the truthful one.
 - **Hide, don't delete.** Untick "Display this review on the website" to keep a review off the cards. It stays in WordPress and still counts toward the average and the count.
 - **Label sources accurately.** The header says "Google Reviews" only when every review in that shortcode is marked as a Google review. Otherwise it lists the mix: "24 reviews from Google, Facebook, and direct feedback".
 - **Copy, don't edit.** Paste the review text as written.
+- **No review schema, on purpose.** The plugin emits plain HTML and no `Review` or `AggregateRating` structured data. Google's review snippet guidelines make a business's own reviews ineligible for star results (ratings must come directly from users, must not be aggregated from other websites, and self-serving LocalBusiness or Organization markup does not qualify), so adding it would gain nothing and invite a manual action. The stars beside your business in search come from your Google Business Profile.
 
 Consumer protection law in many countries (the Australian Consumer Law, the US FTC rule on consumer reviews, the UK DMCC Act, among others) treats fabricated, edited or selectively presented reviews as misleading. The plugin gives you the means to present reviews properly. Using it truthfully is your responsibility.
 

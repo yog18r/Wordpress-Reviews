@@ -129,6 +129,10 @@ Future versions appear on the Plugins screen automatically.
 
 No. Every review is entered manually. The plugin makes no network requests of its own apart from checking GitHub for plugin updates. If you need live sync, this is not the plugin for you; the appeal here is that it is small, under your control and keeps working regardless of what the platforms do.
 
+= Does the plugin add review schema (star ratings in search results)? =
+
+No, deliberately. Google's review snippet guidelines make a business's own reviews ineligible for star results: ratings must be sourced directly from users, must not be aggregated from other websites, and pages using LocalBusiness or Organization markup do not qualify when the business being reviewed controls the reviews shown, which includes embedded Google or Facebook review widgets. Reviews entered by hand and copied from Google, Facebook or Trustpilot fail all three tests. Adding AggregateRating markup would earn no rich result and risks a manual action for misleading structured data. The stars that appear beside your business in search come from your Google Business Profile, not from your website. The plugin therefore outputs plain, accessible HTML and no structured data.
+
 = How do I hide a bad review without affecting the rating? =
 
 Edit the review and untick "Display this review on the website". It disappears from the cards but remains in WordPress and still counts toward the average and the review count in the header. That is deliberate: hiding a review from view is a presentation choice; removing it from the maths would make the summary untrue. You can also hide or show many at once with the bulk actions on the Reviews list.
