@@ -42,13 +42,14 @@ Consumer protection law in many countries (the Australian Consumer Law, the US F
 - **Honest summary header** with fractionally filled stars and an automatic description of the sources, or your own title.
 - **Three layouts**: grid (1 to 4 columns), list, carousel. Limit the count with a "Show more" button, cut long reviews with "Read more". Sort newest, oldest, highest or random.
 - **CSV import and export** with a template, fraction-to-stars conversion (8/10 → 4 stars) and duplicate skipping.
+- **Optional Google Business Profile import** through your own Google Cloud project: every review from one location, matched against reviews you had already entered, kept current when reviewers edit, flagged when Google removes one. Off until connected.
 - **A block for the block editor** with a live preview, plus the shortcode for widgets and templates.
 - **Optional link to the original review** on each card, and an opt-in minimum-rating filter that hides low ratings from the cards while still counting them in the header.
 - **"Leave us a review" buttons** to your review page on each platform, with guidance on finding the direct links. Off by default; also available on their own via `[if_reviews_buttons]`.
 - **Categories** to show the right reviews on each page, **pinned reviews**, **numbered pagination** and **carousel autoplay** for large sets.
 - **Featured Review** and **Rating Badge** blocks and shortcodes for landing pages, headers and footers.
 - **Styling from a settings screen**: colours, corner radius and a cycling avatar palette with automatic contrast.
-- **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, no external requests.
+- **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, and no external requests unless you connect Google.
 - **Automatic updates** from this repository's releases.
 - Translation-ready and accessible.
 
@@ -90,6 +91,20 @@ In the block editor, use the **Reviews**, **Featured Review** and **Rating Badge
 ## Importing reviews
 
 Reviews → Import / Export. Download the template, fill one review per row, upload. Only `reviewer_name` and `rating` are required; `review_date`, `review_text`, `source`, `source_label`, `review_url`, `display` and `status` are optional. Rows that match an existing review (same name, date and text) are skipped, so a corrected file can be re-imported. Export gives you the same format back as a backup.
+
+## Google Business Profile import
+
+Reviews → Google import. Optional, off by default, and built on a Google Cloud project you own: the plugin contacts Google only once you connect it, and nothing passes through a third-party server.
+
+Why a Cloud project? Plugins that import Google reviews "without an API key" run the request through their own servers, which read your public Maps page, and cap the free tier because that service is their product. This plugin uses Google's Business Profile API instead. It returns every review and allows storing them, but Google approves access per project, so there is one-off setup: a verified profile at least 60 days old that lists your site, a Cloud project, an access request Google reviews by hand, three APIs enabled, and an OAuth client with the redirect URI the screen shows. The screen walks through each step.
+
+How the sync behaves:
+
+- The first sync is a preview. Existing reviews with the source Google are matched by reviewer name, rating and text; you confirm or change each match, and matched reviews are linked rather than imported again.
+- Every linked or imported review stores Google's review ID, and later syncs match on that alone.
+- When a reviewer edits on Google, the rating, text and date here follow. Hidden, pinned and category settings are never touched.
+- A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
+- Daily sync is a checkbox; it runs through WP-Cron once you have approved a first preview.
 
 ## Updates
 

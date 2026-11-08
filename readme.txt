@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.3.1
+Stable tag: 2.4.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -38,13 +38,14 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **Three layouts**: grid (1 to 4 columns), list, and a touch-friendly carousel with previous/next buttons.
 * **Built for many reviews**: show a limited number with a "Show more" button, cut long reviews with "Read more" at a length you choose, sort by newest, oldest, highest or random, filter by source, and manage the admin list with sortable columns, a source filter and bulk actions.
 * **CSV import and export**: bring in years of reviews from a spreadsheet in one go (ratings such as 8/10 are converted, duplicates are skipped) and download everything as a backup.
+* **Optional Google Business Profile import** using your own Google Cloud project: pull every review from one location, match the ones you had already entered by hand, keep edited reviews current and flag the ones Google removes. Off until you connect it.
 * **A block for the block editor** with a live preview and all the display options in the sidebar, alongside the `[if_reviews]` shortcode for widgets and templates.
 * **Optional link to the original review** on each card, and an opt-in setting to hide reviews below a chosen star rating (they still count in the header).
 * **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you add a link.
 * **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
 * **Styling without CSS**: accent, card, border and text colours, corner radius and a cycling avatar colour palette, all from a settings screen. Avatar text colour is picked automatically for contrast.
-* **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no external requests, no tracking.
+* **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests unless you connect Google.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
 
@@ -96,6 +97,16 @@ Reviews → Display Settings → "Leave us a review" buttons. Tick "Show buttons
 
 Reviews → Import / Export. Export downloads every review, including hidden ones and drafts, as a UTF-8 CSV. Import takes a CSV with a header row; only `reviewer_name` and `rating` are required, and the other columns are `review_date`, `review_text`, `source`, `source_label`, `review_url`, `display` and `status`. A template is available on the screen. Ratings written as fractions (4/5, 8/10) are converted to stars, platform names are matched to sources, and rows that match an existing review are skipped so a corrected file can be re-imported safely.
 
+= Google Business Profile import =
+
+Reviews → Google import. This is optional, off by default, and uses a Google Cloud project that you own; the plugin never contacts Google otherwise, and nothing passes through anyone else's servers.
+
+Google only lets approved projects read Business Profile reviews, so there is one-off setup on Google's side: a verified profile at least 60 days old that lists your website, a Cloud project, an access request that Google approves by hand (days to weeks), three APIs enabled and an OAuth client whose redirect URI is shown on the screen. The screen walks through it. Once connected, the plugin reads all reviews of one location, not the five the Places API returns, and because the data is read by the profile's owner there is no caching limit.
+
+The first sync is a preview. Reviews already on the site with the source "Google" are matched to the profile by reviewer name, rating and text, and you approve each match before anything changes, so reviews you entered by hand are linked rather than duplicated. Every imported or linked review stores Google's review ID; later syncs, manual or once a day, use that ID alone. When a reviewer edits their review on Google, the rating, text and date here follow; showing, hiding, pinning and categories are yours and are never touched. A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
+
+All reviews on the profile are imported, low ratings included. Hide the ones you do not want shown; they still count in the summary header, exactly as hand-entered reviews do.
+
 = Updates =
 
 The plugin checks the project's GitHub releases and offers new versions on the Plugins and Updates screens, exactly like a plugin from the WordPress.org directory. No account or token is needed. To opt out, add `add_filter( 'if_reviews_update_checker_enabled', '__return_false' );` to a small plugin or your theme.
@@ -127,7 +138,11 @@ Future versions appear on the Plugins screen automatically.
 
 = Does this pull reviews from Google or anywhere else automatically? =
 
-No. Every review is entered manually. The plugin makes no network requests of its own apart from checking GitHub for plugin updates. If you need live sync, this is not the plugin for you; the appeal here is that it is small, under your control and keeps working regardless of what the platforms do.
+Not by default. Every review is entered by hand or imported from a CSV, and the plugin makes no network requests of its own apart from checking GitHub for plugin updates. If you own a Google Business Profile you can optionally connect it (Reviews → Google import) using your own Google Cloud project, after which the plugin reads your reviews from Google's Business Profile API and keeps them current. No other platform is pulled automatically.
+
+= Why does the Google import need a Google Cloud project? Other plugins do not ask for one. =
+
+Plugins that import Google reviews "without an API key" route the request through their own servers, which read your public Maps page on your behalf, and the free tiers are capped because that service is what they sell. This plugin does not run a service. It uses Google's own Business Profile API, which returns every review and permits storing them, but which Google only opens to projects it has approved individually. That approval, and the OAuth client that goes with it, is the setup described on the Google import screen. It is a one-off and it keeps your reviews in your hands, with nothing passing through a third party.
 
 = Does the plugin add review schema (star ratings in search results)? =
 
@@ -191,6 +206,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.0 =
+* New: **Google Business Profile import** (Reviews → Google import). Connect your own, Google-approved Cloud project with OAuth and the plugin reads every review of one location through the Business Profile API. The first sync is a preview in which reviews you had already entered by hand are matched by reviewer name, rating and text and linked instead of duplicated, with each match yours to confirm or change. Later syncs, on demand or once a day, update edited reviews, import new ones and mark reviews that have gone from Google as "No longer on Google" without deleting them. Hidden, pinned and category settings are never overwritten. Off until you connect it; the plugin still makes no request to Google otherwise.
+* Docs: the readme now explains that the plugin deliberately emits no review schema, and why.
+
 = 2.3.1 =
 * Improved: avatar colours in Display Settings are now a list of swatches with a colour picker, an "Add colour" button and a remove link per colour, instead of a comma-separated text field. Saved data is unchanged.
 * Improved: neighbouring avatars no longer share a colour. Each reviewer still takes their colour from their name; where that would match one of the cards immediately before it (one row's worth in a grid), the next colour in the palette is used for that card.
@@ -244,6 +263,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.0 =
+Adds an optional Google Business Profile import using your own Google Cloud project. Nothing changes unless you connect it.
 
 = 2.3.1 =
 Colour-picker swatches for avatar colours and no more matching avatars side by side. A few avatars may shift to a neighbouring colour once.

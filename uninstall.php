@@ -33,6 +33,8 @@ if ( is_array( $if_reviews_options ) && ! empty( $if_reviews_options['delete_on_
 }
 
 delete_option( 'if_reviews_options' );
+delete_option( 'if_reviews_google' );
+wp_clear_scheduled_hook( 'if_reviews_google_sync_event' );
 
 // Update-checker housekeeping (safe if the keys do not exist).
 delete_option( 'external_updates-if-reviews' );

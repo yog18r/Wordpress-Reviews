@@ -444,6 +444,7 @@ function if_reviews_admin_styles( $hook ) {
 
 	$css = '.if-admin-stars{color:#f5a623;letter-spacing:1px;font-size:15px}'
 		. '.if-admin-hidden{color:#a7aaad}'
+		. '.if-admin-warn{color:#b32d2e;font-weight:600}'
 		. '.column-if_rating{width:110px}.column-if_shown{width:80px}'
 		. '.if-review-fields .if-field{margin:0 0 18px}'
 		. '.if-review-fields label strong{display:block;margin-bottom:4px}'
