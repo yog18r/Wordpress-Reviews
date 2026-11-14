@@ -52,20 +52,34 @@ function if_reviews_init_update_checker() {
 		'if-reviews'
 	);
 
-	// Releases are cut from main; this is the fallback when no release exists.
+	// Releases are cut from main.
 	$checker->setBranch( 'main' );
 
-	// Prefer the if-reviews.zip built by the release workflow over the raw
-	// repository archive, so the installed folder is always "if-reviews".
+	// Only ever install the if-reviews.zip attached to a published GitHub
+	// release (built by the release workflow, immutable once published).
+	// Never fall back to a tag's or the main branch's source archive.
 	$api = $checker->getVcsApi();
 
 	if ( $api && method_exists( $api, 'enableReleaseAssets' ) ) {
-		$api->enableReleaseAssets( '/if-reviews\.zip/i' );
+		$require = get_class( $api ) . '::REQUIRE_RELEASE_ASSETS';
+		$api->enableReleaseAssets( '/if-reviews\.zip/i', defined( $require ) ? constant( $require ) : 2 );
 	}
+
+	add_filter( $checker->getUniqueName( 'vcs_update_detection_strategies' ), 'if_reviews_release_only_strategies' );
 
 	add_filter( 'puc_request_info_result-if-reviews', 'if_reviews_fix_banner_sizes' );
 }
 add_action( 'init', 'if_reviews_init_update_checker' );
+
+/**
+ * Keep only the "latest release" way of finding updates.
+ *
+ * @param array $strategies Update detection strategies, keyed by name.
+ * @return array
+ */
+function if_reviews_release_only_strategies( $strategies ) {
+	return array_intersect_key( (array) $strategies, array( 'latest_release' => true ) );
+}
 
 /**
  * The library labels assets/banner-772x250.png "high" and the 1544x500

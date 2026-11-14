@@ -176,6 +176,48 @@ switch ( $phase ) {
 		$seen = get_option( 'ifr_test_revoked' );
 		ifr_check( false === strpos( $seen['url'], 'rt-xyz' ) && 'rt-xyz' === $seen['body']['token'], 'revoke token in body' );
 
+		/* Block editor: Authors only see reviews already shown on the site. */
+		$hidden = ifr_review( 'Hidden Harriet', 2, 'Private', '2026-03-03', 'direct' );
+		update_post_meta( $hidden, '_if_display_on_website', '0' );
+		$editor_list = function ( $user ) {
+			wp_set_current_user( $user );
+			wp_scripts()->add_data( 'if-reviews-featured-editor-script', 'before', array() );
+			if_reviews_block_editor_assets();
+			return implode( '', (array) wp_scripts()->get_data( 'if-reviews-featured-editor-script', 'before' ) );
+		};
+		$as_author = $editor_list( $users['author'] );
+		$as_editor = $editor_list( $users['editor'] );
+		wp_set_current_user( 1 );
+		ifr_check( false !== strpos( $as_author, 'Li Wei' ) && false === strpos( $as_author, 'Hidden Harriet' ), 'author editor data has shown reviews only' );
+		ifr_check( false !== strpos( $as_editor, 'Hidden Harriet' ), 'editor editor data includes hidden reviews' );
+
+		/* Updates: only from release zips. */
+		ifr_check( array( 'latest_release' => 1 ) === if_reviews_release_only_strategies( array( 'latest_release' => 1, 'latest_tag' => 2, 'branch' => 3 ) ), 'update strategies limited to releases' );
+		ifr_check( false !== has_filter( 'puc_vcs_update_detection_strategies-if-reviews', 'if_reviews_release_only_strategies' ), 'release-only filter registered' );
+
+		/* Revoke result is reported. */
+		ifr_check( true === if_reviews_google_revoke( 'rt-ok' ), 'revoke success reported' );
+		$fail = function ( $pre, $args, $url ) { return false !== strpos( $url, '/revoke' ) ? new WP_Error( 'down', 'down' ) : $pre; };
+		add_filter( 'pre_http_request', $fail, 20, 3 );
+		ifr_check( false === if_reviews_google_revoke( 'rt-fail' ), 'revoke failure reported' );
+		remove_filter( 'pre_http_request', $fail, 20 );
+
+		/* Migration runs after an update on any request, once per version. */
+		$sealed = ifr_raw();
+		update_option( 'if_reviews_google', array( 'client_id' => 'cid.apps.googleusercontent.com', 'client_secret' => 'GOCSPX-old', 'refresh_token' => 'rt-1', 'account' => 'accounts/111', 'location' => 'locations/222', 'location_title' => 'Test Co Melbourne' ), false );
+		update_option( 'if_reviews_version', '2.4.2' );
+		if_reviews_google_migrate_after_update();
+		ifr_check( if_reviews_is_encrypted( ifr_raw()['client_secret'] ) && IF_REVIEWS_VERSION === get_option( 'if_reviews_version' ), 'plain values from an older version encrypted after update' );
+
+		/* Saving a setting keeps values that cannot be re-encrypted right now. */
+		$before = ifr_raw();
+		add_filter( 'if_reviews_crypto_available', '__return_false' );
+		if_reviews_google_update( array( 'auto_sync' => 1 ) );
+		$after = ifr_raw();
+		ifr_check( $before['client_secret'] === $after['client_secret'] && $before['refresh_token'] === $after['refresh_token'], 'unrelated save keeps stored values while encryption is unavailable' );
+		remove_filter( 'if_reviews_crypto_available', '__return_false' );
+		ifr_check( 'GOCSPX-old' === if_reviews_google_get()['client_secret'], 'values readable again afterwards' );
+
 		/* Fail closed: without encryption nothing private is stored. */
 		add_filter( 'if_reviews_crypto_available', '__return_false' );
 		ifr_connection();
@@ -204,6 +246,18 @@ switch ( $phase ) {
 		ifr_check( 1 === (int) $g['key_changed'] && '' === $g['refresh_token'], 'unreadable values detected' );
 		ifr_check( ! if_reviews_google_is_connected(), 'shows as not connected' );
 		ifr_check( false !== strpos( ifr_page(), 'could not be decrypted' ), 'asks for the secret and a reconnect' );
+		$before = ifr_raw();
+		if_reviews_google_update( array( 'auto_sync' => 1 ) );
+		$after = ifr_raw();
+		ifr_check( $before['refresh_token'] === $after['refresh_token'] && $before['client_secret'] === $after['client_secret'] && $before['location'] === $after['location'], 'saving a setting does not wipe unreadable values' );
+		ifr_check( 0 === (int) $after['key_changed'] && 1 === (int) if_reviews_google_get()['key_changed'], 'key_changed worked out on read, not stored' );
+		break;
+
+	case 'key-back':
+		// The first dedicated key is back: nothing was lost.
+		$g = if_reviews_google_get();
+		ifr_check( 'rt-1' === $g['refresh_token'] && 'GOCSPX-test-secret' === $g['client_secret'] && ! $g['key_changed'], 'values readable again when the key returns' );
+		ifr_check( if_reviews_google_is_connected(), 'still connected' );
 		break;
 
 	case 'constant-credentials':

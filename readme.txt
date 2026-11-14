@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.4
+Stable tag: 2.4.5
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -114,7 +114,7 @@ The Client ID, Client Secret and Google connection are stored encrypted (see the
 
 = Updates =
 
-The plugin checks the project's GitHub releases and offers new versions on the Plugins and Updates screens, exactly like a plugin from the WordPress.org directory. No account or token is needed. To opt out, add `add_filter( 'if_reviews_update_checker_enabled', '__return_false' );` to a small plugin or your theme.
+The plugin checks the project's GitHub releases and offers new versions on the Plugins and Updates screens, exactly like a plugin from the WordPress.org directory. No account or token is needed. It only ever installs the `if-reviews.zip` attached to a published release, never unreleased code from the repository. To opt out, add `add_filter( 'if_reviews_update_checker_enabled', '__return_false' );` to a small plugin or your theme.
 
 = For developers =
 
@@ -227,6 +227,13 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.5 =
+* Security: the block editor's review picker now lists only reviews shown on the site for Authors and Contributors. Hidden reviews appear only for Editors and Administrators, who can manage reviews anyway.
+* Security: updates now come only from the `if-reviews.zip` attached to a published GitHub release. The update checker no longer falls back to a tag's or the main branch's source code.
+* Improved: saving an unrelated Google import setting no longer clears credentials that cannot be read at that moment (for example while security keys are being changed). They become usable again as soon as the right key is back.
+* Improved: after an update, credentials saved by older versions are encrypted on the next page load of any kind, not only the next visit to wp-admin.
+* Improved: if Google cannot be reached when you disconnect, the page says so and links to where you can remove the app yourself.
+
 = 2.4.4 =
 * Security: encryption now fails closed. If the server cannot encrypt, the plugin stores nothing private instead of storing it in plain text.
 * Security: connecting to Google is turned off on sites whose wp-config.php has no security keys of its own, because the encryption key would then sit in the database beside the data. The Google import page explains how to add keys; an existing connection keeps syncing meanwhile.
@@ -311,6 +318,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.5 =
+Small security hardening for the block editor, updates and stored Google credentials. Recommended.
 
 = 2.4.4 =
 Hardens how Google credentials are stored and speeds up pages on sites with many reviews. No action needed on most sites.

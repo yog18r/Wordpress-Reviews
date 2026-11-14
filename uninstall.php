@@ -47,6 +47,7 @@ if ( is_string( $if_reviews_token ) && '' !== $if_reviews_token ) {
 
 delete_option( 'if_reviews_options' );
 delete_option( 'if_reviews_google' );
+delete_option( 'if_reviews_version' );
 wp_clear_scheduled_hook( 'if_reviews_google_sync_event' );
 
 // Short-lived data (Google sign-in state, location lists, previews, notices,

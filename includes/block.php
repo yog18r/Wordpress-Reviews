@@ -186,7 +186,10 @@ function if_reviews_block_editor_assets() {
 
 	update_meta_cache( 'post', $ids );
 
-	$list = array();
+	// People who cannot manage reviews (Authors, Contributors) only get the
+	// reviews already shown on the site, so hidden ones stay private.
+	$can_manage = current_user_can( get_post_type_object( 'if_review' )->cap->edit_posts );
+	$list       = array();
 
 	foreach ( $ids as $id ) {
 
@@ -195,6 +198,10 @@ function if_reviews_block_editor_assets() {
 		$date   = if_reviews_format_date( get_post_meta( $id, '_if_review_date', true ) );
 		$shown  = get_post_meta( $id, '_if_display_on_website', true );
 		$shown  = ( '' === $shown || '1' === $shown ) && ! if_reviews_is_auto_hidden( $rating );
+
+		if ( ! $shown && ! $can_manage ) {
+			continue;
+		}
 
 		$label = trim( $name ) !== '' ? $name : get_the_title( $id );
 		$label .= ' · ' . str_repeat( '★', max( 1, min( 5, $rating ) ) );
@@ -215,7 +222,7 @@ function if_reviews_block_editor_assets() {
 
 	wp_add_inline_script(
 		'if-reviews-featured-editor-script',
-		'window.ifReviewsEditorData = ' . wp_json_encode( array( 'reviews' => $list ) ) . ';',
+		'window.ifReviewsEditorData = ' . wp_json_encode( array( 'reviews' => $list ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';',
 		'before'
 	);
 }

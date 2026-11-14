@@ -118,12 +118,27 @@ function if_reviews_google_get() {
  * @return array The new settings, decrypted.
  */
 function if_reviews_google_update( $changes ) {
+	$saved = get_option( IF_REVIEWS_GOOGLE_OPTION, array() );
+	$saved = is_array( $saved ) ? $saved : array();
 	$new   = array_merge( if_reviews_google_get(), $changes );
 	$store = $new;
 
 	foreach ( if_reviews_google_private_keys() as $key ) {
+		$old = isset( $saved[ $key ] ) ? (string) $saved[ $key ] : '';
+
+		// A stored value this request cannot read or re-encrypt (keys changed,
+		// encryption briefly unavailable) is kept as it is unless it is being
+		// replaced on purpose, so saving an unrelated setting never wipes it.
+		if ( ! array_key_exists( $key, $changes ) && '' !== $old && ( ! if_reviews_crypto_available() || false === if_reviews_decrypt( $old ) ) ) {
+			$store[ $key ] = $old;
+			continue;
+		}
+
 		$store[ $key ] = if_reviews_encrypt( $new[ $key ] );
 	}
+
+	// Worked out on every read; never stored.
+	$store['key_changed'] = 0;
 
 	// Credentials from wp-config.php stay out of the database.
 	foreach ( array_keys( if_reviews_google_constants() ) as $key ) {
@@ -163,6 +178,21 @@ function if_reviews_google_migrate_encryption() {
 	}
 }
 add_action( 'admin_init', 'if_reviews_google_migrate_encryption' );
+
+/**
+ * After the plugin is updated, run the migration on the next request of any
+ * kind (front end, cron or admin), so values from older versions do not wait
+ * for someone to visit wp-admin. A small autoloaded version marker keeps this
+ * to one run per version.
+ */
+function if_reviews_google_migrate_after_update() {
+	if ( IF_REVIEWS_VERSION === get_option( 'if_reviews_version' ) ) {
+		return;
+	}
+	if_reviews_google_migrate_encryption();
+	update_option( 'if_reviews_version', IF_REVIEWS_VERSION, true );
+}
+add_action( 'init', 'if_reviews_google_migrate_after_update', 5 );
 
 /**
  * Whether a refresh token is stored and a location chosen.
@@ -826,19 +856,26 @@ function if_reviews_google_handle_settings() {
 add_action( 'admin_post_if_reviews_google_settings', 'if_reviews_google_handle_settings' );
 
 /**
- * Ask Google to revoke a refresh token. Failures are ignored: the token is
- * forgotten here either way, and the owner can remove access in their account.
+ * Ask Google to revoke a refresh token. The token is forgotten here either
+ * way; on failure the owner is told to remove access in their account.
  *
  * @param string $token Refresh token.
+ * @return bool Whether Google confirmed it (or there was nothing to revoke).
  */
 function if_reviews_google_revoke( $token ) {
 	if ( '' === (string) $token ) {
-		return;
+		return true;
 	}
-	wp_remote_post(
+	$response = wp_remote_post(
 		IF_REVIEWS_GOOGLE_REVOKE,
 		array( 'timeout' => 15, 'body' => array( 'token' => $token ) )
 	);
+	if ( is_wp_error( $response ) ) {
+		return false;
+	}
+	$code = (int) wp_remote_retrieve_response_code( $response );
+	// 400 invalid_token: Google had already forgotten it, which is the goal.
+	return 200 === $code || ( 400 === $code && false !== strpos( wp_remote_retrieve_body( $response ), 'invalid_token' ) );
 }
 
 /**
@@ -849,7 +886,7 @@ function if_reviews_google_handle_disconnect() {
 
 	$g = if_reviews_google_get();
 
-	if_reviews_google_revoke( $g['refresh_token'] );
+	$revoked = if_reviews_google_revoke( $g['refresh_token'] );
 
 	if_reviews_google_update(
 		array(
@@ -868,7 +905,11 @@ function if_reviews_google_handle_disconnect() {
 	delete_transient( 'if_reviews_google_locations_' . get_current_user_id() );
 	delete_transient( 'if_reviews_google_plan_' . get_current_user_id() );
 
-	if_reviews_google_notice( 'success', __( 'Disconnected. Imported reviews remain on this site.', 'if-reviews' ) );
+	if ( $revoked ) {
+		if_reviews_google_notice( 'success', __( 'Disconnected. Imported reviews remain on this site.', 'if-reviews' ) );
+	} else {
+		if_reviews_google_notice( 'warning', __( 'Disconnected here, and imported reviews remain on this site, but Google could not be reached to cancel the connection. To be sure, remove the app at myaccount.google.com/permissions.', 'if-reviews' ) );
+	}
 	wp_safe_redirect( if_reviews_google_page_url() );
 	exit;
 }

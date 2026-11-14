@@ -57,6 +57,7 @@ phase() { wp IFR_PHASE="$1" "${@:2}" -- eval-file wp-content/plugins/if-reviews/
 phase main
 phase dedicated-key IFR_ENCRYPTION_KEY=first-dedicated-key
 phase wrong-key IFR_ENCRYPTION_KEY=a-different-key
+phase key-back IFR_ENCRYPTION_KEY=first-dedicated-key
 phase constant-credentials IFR_CONSTANT_CREDENTIALS=1
 
 # A site whose wp-config.php still has the sample placeholder keys.

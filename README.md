@@ -103,7 +103,7 @@ How the sync behaves:
 
 ## Updates
 
-The plugin bundles [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (MIT) and watches this repository's releases. New versions show up on the Plugins screen like any other plugin. To opt out on a site:
+The plugin bundles [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (MIT) and watches this repository's releases. New versions show up on the Plugins screen like any other plugin. Only the `if-reviews.zip` asset of a published release is ever installed; there is no fallback to tags or the main branch, and releases are immutable once published. To opt out on a site:
 
 ```php
 add_filter( 'if_reviews_update_checker_enabled', '__return_false' );
