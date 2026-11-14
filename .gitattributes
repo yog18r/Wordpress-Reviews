@@ -12,8 +12,9 @@
 *.png binary
 *.jpg binary
 
-# Keep repository-only files out of GitHub's source archives, which the
-# update checker falls back to when a release has no zip asset.
+# Keep repository-only files out of GitHub's source archives (the "Source
+# code" downloads on each release). Sites never install these: the update
+# checker only uses the if-reviews.zip release asset.
 /.github export-ignore
 /.gitattributes export-ignore
 /.gitignore export-ignore

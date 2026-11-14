@@ -88,7 +88,7 @@ function if_reviews_register_settings() {
 			'label'       => __( 'Reviews to show', 'if-reviews' ),
 			'min'         => 0,
 			'max'         => 500,
-			'description' => __( '0 shows every visible review. With a limit, grid and list layouts add a "Show more" button for the rest; the carousel simply stops at the limit.', 'if-reviews' ),
+			'description' => __( '0 shows every visible review, loaded 24 at a time (a "Show more" button in grids and lists; the carousel loads more as visitors scroll). With a limit, grids and lists show that many and add a "Show more" button for the rest; the carousel stops at the limit.', 'if-reviews' ),
 		),
 		'show_more'         => array(
 			'type'        => 'checkbox',

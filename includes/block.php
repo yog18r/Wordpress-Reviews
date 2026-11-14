@@ -162,8 +162,8 @@ function if_reviews_render_rating_block( $attributes ) {
 }
 
 /**
- * Editor assets: the stylesheet with the settings-driven variables, and the
- * list of reviews for the Featured Review block's picker.
+ * Editor assets: the stylesheet with the settings-driven variables. The
+ * Featured Review picker loads its list from the REST API when it is used.
  */
 function if_reviews_block_editor_assets() {
 
@@ -171,59 +171,66 @@ function if_reviews_block_editor_assets() {
 
 	wp_enqueue_style( 'if-reviews-style' );
 	wp_add_inline_style( 'if-reviews-style', if_reviews_build_dynamic_css() );
+}
+add_action( 'enqueue_block_editor_assets', 'if_reviews_block_editor_assets' );
 
-	$ids = get_posts(
-		array(
-			'post_type'      => 'if_review',
-			'post_status'    => 'publish',
-			'posts_per_page' => 500,
-			'fields'         => 'ids',
-			'orderby'        => 'date',
-			'order'          => 'DESC',
-			'no_found_rows'  => true,
-		)
-	);
+/**
+ * Reviews for the Featured Review block's picker, newest first.
+ *
+ * People who cannot manage reviews (Authors, Contributors) only get the
+ * reviews already shown on the site, so hidden ones stay private.
+ *
+ * @return array[] Each { value: ID, label: "Name · ★★★★★ · Date" }.
+ */
+function if_reviews_picker_list() {
 
-	update_meta_cache( 'post', $ids );
-
-	// People who cannot manage reviews (Authors, Contributors) only get the
-	// reviews already shown on the site, so hidden ones stay private.
 	$can_manage = current_user_can( get_post_type_object( 'if_review' )->cap->edit_posts );
+	$reviews    = if_reviews_sort_reviews( if_reviews_get_reviews(), 'newest' );
 	$list       = array();
 
-	foreach ( $ids as $id ) {
+	foreach ( $reviews as $review ) {
 
-		$name   = get_post_meta( $id, '_if_reviewer_name', true );
-		$rating = (int) get_post_meta( $id, '_if_rating', true );
-		$date   = if_reviews_format_date( get_post_meta( $id, '_if_review_date', true ) );
-		$shown  = get_post_meta( $id, '_if_display_on_website', true );
-		$shown  = ( '' === $shown || '1' === $shown ) && ! if_reviews_is_auto_hidden( $rating );
-
-		if ( ! $shown && ! $can_manage ) {
+		if ( ! $review['display'] && ! $can_manage ) {
 			continue;
 		}
 
-		$label = trim( $name ) !== '' ? $name : get_the_title( $id );
-		$label .= ' · ' . str_repeat( '★', max( 1, min( 5, $rating ) ) );
+		$label  = '' !== trim( $review['name'] ) ? $review['name'] : __( '(no name)', 'if-reviews' );
+		$label .= ' · ' . str_repeat( '★', max( 1, min( 5, (int) $review['rating'] ) ) );
+		$date   = if_reviews_format_date( $review['date'] );
 
 		if ( '' !== $date ) {
 			$label .= ' · ' . $date;
 		}
 
-		if ( ! $shown ) {
+		if ( ! $review['display'] ) {
 			$label .= ' · ' . __( '(hidden)', 'if-reviews' );
 		}
 
 		$list[] = array(
-			'value' => $id,
+			'value' => (int) $review['id'],
 			'label' => $label,
 		);
 	}
 
-	wp_add_inline_script(
-		'if-reviews-featured-editor-script',
-		'window.ifReviewsEditorData = ' . wp_json_encode( array( 'reviews' => $list ), JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT ) . ';',
-		'before'
+	return $list;
+}
+
+/**
+ * REST route for the picker: anyone who can write posts.
+ */
+function if_reviews_register_picker_route() {
+	register_rest_route(
+		'if-reviews/v1',
+		'/picker',
+		array(
+			'methods'             => 'GET',
+			'callback'            => function () {
+				return rest_ensure_response( if_reviews_picker_list() );
+			},
+			'permission_callback' => function () {
+				return current_user_can( 'edit_posts' );
+			},
+		)
 	);
 }
-add_action( 'enqueue_block_editor_assets', 'if_reviews_block_editor_assets' );
+add_action( 'rest_api_init', 'if_reviews_register_picker_route' );

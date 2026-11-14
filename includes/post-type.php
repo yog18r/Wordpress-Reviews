@@ -445,10 +445,8 @@ add_action( 'admin_notices', 'if_reviews_bulk_notice' );
 
 /**
  * Small amount of admin CSS for the list table and meta box.
- *
- * @param string $hook Current admin page hook.
  */
-function if_reviews_admin_styles( $hook ) {
+function if_reviews_admin_styles() {
 
 	$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
 

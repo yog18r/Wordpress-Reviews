@@ -18,17 +18,33 @@ $if_reviews_options = get_option( 'if_reviews_options', array() );
 
 if ( is_array( $if_reviews_options ) && ! empty( $if_reviews_options['delete_on_uninstall'] ) ) {
 
-	$if_reviews_ids = get_posts(
+	global $wpdb;
+
+	// Every review in any state, including the trash and auto-drafts.
+	$if_reviews_ids = $wpdb->get_col( "SELECT ID FROM {$wpdb->posts} WHERE post_type = 'if_review'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off cleanup on uninstall, constant query.
+
+	foreach ( $if_reviews_ids as $if_reviews_id ) {
+		wp_delete_post( (int) $if_reviews_id, true );
+	}
+
+	// And the review categories (the plugin is not loaded here, so register
+	// the taxonomy just long enough to delete its terms).
+	if ( ! taxonomy_exists( 'if_review_category' ) ) {
+		register_taxonomy( 'if_review_category', 'if_review' );
+	}
+
+	$if_reviews_terms = get_terms(
 		array(
-			'post_type'      => 'if_review',
-			'post_status'    => 'any',
-			'posts_per_page' => -1,
-			'fields'         => 'ids',
+			'taxonomy'   => 'if_review_category',
+			'hide_empty' => false,
+			'fields'     => 'ids',
 		)
 	);
 
-	foreach ( $if_reviews_ids as $if_reviews_id ) {
-		wp_delete_post( $if_reviews_id, true );
+	if ( is_array( $if_reviews_terms ) ) {
+		foreach ( $if_reviews_terms as $if_reviews_term ) {
+			wp_delete_term( (int) $if_reviews_term, 'if_review_category' );
+		}
 	}
 }
 
@@ -56,6 +72,7 @@ global $wpdb;
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_if\\_reviews\\_%' OR option_name LIKE '\\_transient\\_timeout\\_if\\_reviews\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off cleanup on uninstall, constant query.
 
 delete_transient( 'if_reviews_review_cache' );
+delete_transient( 'if_reviews_stats_cache' );
 
 // Update-checker housekeeping (safe if the keys do not exist).
 delete_option( 'external_updates-if-reviews' );

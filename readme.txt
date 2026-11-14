@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.5
+Stable tag: 2.5.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -64,6 +64,7 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews columns="2"]` — maximum grid columns, 1 to 4. Collapses automatically on smaller screens.
 * `[if_reviews limit="6"]` — show six and add a "Show more" button for the rest.
 * `[if_reviews limit="6" show_more="no"]` — show six and stop.
+* `[if_reviews limit="0"]` — every review, loaded 24 at a time: a "Show more" button in grids and lists, and more cards as visitors scroll a carousel. Only the first batch is in the page, so large review collections stay fast.
 * `[if_reviews source="google"]` — one source only; the header then describes that source alone. Several: `source="google,facebook"`.
 * `[if_reviews order="highest"]` — `newest` (default), `oldest`, `highest` or `random`.
 * `[if_reviews show_header="no"]` — cards only.
@@ -123,6 +124,8 @@ The plugin checks the project's GitHub releases and offers new versions on the P
 * `if_reviews_reviews` — filter the loaded reviews before stats and display.
 * `if_reviews_date_format` — PHP date format for review dates (default `F Y`).
 * `if_reviews_show_more_label` — label of the "Show more" button.
+* `if_reviews_batch_size` — cards loaded at a time when every review is shown (default 24).
+* `if_reviews_crypto_available` — return false to stop the plugin storing private values at all.
 * `if_reviews_cta_buttons` — alter the "Leave us a review" buttons.
 * `if_reviews_cta_help` — the "Where do I find this link?" help for each platform.
 * `if_reviews_google_fetched_reviews` — alter reviews fetched from Google before they are matched.
@@ -227,6 +230,18 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.5.0 =
+* Faster with large numbers of reviews. Only the first batch of cards is sent with the page; "Show more" and carousels fetch the next batch when needed. Measured with 5,000 reviews: the default widget went from about 480 ms and 8 MB of HTML to about 10 ms and 36 KB.
+* Faster: rebuilding the review cache takes a handful of database queries instead of one per review, the cache is about half the size, several widgets on one page share one load, and the rating badge uses cached totals.
+* Fixed: reviews added during a CSV import or Google sync could stay invisible for up to a day if a visitor loaded a page mid-import.
+* Fixed: random order with page numbers or "Show more" no longer repeats or skips reviews.
+* Google import: the preview handles large profiles (one shared, searchable list for linking reviews by hand instead of a copy in every row; faster matching), and your choices are no longer lost on profiles with more than about 1,000 reviews.
+* Featured Review block: the review picker is searchable and lists every review, not only the newest 500, and loads only when the block is used.
+* Security: the list of Google locations to choose from is stored encrypted; "Delete all reviews" on uninstall now also removes trashed reviews and review categories; updates only accept a release file named exactly if-reviews.zip.
+* Accessibility: the carousel's pause button now shows on phones and touching the carousel stops autoplay; focus outlines use the text colour so they are visible; cards are labelled "Review by …" for screen readers; star ratings stay readable in Windows high-contrast mode; the current page number stays readable on dark accent colours.
+* Appearance fixes: reviewer names no longer disappear on dark themes; header text follows the page's text colour; cards no longer lift on hover as if clickable; the page-number list no longer gets its own border; right-to-left languages fill stars and scroll the carousel correctly; reviews print cleanly.
+* Compatibility: works on servers without PHP's mbstring extension; the stylesheet no longer loads on pages without reviews on older WordPress versions with classic themes; the rating badge is one translatable sentence.
+
 = 2.4.5 =
 * Security: the block editor's review picker now lists only reviews shown on the site for Authors and Contributors. Hidden reviews appear only for Editors and Administrators, who can manage reviews anyway.
 * Security: updates now come only from the `if-reviews.zip` attached to a published GitHub release. The update checker no longer falls back to a tag's or the main branch's source code.
@@ -318,6 +333,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.5.0 =
+Much faster on sites with many reviews, plus accessibility and appearance fixes. Recommended.
 
 = 2.4.5 =
 Small security hardening for the block editor, updates and stored Google credentials. Recommended.

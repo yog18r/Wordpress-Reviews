@@ -146,7 +146,8 @@ switch ( $phase ) {
 		set_transient( 'if_reviews_google_plan_' . get_current_user_id(), $plan, 600 );
 		ob_start();
 		if_reviews_google_render_preview();
-		ifr_check( false !== strpos( ob_get_clean(), 'value="link:' . $aisha . '"' ), 'any unlinked review offered for linking' );
+		$preview = ob_get_clean();
+		ifr_check( false !== strpos( $preview, '#' . $aisha . '"' ) && 1 === substr_count( $preview, '<datalist' ), 'any unlinked review offered for linking, from one shared list' );
 		$result = if_reviews_google_apply_plan( $plan, array( 'g-new1' => 'link:' . $aisha, 'g-new2' => 'bogus' ) );
 		if_reviews_google_record_result( $result );
 		ifr_check( 'g-new1' === get_post_meta( $aisha, '_if_google_review_id', true ), 'manual link applied' );
@@ -171,6 +172,99 @@ switch ( $phase ) {
 		wp_trash_post( $new );
 		ifr_check( count( if_reviews_get_reviews() ) === count( $first ), 'trashed review disappears' );
 
+		/* Cold cache build: a fixed number of queries, not one per review. */
+		for ( $n = 0; $n < 60; $n++ ) {
+			$q = ifr_review( "Bulk $n", 4, "Bulk review $n", '2025-05-05', 'direct' );
+			wp_set_object_terms( $q, 'bulk', 'if_review_category' );
+		}
+		if_reviews_delete_review_caches();
+		global $wpdb;
+		$before = $wpdb->num_queries;
+		if_reviews_get_reviews();
+		$queries = $wpdb->num_queries - $before;
+		ifr_check( $queries < 20, "cold cache build uses few queries ($queries for " . count( if_reviews_get_reviews() ) . ' reviews)' );
+		$cached = get_transient( 'if_reviews_review_cache' );
+		ifr_check( ! isset( $cached['reviews'][0]['source']['icon'] ), 'cache stores no icons' );
+
+		/* Same-request memo: a second widget does not read the cache again. */
+		$before = $wpdb->num_queries;
+		if_reviews_get_reviews();
+		ifr_check( $wpdb->num_queries === $before, 'second load in a request costs no queries' );
+
+		/* Stale cache: changes after someone else rebuilt the cache are flushed at shutdown. */
+		if_reviews_flush_review_cache();
+		if_reviews_get_reviews(); // Rebuilt mid-"import".
+		update_post_meta( $q, '_if_rating', 2 );
+		set_transient( 'if_reviews_review_cache', array( 'key' => if_reviews_cache_key(), 'reviews' => array() ), 600 ); // Another request's stale rebuild.
+		do_action( 'shutdown' );
+		ifr_check( false === get_transient( 'if_reviews_review_cache' ), 'cache flushed again at the end of a request that changed reviews' );
+
+		/* Batches: only the first batch is in the page. */
+		$html  = do_shortcode( '[if_reviews limit="0"]' );
+		$cards = substr_count( $html, '<article class="if-review-card' );
+		ifr_check( if_reviews_batch_size() === $cards, "limit 0 renders one batch ($cards cards)" );
+		ifr_check( false !== strpos( $html, 'data-more-url=' ) && false !== strpos( $html, 'class="if-show-more"' ), 'Show more set up to fetch the rest' );
+		$html = do_shortcode( '[if_reviews limit="6"]' );
+		ifr_check( 6 === substr_count( $html, '<article class="if-review-card' ) && false === strpos( $html, ' hidden>' ), 'limit 6 renders six cards, none hidden' );
+		$html = do_shortcode( '[if_reviews limit="6" show_more="no"]' );
+		ifr_check( false === strpos( $html, 'data-more-url=' ), 'no Show more when turned off' );
+		$html = do_shortcode( '[if_reviews layout="carousel" limit="0"]' );
+		ifr_check( if_reviews_batch_size() === substr_count( $html, '<article class="if-review-card' ) && false !== strpos( $html, 'data-more-url=' ), 'carousel without a limit loads in batches' );
+
+		/* REST batches: complete, no repeats, hidden reviews never returned. */
+		$total = count( array_filter( if_reviews_get_reviews(), function ( $r ) { return $r['display']; } ) );
+		foreach ( array( 'newest', 'random' ) as $order ) {
+			$seen_ids = array();
+			$offset   = 0;
+			$more     = true;
+			$guard    = 0;
+			while ( $more && $guard++ < 20 ) {
+				$request = new WP_REST_Request( 'GET', '/if-reviews/v1/cards' );
+				$request->set_query_params( array( 'order' => $order, 'seed' => 12345, 'offset' => $offset, 'count' => 10 ) );
+				$data = rest_do_request( $request )->get_data();
+				preg_match_all( '/aria-label="Review by ([^"]+)"/', $data['html'], $m );
+				$seen_ids = array_merge( $seen_ids, $m[1] );
+				$offset   = $data['offset'];
+				$more     = $data['more'];
+			}
+			$expected = wp_list_pluck( if_reviews_display_list( if_reviews_get_reviews(), $order, 12345, if_reviews_get_options(), 3 ), 'name' );
+			$got      = array_map( 'html_entity_decode', $seen_ids );
+			sort( $expected );
+			sort( $got );
+			ifr_check( $got === $expected, "REST batches return every shown review exactly once ($order: " . count( $seen_ids ) . " of $total)" );
+		}
+		$request = new WP_REST_Request( 'GET', '/if-reviews/v1/cards' );
+		$request->set_query_params( array( 'count' => 100 ) );
+		$all_html = rest_do_request( $request )->get_data()['html'];
+		ifr_check( false === strpos( $all_html, 'Hidden Harriet' ) || ! get_post( $hidden ), 'REST never returns hidden reviews' );
+
+		/* Rating badge from cached totals, as one sentence. */
+		delete_transient( 'if_reviews_stats_cache' );
+		$badge = do_shortcode( '[if_reviews_rating]' );
+		ifr_check( false !== get_transient( 'if_reviews_stats_cache' ), 'badge totals cached' );
+		ifr_check( (bool) preg_match( '/<span class="if-rating-value">[\d.]+<\/span> from [\d,]+ reviews/', $badge ), 'badge reads as one sentence' );
+		$stats = if_reviews_get_stats( array(), array( 'bulk' ) );
+		ifr_check( 60 === $stats['count'], 'stats for a category' );
+
+		/* Preview choices arrive as one JSON field. */
+		$parsed = if_reviews_google_parse_decisions( array( 'decisions' => wp_slash( wp_json_encode( array( 'g-1' => 'skip', 'g-2' => 'link:12', 'g-3' => array( 'x' ) ) ) ) ) );
+		ifr_check( array( 'g-1' => 'skip', 'g-2' => 'link:12' ) === $parsed, 'decisions JSON parsed, non-text values dropped' );
+
+		/* Location list stored encrypted. */
+		if_reviews_google_store_locations( array( array( 'account' => 'accounts/999', 'location' => 'locations/888', 'title' => 'Branch' ) ) );
+		$raw_loc = get_transient( 'if_reviews_google_locations_' . get_current_user_id() );
+		ifr_check( is_string( $raw_loc ) && false === strpos( $raw_loc, 'accounts/999' ), 'location list encrypted at rest' );
+		$loaded = if_reviews_google_load_locations();
+		ifr_check( isset( $loaded[0]['location'] ) && 'locations/888' === $loaded[0]['location'], 'location list reads back' );
+
+		/* Settings stored once so later views need no extra query. */
+		delete_option( 'if_reviews_options' );
+		if_reviews_get_options();
+		ifr_check( is_array( get_option( 'if_reviews_options' ) ), 'default settings stored on first use' );
+
+		/* Multibyte helpers. */
+		ifr_check( 'ÉLAN' === if_reviews_strtoupper( 'élan' ) && 'élan' === if_reviews_strtolower( 'ÉLAN' ), 'multibyte case helpers' );
+
 		/* Revoke sends the token in the body. */
 		if_reviews_google_revoke( 'rt-xyz' );
 		$seen = get_option( 'ifr_test_revoked' );
@@ -181,9 +275,7 @@ switch ( $phase ) {
 		update_post_meta( $hidden, '_if_display_on_website', '0' );
 		$editor_list = function ( $user ) {
 			wp_set_current_user( $user );
-			wp_scripts()->add_data( 'if-reviews-featured-editor-script', 'before', array() );
-			if_reviews_block_editor_assets();
-			return implode( '', (array) wp_scripts()->get_data( 'if-reviews-featured-editor-script', 'before' ) );
+			return wp_json_encode( if_reviews_picker_list() );
 		};
 		$as_author = $editor_list( $users['author'] );
 		$as_editor = $editor_list( $users['editor'] );
@@ -299,6 +391,14 @@ switch ( $phase ) {
 
 	case 'before-uninstall':
 		ifr_connection( array( 'refresh_token' => 'rt-uninstall' ) );
+		// "Delete all reviews" ticked, with a trashed review and categories around.
+		$options                        = get_option( 'if_reviews_options', array() );
+		$options['delete_on_uninstall'] = 1;
+		update_option( 'if_reviews_options', $options );
+		$trashed = ifr_review( 'In The Bin', 3, 'Trashed', '2025-01-01', 'direct' );
+		wp_set_object_terms( $trashed, 'binned', 'if_review_category' );
+		wp_trash_post( $trashed );
+		ifr_check( (bool) get_option( 'if_reviews_options' )['delete_on_uninstall'], 'delete-on-uninstall ticked' );
 		set_transient( 'if_reviews_google_plan_9', array( 1 ), 600 );
 		set_transient( 'other_plugin_transient', 1, 600 );
 		ifr_check( if_reviews_is_encrypted( ifr_raw()['refresh_token'] ), 'token encrypted before uninstall' );
@@ -309,6 +409,10 @@ switch ( $phase ) {
 		ifr_check( isset( $seen['body']['token'] ) && 'rt-uninstall' === $seen['body']['token'], 'uninstall decrypts and revokes the token' );
 		ifr_check( false === get_option( 'if_reviews_google' ), 'settings removed' );
 		ifr_check( false === get_transient( 'if_reviews_google_plan_9' ) && 1 == get_transient( 'other_plugin_transient' ), 'only the plugin\'s temporary data removed' );
+		global $wpdb;
+		$left_posts = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->posts} WHERE post_type = 'if_review'" );
+		$left_terms = (int) $wpdb->get_var( "SELECT COUNT(*) FROM {$wpdb->term_taxonomy} WHERE taxonomy = 'if_review_category'" );
+		ifr_check( 0 === $left_posts && 0 === $left_terms, "every review (trash included) and category removed ($left_posts posts, $left_terms terms left)" );
 		break;
 
 	default:

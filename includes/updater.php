@@ -62,7 +62,7 @@ function if_reviews_init_update_checker() {
 
 	if ( $api && method_exists( $api, 'enableReleaseAssets' ) ) {
 		$require = get_class( $api ) . '::REQUIRE_RELEASE_ASSETS';
-		$api->enableReleaseAssets( '/if-reviews\.zip/i', defined( $require ) ? constant( $require ) : 2 );
+		$api->enableReleaseAssets( '/^if-reviews\.zip$/i', defined( $require ) ? constant( $require ) : 2 );
 	}
 
 	add_filter( $checker->getUniqueName( 'vcs_update_detection_strategies' ), 'if_reviews_release_only_strategies' );

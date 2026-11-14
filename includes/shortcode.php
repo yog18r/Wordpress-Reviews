@@ -62,8 +62,35 @@ function if_reviews_build_review( $id, $options = null ) {
 		'auto_hidden'    => $auto_hidden,
 		'pinned'         => ( '1' === get_post_meta( $id, '_if_pinned', true ) ),
 		'categories'     => array_values( $categories ),
-		'source'         => if_reviews_get_review_source( $id ),
+		'source'         => if_reviews_slim_source( if_reviews_get_review_source( $id ) ),
 	);
+}
+
+/**
+ * The part of a source worth caching with each review: its key and label.
+ * Icons and descriptions are looked up when a card is rendered.
+ *
+ * @param array $source Full source definition.
+ * @return array{key:string,label:string}
+ */
+function if_reviews_slim_source( $source ) {
+	return array(
+		'key'   => (string) $source['key'],
+		'label' => (string) $source['label'],
+	);
+}
+
+/**
+ * The full source definition (icon, description) for a review, keeping the
+ * review's own label (custom "Other" labels).
+ *
+ * @param array $review Review array.
+ * @return array
+ */
+function if_reviews_review_source( $review ) {
+	$source          = if_reviews_get_source( $review['source']['key'] );
+	$source['label'] = $review['source']['label'];
+	return $source;
 }
 
 /**
@@ -96,34 +123,108 @@ function if_reviews_get_reviews() {
  */
 function if_reviews_get_reviews_cached() {
 
-	$key    = md5(
-		wp_json_encode(
-			array(
-				IF_REVIEWS_VERSION,
-				if_reviews_get_options(),
-				get_locale(),
-				apply_filters( 'if_reviews_date_format', 'F Y' ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- the plugin's own filter.
-				array_keys( if_reviews_get_sources() ),
-			)
-		)
-	);
+	$memo = if_reviews_review_memo();
+	$key  = if_reviews_cache_key();
+
+	if ( null !== $memo && $memo['key'] === $key ) {
+		return $memo['reviews'];
+	}
+
 	$cached = get_transient( 'if_reviews_review_cache' );
 
 	if ( is_array( $cached ) && isset( $cached['key'], $cached['reviews'] ) && $cached['key'] === $key ) {
-		return $cached['reviews'];
+		$reviews = $cached['reviews'];
+	} else {
+		$reviews = if_reviews_load_reviews();
+		set_transient( 'if_reviews_review_cache', array( 'key' => $key, 'reviews' => $reviews ), DAY_IN_SECONDS );
+		if_reviews_flush_review_cache( 'built' );
 	}
 
-	$reviews = if_reviews_load_reviews();
-
-	set_transient( 'if_reviews_review_cache', array( 'key' => $key, 'reviews' => $reviews ), DAY_IN_SECONDS );
-	if_reviews_flush_review_cache( 'built' );
+	if_reviews_review_memo( array( 'key' => $key, 'reviews' => $reviews ) );
 
 	return $reviews;
 }
 
 /**
- * Clear the review cache. Called on every change to reviews; clears at most
- * once until the cache is next rebuilt, so bulk imports stay fast.
+ * What the cached review arrays depend on, besides the reviews themselves.
+ *
+ * @return string
+ */
+function if_reviews_cache_key() {
+	return md5(
+		wp_json_encode(
+			array(
+				IF_REVIEWS_VERSION,
+				if_reviews_get_options(),
+				get_locale(),
+				array_keys( if_reviews_get_sources() ),
+			)
+		)
+	);
+}
+
+/**
+ * The reviews already loaded in this request, so several widgets on one
+ * page read the cache once.
+ *
+ * @param array|false|null $set Array to store, false to clear, null to read.
+ * @return array|null
+ */
+function if_reviews_review_memo( $set = null ) {
+	static $memo = null;
+
+	if ( false === $set ) {
+		$memo = null;
+	} elseif ( null !== $set ) {
+		$memo = $set;
+	}
+
+	return $memo;
+}
+
+/**
+ * Count, average and sources for one source/category selection, cached so
+ * the rating badge and headers do not need every review loaded.
+ *
+ * Sites that change reviews with the if_reviews_reviews filter get the
+ * stats worked out from the filtered reviews every time.
+ *
+ * @param string[] $sources    Source keys; empty = all.
+ * @param string[] $categories Category slugs; empty = all.
+ * @return array From if_reviews_calculate_stats().
+ */
+function if_reviews_get_stats( $sources = array(), $categories = array() ) {
+
+	if ( has_filter( 'if_reviews_reviews' ) ) {
+		return if_reviews_calculate_stats( if_reviews_filter_reviews( if_reviews_get_reviews(), $sources, $categories ) );
+	}
+
+	$key    = if_reviews_cache_key();
+	$which  = implode( ',', $sources ) . '|' . implode( ',', $categories );
+	$cached = get_transient( 'if_reviews_stats_cache' );
+	$cached = ( is_array( $cached ) && isset( $cached['key'], $cached['stats'] ) && $cached['key'] === $key ) ? $cached : array( 'key' => $key, 'stats' => array() );
+
+	if ( isset( $cached['stats'][ $which ] ) ) {
+		return $cached['stats'][ $which ];
+	}
+
+	$stats = if_reviews_calculate_stats( if_reviews_filter_reviews( if_reviews_get_reviews_cached(), $sources, $categories ) );
+
+	// A handful of selections per site; cap it so it cannot grow unbounded.
+	if ( count( $cached['stats'] ) >= 50 ) {
+		$cached['stats'] = array();
+	}
+	$cached['stats'][ $which ] = $stats;
+	set_transient( 'if_reviews_stats_cache', $cached, DAY_IN_SECONDS );
+
+	return $stats;
+}
+
+/**
+ * Clear the review caches. Called on every change to reviews; clears at
+ * most once until the cache is next rebuilt, so bulk imports stay fast, and
+ * once more at the end of the request, in case a visitor rebuilt the cache
+ * from half-finished changes in the meantime.
  *
  * @param string $state 'built' after the cache is rebuilt; anything else clears.
  */
@@ -136,13 +237,28 @@ function if_reviews_flush_review_cache( $state = '' ) {
 	}
 
 	if ( false !== $clean ) {
-		delete_transient( 'if_reviews_review_cache' );
+		if_reviews_delete_review_caches();
 		$clean = false;
+	}
+
+	if ( ! has_action( 'shutdown', 'if_reviews_delete_review_caches' ) ) {
+		add_action( 'shutdown', 'if_reviews_delete_review_caches' );
 	}
 }
 
 /**
- * Hooks that clear the review cache.
+ * Delete the cached reviews and stats.
+ */
+function if_reviews_delete_review_caches() {
+	delete_transient( 'if_reviews_review_cache' );
+	delete_transient( 'if_reviews_stats_cache' );
+	if_reviews_review_memo( false );
+}
+
+/**
+ * Clear the review cache when a review is trashed, restored or deleted.
+ *
+ * @param int $post_id Post ID.
  */
 function if_reviews_flush_on_post( $post_id ) {
 	if ( 'if_review' === get_post_type( $post_id ) ) {
@@ -213,7 +329,9 @@ function if_reviews_load_reviews() {
 		return array();
 	}
 
-	// One query each for all the meta and all the terms.
+	// One query each for all the posts, meta and terms (without the posts
+	// primed, get_the_terms() would load each post on its own).
+	_prime_post_caches( $ids, false, false );
 	update_meta_cache( 'post', $ids );
 	update_object_term_cache( $ids, 'if_review' );
 
@@ -329,14 +447,23 @@ function if_reviews_calculate_stats( $reviews ) {
  *
  * @param array[] $reviews Review arrays.
  * @param string  $order   newest | oldest | highest | random.
+ * @param int     $seed    For "random": the same seed gives the same order,
+ *                         so "Show more" batches and page numbers never
+ *                         repeat or skip reviews. 0 picks a fresh one.
  * @return array[]
  */
-function if_reviews_sort_reviews( $reviews, $order ) {
+function if_reviews_sort_reviews( $reviews, $order, $seed = 0 ) {
 
 	switch ( $order ) {
 
 		case 'random':
-			shuffle( $reviews );
+			$seed = $seed ? (int) $seed : wp_rand( 1, PHP_INT_MAX );
+			usort(
+				$reviews,
+				function ( $a, $b ) use ( $seed ) {
+					return crc32( $seed . ':' . $a['id'] ) <=> crc32( $seed . ':' . $b['id'] );
+				}
+			);
 			break;
 
 		case 'oldest':
@@ -449,42 +576,43 @@ function if_reviews_shortcode( $atts = array() ) {
 
 	$stats = if_reviews_calculate_stats( $reviews );
 
-	$displayed = array_values(
-		array_filter(
-			$reviews,
-			function ( $review ) {
-				return $review['display'];
-			}
-		)
-	);
-
-	$displayed = if_reviews_sort_reviews( $displayed, $order );
-
-	$total_displayed   = count( $displayed );
-	$initially_visible = ( $limit > 0 ) ? min( $limit, $total_displayed ) : $total_displayed;
-	$use_show_more     = ( 'carousel' !== $layout && $limit > 0 && $show_more && $total_displayed > $limit );
-	$total_pages       = 1;
-	$current_page      = 1;
-
-	if ( $paginate > 0 && $total_displayed > 0 ) {
-
-		// Real pages replace the limit / "Show more" behaviour.
-		$total_pages       = (int) ceil( $total_displayed / $paginate );
-		$current_page      = min( $total_pages, if_reviews_current_page() );
-		$displayed         = array_slice( $displayed, ( $current_page - 1 ) * $paginate, $paginate );
-		$initially_visible = count( $displayed );
-		$use_show_more     = false;
-
-	} elseif ( $limit > 0 && ! $use_show_more ) {
-		$displayed = array_slice( $displayed, 0, $limit );
+	// Random order: a fresh seed per page view, carried into "Show more"
+	// requests; with page numbers, one seed per day so pages stay consistent.
+	$seed = 0;
+	if ( 'random' === $order ) {
+		$seed = $paginate > 0 ? (int) gmdate( 'Ymd' ) : wp_rand( 1, 2147483647 );
 	}
 
-	// Neighbour-aware avatar colours: in a grid the card above is a
-	// neighbour too, so look back one row; in a list or carousel, one card.
-	$avatar_colors = if_reviews_assign_avatar_colors( $displayed, $options, 'grid' === $layout ? $columns : 1 );
+	$displayed       = if_reviews_display_list( $reviews, $order, $seed, $options, 'grid' === $layout ? $columns : 1 );
+	$total_displayed = count( $displayed );
+	$total_pages     = 1;
+	$current_page    = 1;
+	$step            = 0; // Cards per "Show more" batch; 0 = no more to load.
+	$batch           = if_reviews_batch_size();
 
-	foreach ( $displayed as $i => $review ) {
-		$displayed[ $i ]['avatar_index'] = isset( $avatar_colors[ $review['id'] ] ) ? $avatar_colors[ $review['id'] ] : null;
+	if ( $paginate > 0 ) {
+
+		// Real pages replace the limit / "Show more" behaviour.
+		$total_pages  = max( 1, (int) ceil( $total_displayed / $paginate ) );
+		$current_page = min( $total_pages, if_reviews_current_page() );
+		$displayed    = array_slice( $displayed, ( $current_page - 1 ) * $paginate, $paginate );
+
+	} elseif ( $limit > 0 && ( ! $show_more || 'carousel' === $layout ) ) {
+
+		// A fixed number of reviews.
+		$displayed = array_slice( $displayed, 0, $limit );
+
+	} else {
+
+		// "Show more" (or every review, for limit 0): only the first batch is
+		// in the page; the rest is fetched when asked for, so a site with
+		// thousands of reviews does not send them all on every view.
+		$step      = $limit > 0 ? $limit : $batch;
+		$displayed = array_slice( $displayed, 0, $step );
+
+		if ( $total_displayed <= $step ) {
+			$step = 0;
+		}
 	}
 
 	if_reviews_enqueue_assets();
@@ -507,6 +635,13 @@ function if_reviews_shortcode( $atts = array() ) {
 		class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>"
 		<?php if ( $autoplay > 0 ) : ?>
 			data-autoplay="<?php echo (int) $autoplay; ?>"
+		<?php endif; ?>
+		<?php if ( $step > 0 ) : ?>
+			data-more-url="<?php echo esc_url( rest_url( 'if-reviews/v1/cards' ) ); ?>"
+			data-more-query="<?php echo esc_attr( wp_json_encode( array( 'layout' => $layout, 'columns' => $columns, 'order' => $order, 'seed' => $seed, 'source' => implode( ',', if_reviews_parse_list( $atts['source'] ) ), 'category' => implode( ',', if_reviews_parse_list( $atts['category'], 'sanitize_title' ) ) ) ) ); ?>"
+			data-more-offset="<?php echo (int) count( $displayed ); ?>"
+			data-more-step="<?php echo (int) $step; ?>"
+			data-more-total="<?php echo (int) $total_displayed; ?>"
 		<?php endif; ?>
 	>
 
@@ -536,8 +671,8 @@ function if_reviews_shortcode( $atts = array() ) {
 					<?php endif; ?>
 				>
 					<?php
-					foreach ( $displayed as $index => $review ) {
-						if_reviews_render_card( $review, $options, $index >= $initially_visible );
+					foreach ( $displayed as $review ) {
+						if_reviews_render_card( $review, $options );
 					}
 					?>
 				</div>
@@ -556,9 +691,9 @@ function if_reviews_shortcode( $atts = array() ) {
 
 			</div>
 
-			<?php if ( $use_show_more ) : ?>
+			<?php if ( $step > 0 && 'carousel' !== $layout ) : ?>
 				<p class="if-show-more-wrap">
-					<button type="button" class="if-show-more" data-step="<?php echo (int) $limit; ?>">
+					<button type="button" class="if-show-more" data-loading="<?php esc_attr_e( 'Loading…', 'if-reviews' ); ?>" data-error="<?php esc_attr_e( 'Could not load more reviews. Try again.', 'if-reviews' ); ?>">
 						<?php
 						/**
 						 * Filter the "Show more" button label.
@@ -591,6 +726,122 @@ function if_reviews_shortcode( $atts = array() ) {
 	return ob_get_clean();
 }
 add_shortcode( 'if_reviews', 'if_reviews_shortcode' );
+
+/**
+ * The reviews a widget shows, in order, with neighbour-aware avatar colours.
+ *
+ * Colours are worked out over the whole list, so a card gets the same
+ * colour whether it arrives with the page or in a later batch.
+ *
+ * @param array[] $reviews Filtered review arrays.
+ * @param string  $order   Sort order.
+ * @param int     $seed    Seed for random order.
+ * @param array   $options Plugin options.
+ * @param int     $window  Neighbours to keep apart (columns in a grid, else 1).
+ * @return array[]
+ */
+function if_reviews_display_list( $reviews, $order, $seed, $options, $window ) {
+
+	$displayed = array_values(
+		array_filter(
+			$reviews,
+			function ( $review ) {
+				return $review['display'];
+			}
+		)
+	);
+
+	$displayed = if_reviews_sort_reviews( $displayed, $order, $seed );
+	$colors    = if_reviews_assign_avatar_colors( $displayed, $options, $window );
+
+	foreach ( $displayed as $i => $review ) {
+		$displayed[ $i ]['avatar_index'] = isset( $colors[ $review['id'] ] ) ? $colors[ $review['id'] ] : null;
+	}
+
+	return $displayed;
+}
+
+/**
+ * Cards sent with the page, and per "Show more" batch, when a widget shows
+ * every review (limit 0) or is a carousel without a limit.
+ *
+ * @return int
+ */
+function if_reviews_batch_size() {
+	/**
+	 * Filter the number of review cards loaded at a time.
+	 *
+	 * @param int $size Default 24.
+	 */
+	return max( 1, min( 100, (int) apply_filters( 'if_reviews_batch_size', 24 ) ) );
+}
+
+/**
+ * Public, read-only endpoint that returns the next batch of rendered cards
+ * for "Show more" and carousels. It only ever returns reviews that are
+ * published and shown on the site, exactly as the page itself would.
+ */
+function if_reviews_register_rest_routes() {
+	register_rest_route(
+		'if-reviews/v1',
+		'/cards',
+		array(
+			'methods'             => 'GET',
+			'callback'            => 'if_reviews_rest_cards',
+			'permission_callback' => '__return_true',
+			'args'                => array(
+				'layout'   => array( 'type' => 'string', 'default' => 'grid' ),
+				'columns'  => array( 'type' => 'integer', 'default' => 3 ),
+				'order'    => array( 'type' => 'string', 'default' => 'newest' ),
+				'seed'     => array( 'type' => 'integer', 'default' => 0 ),
+				'source'   => array( 'type' => 'string', 'default' => '' ),
+				'category' => array( 'type' => 'string', 'default' => '' ),
+				'offset'   => array( 'type' => 'integer', 'default' => 0, 'minimum' => 0 ),
+				'count'    => array( 'type' => 'integer', 'default' => 24, 'minimum' => 1, 'maximum' => 100 ),
+			),
+		)
+	);
+}
+add_action( 'rest_api_init', 'if_reviews_register_rest_routes' );
+
+/**
+ * Render one batch of cards.
+ *
+ * @param WP_REST_Request $request Request.
+ * @return WP_REST_Response
+ */
+function if_reviews_rest_cards( $request ) {
+
+	$options = if_reviews_get_options();
+	$layout  = array_key_exists( $request['layout'], if_reviews_get_layouts() ) ? $request['layout'] : 'grid';
+	$order   = array_key_exists( $request['order'], if_reviews_get_orders() ) ? $request['order'] : 'newest';
+	$columns = max( 1, min( 4, absint( $request['columns'] ) ) );
+	$offset  = max( 0, (int) $request['offset'] );
+	$count   = max( 1, min( 100, (int) $request['count'] ) );
+
+	$reviews = if_reviews_filter_reviews(
+		if_reviews_get_reviews(),
+		if_reviews_parse_list( $request['source'] ),
+		if_reviews_parse_list( $request['category'], 'sanitize_title' )
+	);
+
+	$displayed = if_reviews_display_list( $reviews, $order, 'random' === $order ? max( 1, (int) $request['seed'] ) : 0, $options, 'grid' === $layout ? $columns : 1 );
+	$total     = count( $displayed );
+
+	ob_start();
+	foreach ( array_slice( $displayed, $offset, $count ) as $review ) {
+		if_reviews_render_card( $review, $options );
+	}
+
+	return rest_ensure_response(
+		array(
+			'html'   => ob_get_clean(),
+			'offset' => min( $total, $offset + $count ),
+			'total'  => $total,
+			'more'   => ( $offset + $count ) < $total,
+		)
+	);
+}
 
 /**
  * Numbered page links for a paginated widget.
@@ -643,7 +894,7 @@ function if_reviews_render_header( $stats, $title, $options ) {
 
 	if ( 1 === count( $sources ) ) {
 		$first           = reset( $sources );
-		$single          = $first['source'];
+		$single          = array_merge( if_reviews_get_source( $first['source']['key'] ), array( 'label' => $first['source']['label'] ) );
 		$single_platform = ( 'direct' !== $single['key'] );
 	}
 
@@ -731,7 +982,7 @@ function if_reviews_render_stars( $value, $class = 'if-stars', $decimals = 1 ) {
  */
 function if_reviews_render_card( $review, $options, $hidden = false, $extra_class = '' ) {
 
-	$source = $review['source'];
+	$source = if_reviews_review_source( $review );
 	$badge  = if_reviews_source_has_badge( $source );
 	$date   = if_reviews_format_date( $review['date'] );
 
@@ -752,7 +1003,7 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 	}
 	?>
 
-	<article class="<?php echo esc_attr( $card_class ); ?>"<?php echo $hidden ? ' hidden' : ''; ?>>
+	<article class="<?php echo esc_attr( $card_class ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: reviewer name */ __( 'Review by %s', 'if-reviews' ), '' !== $review['name'] ? $review['name'] : __( 'a customer', 'if-reviews' ) ) ); ?>"<?php echo $hidden ? ' hidden' : ''; ?>>
 
 		<div class="if-card-top">
 

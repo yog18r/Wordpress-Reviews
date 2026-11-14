@@ -44,7 +44,7 @@
 .if-header-icon {
   display: inline-flex;
   flex-shrink: 0;
-  color: var(--if-meta-color, #6b7280);
+  color: inherit; /* Sits on the page, not a card: follow the page's text colour. */
 }
 
 .if-header-icon .if-source-icon {
@@ -73,7 +73,7 @@
 
 .if-reviews-meta {
   margin: 4px 0 0;
-  color: var(--if-meta-color, #6b7280);
+  color: inherit; /* On the page background, so the page's text colour reads on light and dark themes. */
   font-size: 13px;
 }
 
@@ -98,7 +98,7 @@
 .if-stars-fill {
   position: absolute;
   top: 0;
-  left: 0;
+  inset-inline-start: 0; /* Fills from the right in right-to-left languages. */
   overflow: hidden;
   white-space: nowrap;
   color: var(--if-accent-color, #f5a623);
@@ -176,7 +176,7 @@
 }
 
 .if-layout-carousel .if-cards:focus-visible {
-  outline: 2px solid var(--if-accent-color, #f5a623);
+  outline: 2px solid currentColor;
   outline-offset: 4px;
   border-radius: var(--if-border-radius, 14px);
 }
@@ -213,6 +213,18 @@
   border-color: var(--if-accent-color, #f5a623);
 }
 
+/* Focus rings use the text colour: the accent (often a light gold) is too
+   faint against white to show keyboard focus. */
+.if-carousel-btn:focus-visible,
+.if-show-more:focus-visible,
+.if-read-more:focus-visible,
+.if-review-link a:focus-visible,
+.if-cta-button:focus-visible,
+.if-pagination a.page-numbers:focus-visible {
+  outline: 2px solid var(--if-text-color, #4b5563);
+  outline-offset: 2px;
+}
+
 .if-carousel-btn:disabled {
   opacity: 0.35;
   cursor: default;
@@ -224,8 +236,10 @@
 }
 
 @media (max-width: 600px) {
-  /* Swiping is natural on touch screens; give the cards the full width. */
-  .if-carousel-btn { display: none !important; }
+  /* Swiping is natural on touch screens; give the cards the full width.
+     The pause button stays, so autoplay can always be stopped. */
+  .if-carousel-prev,
+  .if-carousel-next { display: none !important; }
 }
 
 /* ------------------------------------------------------------------
@@ -234,6 +248,7 @@
 
 .if-review-card {
   min-width: 0;
+  color: var(--if-text-color, #4b5563); /* The card sets its own background, so it sets its own text colour too. */
   background: var(--if-card-bg-color, #fff);
   border: 1px solid var(--if-border-color, #d6d6d6);
   border-radius: var(--if-border-radius, 14px);
@@ -242,17 +257,12 @@
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
-.if-review-card:hover {
-  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
-  transform: translateY(-2px);
-}
-
 .if-review-card:focus {
   outline: none;
 }
 
 .if-review-card:focus-visible {
-  outline: 2px solid var(--if-accent-color, #f5a623);
+  outline: 2px solid var(--if-text-color, #4b5563);
   outline-offset: 2px;
 }
 
@@ -311,7 +321,7 @@
 
 .if-review-date-text + .if-source-badge::before {
   content: "·";
-  margin-right: 2px;
+  margin-inline-end: 2px;
 }
 
 .if-source-icon {
@@ -442,10 +452,6 @@
   line-height: 1.7;
 }
 
-.if-featured .if-featured-card:hover {
-  transform: none;
-}
-
 /* ------------------------------------------------------------------
  * Inline rating badge ([if_reviews_rating] / Rating Badge block)
  * ---------------------------------------------------------------- */
@@ -466,7 +472,12 @@
 .if-rating-count {
   font-size: 14px;
   font-weight: 400;
-  color: var(--if-meta-color, #6b7280);
+  color: inherit; /* On the page background: follow the page's text colour. */
+}
+
+.if-rating-count .if-rating-value {
+  font-size: 15px;
+  font-weight: 600;
 }
 
 /* ------------------------------------------------------------------
@@ -491,7 +502,8 @@
   margin: 0;
 }
 
-.if-pagination .page-numbers {
+.if-pagination a.page-numbers,
+.if-pagination span.page-numbers {
   display: inline-block;
   min-width: 38px;
   padding: 8px 12px;
@@ -516,7 +528,7 @@
 .if-pagination .page-numbers.current {
   border-color: var(--if-accent-color, #f5a623);
   background: var(--if-accent-color, #f5a623);
-  color: #1f2937;
+  color: var(--if-accent-contrast, #1f2937); /* Light or dark, whichever reads on the accent. */
 }
 
 .if-pagination .page-numbers.dots {
@@ -594,12 +606,59 @@
     transition: none;
   }
 
-  .if-review-card:hover,
   .if-cta-button:hover {
     transform: none;
   }
 
   .if-layout-carousel .if-cards {
     scroll-behavior: auto;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Windows high-contrast (forced colours): keep filled and empty stars
+ * distinguishable, since they differ only by colour.
+ * ---------------------------------------------------------------- */
+
+@media (forced-colors: active) {
+  .if-stars {
+    forced-color-adjust: none;
+    color: GrayText;
+  }
+
+  .if-stars-fill {
+    color: CanvasText;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Print
+ * ---------------------------------------------------------------- */
+
+@media print {
+  .if-layout-carousel .if-cards {
+    flex-wrap: wrap;
+    overflow: visible;
+  }
+
+  .if-layout-carousel .if-review-card {
+    flex: 1 1 280px;
+    max-width: none;
+  }
+
+  .if-carousel-btn,
+  .if-show-more-wrap,
+  .if-read-more,
+  .if-text-ellipsis {
+    display: none !important;
+  }
+
+  .if-text-rest[hidden] {
+    display: inline;
+  }
+
+  .if-review-card {
+    box-shadow: none;
+    break-inside: avoid;
   }
 }

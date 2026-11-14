@@ -19,7 +19,7 @@ WP_IMAGE="${WP_IMAGE:-wordpress:php8.3-apache}"
 CLI_IMAGE="${CLI_IMAGE:-wordpress:cli-php8.3}"
 
 cleanup() {
-	docker rm -f "$NAME-wp" "$NAME-db" >/dev/null 2>&1 || true
+	docker rm -f -v "$NAME-wp" "$NAME-db" >/dev/null 2>&1 || true
 	docker volume rm "$NAME-html" >/dev/null 2>&1 || true
 	docker network rm "$NAME" >/dev/null 2>&1 || true
 }

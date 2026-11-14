@@ -82,24 +82,33 @@ function if_reviews_rating_shortcode( $atts = array() ) {
 		'if_reviews_rating'
 	);
 
-	$reviews = if_reviews_filter_reviews(
-		if_reviews_get_reviews(),
+	$stats = if_reviews_get_stats(
 		if_reviews_parse_list( $atts['source'] ),
 		if_reviews_parse_list( $atts['category'], 'sanitize_title' )
 	);
 
-	if ( empty( $reviews ) ) {
+	if ( empty( $stats['count'] ) ) {
 		return '';
 	}
 
-	$stats      = if_reviews_calculate_stats( $reviews );
 	$show_stars = if_reviews_to_bool( $atts['stars'] );
 	$show_count = if_reviews_to_bool( $atts['count'] );
 
 	if_reviews_enqueue_assets();
 
-	/* translators: %s: number of reviews */
-	$count_text = sprintf( _n( 'from %s review', 'from %s reviews', $stats['count'], 'if-reviews' ), number_format_i18n( $stats['count'] ) );
+	$value = '<span class="if-rating-value">' . esc_html( number_format_i18n( $stats['average'], 1 ) ) . '</span>';
+
+	if ( $show_count ) {
+		// One sentence, so translators can order the rating and count freely.
+		$text = '<span class="if-rating-count">' . sprintf(
+			/* translators: 1: average rating, e.g. 4.8; 2: number of reviews */
+			esc_html( _n( '%1$s from %2$s review', '%1$s from %2$s reviews', $stats['count'], 'if-reviews' ) ),
+			$value,
+			esc_html( number_format_i18n( $stats['count'] ) )
+		) . '</span>';
+	} else {
+		$text = $value;
+	}
 
 	ob_start();
 	?>
@@ -107,10 +116,7 @@ function if_reviews_rating_shortcode( $atts = array() ) {
 	if ( $show_stars ) {
 		if_reviews_render_stars( $stats['average'], 'if-stars if-stars-small', 1 );
 	}
-	?><span class="if-rating-value"><?php echo esc_html( number_format_i18n( $stats['average'], 1 ) ); ?></span><?php
-	if ( $show_count ) {
-		?> <span class="if-rating-count"><?php echo esc_html( $count_text ); ?></span><?php
-	}
+	echo $text; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built from escaped parts above.
 	?></span>
 	<?php
 	return trim( ob_get_clean() );

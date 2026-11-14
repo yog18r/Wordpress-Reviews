@@ -120,10 +120,14 @@ Filters:
 | `if_reviews_reviews` | Alter the loaded reviews before stats and display |
 | `if_reviews_date_format` | PHP date format for review dates (default `F Y`) |
 | `if_reviews_show_more_label` | Label of the "Show more" button |
+| `if_reviews_batch_size` | Cards loaded at a time when every review is shown (default 24) |
+| `if_reviews_crypto_available` | Return false to stop the plugin storing private values at all |
 | `if_reviews_cta_buttons` | Alter the "Leave us a review" buttons |
 | `if_reviews_cta_help` | The "Where do I find this link?" help for each platform |
 | `if_reviews_google_fetched_reviews` | Alter reviews fetched from Google before they are matched |
 | `if_reviews_update_checker_enabled` | Disable GitHub update checks |
+
+Performance: reviews are cached as a transient (`if_reviews_review_cache`, slim arrays, rebuilt in a few queries), totals per source/category selection in `if_reviews_stats_cache`, and only the first batch of cards is rendered; `GET /wp-json/if-reviews/v1/cards` returns further batches (public, read-only, shown reviews only). The Featured Review picker uses `GET /wp-json/if-reviews/v1/picker` (needs `edit_posts`).
 
 Data model: post type `if_review`; taxonomy `if_review_category`; meta `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1–5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_pinned`, `_if_display_on_website` (`'1'`/`'0'`), plus `_if_google_review_id`, `_if_google_updated` and `_if_google_missing` on synced reviews; options `if_reviews_options` and `if_reviews_google`. Reviews can be added and edited by Editors and Administrators; settings, import and Google need `manage_options`.
 

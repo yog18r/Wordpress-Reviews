@@ -208,11 +208,20 @@ function if_reviews_svg_kses() {
  */
 function if_reviews_source_icon_html( $source ) {
 
+	static $clean = array();
+
 	if ( empty( $source['icon'] ) ) {
 		return '';
 	}
 
-	return wp_kses( $source['icon'], if_reviews_svg_kses() );
+	// The same few icons repeat on every card; sanitise each one once.
+	$hash = md5( $source['icon'] );
+
+	if ( ! isset( $clean[ $hash ] ) ) {
+		$clean[ $hash ] = wp_kses( $source['icon'], if_reviews_svg_kses() );
+	}
+
+	return $clean[ $hash ];
 }
 
 /* ------------------------------------------------------------------

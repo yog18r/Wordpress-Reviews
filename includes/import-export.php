@@ -399,7 +399,9 @@ function if_reviews_import_csv_upload( $file, $skip_duplicates ) {
 		return array( 'fatal' => __( 'The file could not be opened.', 'if-reviews' ) );
 	}
 
+	if_reviews_begin_bulk();
 	$result = if_reviews_import_csv_stream( $handle, $skip_duplicates );
+	if_reviews_end_bulk();
 
 	fclose( $handle ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 
@@ -541,20 +543,20 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 		$post_id = wp_insert_post(
 			wp_slash(
 				array(
-				'post_type'   => 'if_review',
-				'post_status' => $status,
-				'post_title'  => $name,
-				'meta_input'  => array(
-					'_if_reviewer_name'      => $name,
-					'_if_review_date'        => $date,
-					'_if_rating'             => $rating,
-					'_if_review_text'        => $text,
-					'_if_source'             => $source_key,
-					'_if_source_label'       => 'other' === $source_key ? $source_label : '',
-					'_if_review_url'         => $url,
-					'_if_display_on_website' => $display,
-					'_if_pinned'             => $pinned,
-				),
+					'post_type'   => 'if_review',
+					'post_status' => $status,
+					'post_title'  => $name,
+					'meta_input'  => array(
+						'_if_reviewer_name'      => $name,
+						'_if_review_date'        => $date,
+						'_if_rating'             => $rating,
+						'_if_review_text'        => $text,
+						'_if_source'             => $source_key,
+						'_if_source_label'       => 'other' === $source_key ? $source_label : '',
+						'_if_review_url'         => $url,
+						'_if_display_on_website' => $display,
+						'_if_pinned'             => $pinned,
+					),
 				)
 			),
 			true
@@ -651,7 +653,7 @@ function if_reviews_existing_fingerprints() {
 function if_reviews_review_fingerprint( $name, $date, $text ) {
 
 	$normalise = function ( $value ) {
-		return mb_strtolower( preg_replace( '/\s+/u', ' ', trim( (string) $value ) ) );
+		return if_reviews_strtolower( preg_replace( '/\s+/u', ' ', trim( (string) $value ) ) );
 	};
 
 	return md5( $normalise( $name ) . '|' . trim( (string) $date ) . '|' . $normalise( $text ) );

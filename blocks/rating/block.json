@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "if-reviews/rating",
-	"version": "2.4.5",
+	"version": "2.5.0",
 	"title": "Rating Badge",
 	"category": "widgets",
 	"icon": "star-half",
@@ -20,5 +20,5 @@
 		"html": false
 	},
 	"editorScript": "file:./block.js",
-	"style": "if-reviews-style"
+	"editorStyle": "if-reviews-style"
 }

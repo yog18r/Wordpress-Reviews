@@ -177,7 +177,6 @@ function if_reviews_google_migrate_encryption() {
 		}
 	}
 }
-add_action( 'admin_init', 'if_reviews_google_migrate_encryption' );
 
 /**
  * After the plugin is updated, run the migration on the next request of any
@@ -297,6 +296,33 @@ function if_reviews_google_print_security_notices( $g ) {
 }
 
 /**
+ * Keep the list of locations to choose from for ten minutes, encrypted:
+ * it holds the account and location identifiers.
+ *
+ * @param array $locations From if_reviews_google_list_locations().
+ */
+function if_reviews_google_store_locations( $locations ) {
+	$sealed = if_reviews_encrypt( (string) wp_json_encode( $locations ) );
+
+	if ( '' !== $sealed ) {
+		set_transient( 'if_reviews_google_locations_' . get_current_user_id(), $sealed, 600 );
+	}
+}
+
+/**
+ * The stored list of locations, if it is still there.
+ *
+ * @return array|false
+ */
+function if_reviews_google_load_locations() {
+	$sealed = get_transient( 'if_reviews_google_locations_' . get_current_user_id() );
+	$plain  = is_string( $sealed ) ? if_reviews_decrypt( $sealed ) : false;
+	$list   = is_string( $plain ) ? json_decode( $plain, true ) : null;
+
+	return is_array( $list ) ? $list : false;
+}
+
+/**
  * Render the page.
  */
 function if_reviews_google_render_page() {
@@ -304,6 +330,8 @@ function if_reviews_google_render_page() {
 	if ( ! current_user_can( 'manage_options' ) ) {
 		return;
 	}
+
+	if_reviews_google_migrate_encryption();
 
 	$g         = if_reviews_google_get();
 	$connected = if_reviews_google_is_connected();
@@ -555,7 +583,7 @@ function if_reviews_google_render_last_result( $g ) {
  */
 function if_reviews_google_render_location_picker() {
 
-	$locations = get_transient( 'if_reviews_google_locations_' . get_current_user_id() );
+	$locations = if_reviews_google_load_locations();
 
 	if ( ! is_array( $locations ) ) {
 		$locations = if_reviews_google_list_locations();
@@ -566,7 +594,7 @@ function if_reviews_google_render_location_picker() {
 			return;
 		}
 
-		set_transient( 'if_reviews_google_locations_' . get_current_user_id(), $locations, 600 );
+		if_reviews_google_store_locations( $locations );
 	}
 
 	if ( empty( $locations ) ) {
@@ -680,14 +708,14 @@ function if_reviews_google_handle_connect() {
 		array_map(
 			'rawurlencode',
 			array(
-			'client_id'              => $g['client_id'],
-			'redirect_uri'           => if_reviews_google_redirect_uri(),
-			'response_type'          => 'code',
-			'scope'                  => IF_REVIEWS_GOOGLE_SCOPE,
-			'access_type'            => 'offline',
-			'prompt'                 => 'consent',
-			'include_granted_scopes' => 'true',
-			'state'                  => $state,
+				'client_id'              => $g['client_id'],
+				'redirect_uri'           => if_reviews_google_redirect_uri(),
+				'response_type'          => 'code',
+				'scope'                  => IF_REVIEWS_GOOGLE_SCOPE,
+				'access_type'            => 'offline',
+				'prompt'                 => 'consent',
+				'include_granted_scopes' => 'true',
+				'state'                  => $state,
 			)
 		),
 		IF_REVIEWS_GOOGLE_AUTH
@@ -785,7 +813,7 @@ function if_reviews_google_handle_callback() {
 		if_reviews_google_notice( 'success', sprintf( __( 'Connected to "%s". Click Preview sync to see what the first sync would do.', 'if-reviews' ), $locations[0]['title'] ) );
 	} else {
 		if ( ! is_wp_error( $locations ) ) {
-			set_transient( 'if_reviews_google_locations_' . get_current_user_id(), $locations, 600 );
+			if_reviews_google_store_locations( $locations );
 		}
 		if_reviews_google_notice( 'success', __( 'Signed in to Google. Choose the location to import from.', 'if-reviews' ) );
 	}
@@ -802,7 +830,7 @@ add_action( 'admin_post_nopriv_if_reviews_google_callback', 'auth_redirect' );
 function if_reviews_google_handle_location() {
 	if_reviews_google_guard( 'if_reviews_google_location' );
 
-	$locations = get_transient( 'if_reviews_google_locations_' . get_current_user_id() );
+	$locations = if_reviews_google_load_locations();
 	$index     = isset( $_POST['location'] ) ? (int) $_POST['location'] : -1;
 
 	if ( ! is_array( $locations ) || ! isset( $locations[ $index ] ) ) {
@@ -938,6 +966,40 @@ function if_reviews_google_handle_preview() {
 add_action( 'admin_post_if_reviews_google_preview', 'if_reviews_google_handle_preview' );
 
 /**
+ * The owner's choices from the preview form.
+ *
+ * Changed choices arrive as one JSON field, decisions = {"<Google review ID>": "<choice>"};
+ * the older one-field-per-row form (decision[<id>]) is still understood.
+ *
+ * @param array $post Submitted form fields (slashed, as in $_POST).
+ * @return array Google review ID => choice, sanitised.
+ */
+function if_reviews_google_parse_decisions( $post ) {
+
+	$decisions = array();
+
+	// Changed choices arrive as one JSON field ({"<google review id>": "<decision>"}).
+	if ( isset( $post['decisions'] ) ) {
+		$posted = json_decode( (string) wp_unslash( $post['decisions'] ), true ); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- each element is sanitised below.
+		if ( is_array( $posted ) ) {
+			foreach ( $posted as $review_id => $decision ) {
+				if ( is_scalar( $decision ) ) {
+					$decisions[ sanitize_text_field( (string) $review_id ) ] = sanitize_text_field( (string) $decision );
+				}
+			}
+		}
+	}
+
+	if ( isset( $post['decision'] ) && is_array( $post['decision'] ) ) {
+		foreach ( wp_unslash( $post['decision'] ) as $review_id => $decision ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised per element below.
+			$decisions[ sanitize_text_field( (string) $review_id ) ] = sanitize_text_field( (string) $decision );
+		}
+	}
+
+	return $decisions;
+}
+
+/**
  * Apply the approved plan.
  */
 function if_reviews_google_handle_apply() {
@@ -952,13 +1014,7 @@ function if_reviews_google_handle_apply() {
 		exit;
 	}
 
-	$decisions = array();
-
-	if ( isset( $_POST['decision'] ) && is_array( $_POST['decision'] ) ) {
-		foreach ( wp_unslash( $_POST['decision'] ) as $review_id => $decision ) { // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- sanitised per element below.
-			$decisions[ sanitize_text_field( (string) $review_id ) ] = sanitize_text_field( (string) $decision );
-		}
-	}
+	$decisions = if_reviews_google_parse_decisions( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked in if_reviews_google_guard().
 
 	$result = if_reviews_google_apply_plan( $plan, $decisions );
 	delete_transient( $key );
@@ -1036,9 +1092,12 @@ function if_reviews_google_render_preview() {
 		<?php esc_html_e( 'Check the matches, change any action, then apply.', 'if-reviews' ); ?>
 	</p>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="if-google-apply-form">
 		<input type="hidden" name="action" value="if_reviews_google_apply">
 		<?php wp_nonce_field( 'if_reviews_google_apply' ); ?>
+		<?php // Choices are sent as one field: one field per row would hit PHP's max_input_vars on large profiles. ?>
+		<input type="hidden" name="decisions" id="if-google-decisions" value="">
+		<noscript><div class="notice notice-warning inline"><p><?php esc_html_e( 'Turn on JavaScript to change the actions below; without it, Apply uses the proposed actions.', 'if-reviews' ); ?></p></div></noscript>
 
 		<?php submit_button( __( 'Apply', 'if-reviews' ), 'primary', 'submit', false ); ?>
 		<a class="button" href="<?php echo esc_url( if_reviews_google_page_url() ); ?>" style="margin-left: 6px;"><?php esc_html_e( 'Cancel', 'if-reviews' ); ?></a>
@@ -1072,7 +1131,6 @@ function if_reviews_google_render_preview() {
 				$candidates = isset( $matches[ $r['id'] ] ) ? $matches[ $r['id'] ] : array();
 				$default    = $r['default'];
 				$linked     = isset( $r['linked_post'] ) ? (int) $r['linked_post'] : 0;
-				$others     = array_diff_key( $linkable, array_flip( wp_list_pluck( $candidates, 'post_id' ) ) );
 				?>
 				<tr>
 					<td>
@@ -1100,7 +1158,7 @@ function if_reviews_google_render_preview() {
 						<?php if ( $linked ) : ?>
 							<?php echo esc_html( 'update' === $default ? __( 'Update from Google', 'if-reviews' ) : __( 'No change', 'if-reviews' ) ); ?>
 						<?php else : ?>
-							<select name="decision[<?php echo esc_attr( $r['id'] ); ?>]">
+							<select class="if-google-decision" data-review-id="<?php echo esc_attr( $r['id'] ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: reviewer name */ __( 'Action for the review by %s', 'if-reviews' ), $r['name'] ) ); ?>">
 								<option value="import" <?php selected( 'import', $default ); ?>><?php esc_html_e( 'Import as a new review', 'if-reviews' ); ?></option>
 								<?php foreach ( $candidates as $c ) : ?>
 									<?php $e = $existing[ $c['post_id'] ]; ?>
@@ -1117,33 +1175,27 @@ function if_reviews_google_render_preview() {
 										?>
 									</option>
 								<?php endforeach; ?>
-								<?php if ( ! empty( $others ) ) : ?>
-									<optgroup label="<?php esc_attr_e( 'Link to another Google review on this site', 'if-reviews' ); ?>">
-										<?php foreach ( $others as $post_id => $e ) : ?>
-											<option value="link:<?php echo esc_attr( $post_id ); ?>">
-												<?php
-												echo esc_html(
-													sprintf(
-														/* translators: 1: reviewer name, 2: star rating, 3: review date */
-														__( '%1$s, %2$d stars (%3$s)', 'if-reviews' ),
-														$e['name'],
-														$e['rating'],
-														'' !== $e['date'] ? if_reviews_format_date( $e['date'] ) : __( 'no date', 'if-reviews' )
-													)
-												);
-												?>
-											</option>
-										<?php endforeach; ?>
-									</optgroup>
+								<?php if ( ! empty( $linkable ) ) : ?>
+									<option value="other"><?php esc_html_e( 'Link to another Google review on this site…', 'if-reviews' ); ?></option>
 								<?php endif; ?>
 								<option value="skip" <?php selected( 'skip', $default ); ?>><?php esc_html_e( 'Skip (do not import)', 'if-reviews' ); ?></option>
 							</select>
+							<?php if ( ! empty( $linkable ) ) : ?>
+								<input type="text" class="if-google-link-other regular-text" list="if-google-linkable" hidden style="margin-top: 6px;" placeholder="<?php esc_attr_e( 'Type a name, then pick from the list', 'if-reviews' ); ?>" aria-label="<?php esc_attr_e( 'Review on this site to link to', 'if-reviews' ); ?>">
+							<?php endif; ?>
 						<?php endif; ?>
 					</td>
 				</tr>
 			<?php endforeach; ?>
 			</tbody>
 		</table>
+
+		<?php // One shared list of linkable reviews, instead of a copy in every row. ?>
+		<datalist id="if-google-linkable">
+			<?php foreach ( $linkable as $post_id => $e ) : ?>
+				<option value="<?php echo esc_attr( sprintf( /* translators: 1: reviewer name, 2: star rating, 3: review date, 4: review ID */ __( '%1$s, %2$d stars (%3$s) #%4$d', 'if-reviews' ), $e['name'], $e['rating'], '' !== $e['date'] ? if_reviews_format_date( $e['date'] ) : __( 'no date', 'if-reviews' ), $post_id ) ); ?>"></option>
+			<?php endforeach; ?>
+		</datalist>
 
 		<?php if ( ! empty( $unmatched ) ) : ?>
 			<h3 style="margin-top: 24px;"><?php esc_html_e( 'Google reviews on this site that were not found on the profile', 'if-reviews' ); ?></h3>
@@ -1165,6 +1217,55 @@ function if_reviews_google_render_preview() {
 			<a class="button" href="<?php echo esc_url( if_reviews_google_page_url() ); ?>" style="margin-left: 6px;"><?php esc_html_e( 'Cancel', 'if-reviews' ); ?></a>
 		</p>
 	</form>
+	<script>
+	( function () {
+		var form = document.getElementById( 'if-google-apply-form' );
+		if ( ! form ) {
+			return;
+		}
+		var selects = form.querySelectorAll( '.if-google-decision' );
+		var notChosen = <?php echo wp_json_encode( __( 'Pick a review from the list for each row set to "Link to another Google review".', 'if-reviews' ) ); ?>;
+		Array.prototype.forEach.call( selects, function ( select ) {
+			select.setAttribute( 'data-initial', select.value );
+			var other = select.parentNode.querySelector( '.if-google-link-other' );
+			select.addEventListener( 'change', function () {
+				if ( other ) {
+					other.hidden = select.value !== 'other';
+					if ( ! other.hidden ) {
+						other.focus();
+					}
+				}
+			} );
+		} );
+		form.addEventListener( 'submit', function ( event ) {
+			var decisions = {};
+			var missing = null;
+			Array.prototype.forEach.call( selects, function ( select ) {
+				var value = select.value;
+				if ( value === 'other' ) {
+					var other = select.parentNode.querySelector( '.if-google-link-other' );
+					var match = other ? /#(\d+)\s*$/.exec( other.value ) : null;
+					if ( ! match ) {
+						missing = missing || other;
+						return;
+					}
+					value = 'link:' + match[1];
+				}
+				// Only choices that differ from the proposal are sent.
+				if ( value !== select.getAttribute( 'data-initial' ) ) {
+					decisions[ select.getAttribute( 'data-review-id' ) ] = value;
+				}
+			} );
+			if ( missing ) {
+				event.preventDefault();
+				window.alert( notChosen );
+				missing.focus();
+				return;
+			}
+			document.getElementById( 'if-google-decisions' ).value = JSON.stringify( decisions );
+		} );
+	} )();
+	</script>
 	<?php
 	return true;
 }
@@ -1531,9 +1632,26 @@ function if_reviews_google_local_reviews() {
  * @return string
  */
 function if_reviews_google_normalise( $value ) {
-	$value = mb_strtolower( (string) $value );
-	$value = preg_replace( '/[^\p{L}\p{N}\s]/u', '', $value );
-	return trim( preg_replace( '/\s+/u', ' ', $value ) );
+	static $memo = array();
+
+	$value = (string) $value;
+
+	// The matcher compares every Google review with many local ones; the
+	// same names and texts are normalised over and over, so remember them.
+	if ( isset( $memo[ $value ] ) ) {
+		return $memo[ $value ];
+	}
+
+	$normal = if_reviews_strtolower( $value );
+	$normal = preg_replace( '/[^\p{L}\p{N}\s]/u', '', $normal );
+	$normal = trim( preg_replace( '/\s+/u', ' ', (string) $normal ) );
+
+	if ( count( $memo ) > 20000 ) {
+		$memo = array();
+	}
+	$memo[ $value ] = $normal;
+
+	return $normal;
 }
 
 /**
@@ -1602,13 +1720,24 @@ function if_reviews_google_similarity( $google, $local ) {
 
 		if ( $gt === $lt ) {
 			$score = 1.0;
-		} elseif ( ( mb_strlen( $gt ) >= 20 && false !== mb_strpos( $lt, $gt ) ) || ( mb_strlen( $lt ) >= 20 && false !== mb_strpos( $gt, $lt ) ) ) {
+		} elseif ( ( mb_strlen( $gt ) >= 20 && if_reviews_str_contains( $lt, $gt ) ) || ( mb_strlen( $lt ) >= 20 && if_reviews_str_contains( $gt, $lt ) ) ) {
 			$score = 0.92;
 		} else {
-			similar_text( mb_substr( $gt, 0, 1500 ), mb_substr( $lt, 0, 1500 ), $percent );
-			$score = $percent / 100;
-			if ( $score < 0.6 ) {
+			$ga = mb_substr( $gt, 0, 1500 );
+			$la = mb_substr( $lt, 0, 1500 );
+			$gl = strlen( $ga );
+			$ll = strlen( $la );
+
+			// similar_text() can at best score 2 * shorter / (both lengths);
+			// skip the (slow) comparison when that cannot reach the 0.6 bar.
+			if ( 2 * min( $gl, $ll ) / max( 1, $gl + $ll ) < 0.6 ) {
 				$score = 0.0;
+			} else {
+				similar_text( $ga, $la, $percent );
+				$score = $percent / 100;
+				if ( $score < 0.6 ) {
+					$score = 0.0;
+				}
 			}
 		}
 	} elseif ( '' === $gt && '' === $lt ) {
@@ -1665,8 +1794,18 @@ function if_reviews_google_build_plan( $google_reviews ) {
 		}
 	}
 
-	// Score every (Google review, unlinked local review) pair.
-	$pairs = array();
+	// Score (Google review, unlinked local review) pairs. Names only match
+	// when their first word does (see if_reviews_google_names_match()), so
+	// group local reviews by it and only compare within a group.
+	$pairs   = array();
+	$buckets = array();
+
+	foreach ( $unlinked as $post_id => $e ) {
+		$first = strtok( if_reviews_google_normalise( $e['name'] ), ' ' );
+		if ( false !== $first && '' !== $first ) {
+			$buckets[ $first ][ $post_id ] = $e;
+		}
+	}
 
 	foreach ( $google_reviews as $gi => $review ) {
 
@@ -1674,7 +1813,13 @@ function if_reviews_google_build_plan( $google_reviews ) {
 			continue;
 		}
 
-		foreach ( $unlinked as $post_id => $e ) {
+		$first = strtok( if_reviews_google_normalise( $review['name'] ), ' ' );
+
+		if ( false === $first || ! isset( $buckets[ $first ] ) ) {
+			continue;
+		}
+
+		foreach ( $buckets[ $first ] as $post_id => $e ) {
 			$score = if_reviews_google_similarity( $review, $e );
 			if ( $score >= 0.5 ) {
 				$pairs[] = array( 'gi' => $gi, 'post_id' => $post_id, 'score' => $score );
@@ -1784,6 +1929,8 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 	$seen     = array();
 	$taken    = array();
 
+	if_reviews_begin_bulk();
+
 	foreach ( $plan['reviews'] as $review ) {
 
 		$seen[ $review['id'] ] = true;
@@ -1834,22 +1981,22 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 			$post_id = wp_insert_post(
 				wp_slash(
 					array(
-					'post_type'   => 'if_review',
-					'post_status' => 'publish',
-					'post_title'  => $review['name'],
-					'meta_input'  => array(
-						'_if_reviewer_name'      => $review['name'],
-						'_if_review_date'        => $review['date'],
-						'_if_rating'             => $review['rating'],
-						'_if_review_text'        => $review['text'],
-						'_if_source'             => 'google',
-						'_if_source_label'       => '',
-						'_if_review_url'         => '',
-						'_if_display_on_website' => '1',
-						'_if_pinned'             => '0',
-						'_if_google_review_id'   => $review['id'],
-						'_if_google_updated'     => $review['updated'],
-					),
+						'post_type'   => 'if_review',
+						'post_status' => 'publish',
+						'post_title'  => $review['name'],
+						'meta_input'  => array(
+							'_if_reviewer_name'      => $review['name'],
+							'_if_review_date'        => $review['date'],
+							'_if_rating'             => $review['rating'],
+							'_if_review_text'        => $review['text'],
+							'_if_source'             => 'google',
+							'_if_source_label'       => '',
+							'_if_review_url'         => '',
+							'_if_display_on_website' => '1',
+							'_if_pinned'             => '0',
+							'_if_google_review_id'   => $review['id'],
+							'_if_google_updated'     => $review['updated'],
+						),
 					)
 				),
 				true
@@ -1877,6 +2024,7 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 	}
 
 	if_reviews_google_update( array( 'skipped' => array_keys( $skipped ), 'first_sync_done' => 1 ) );
+	if_reviews_end_bulk();
 
 	return $result;
 }
@@ -1914,6 +2062,8 @@ function if_reviews_google_write_review( $post_id, $review ) {
  * @return array|WP_Error Result counts.
  */
 function if_reviews_google_run_sync() {
+
+	if_reviews_google_migrate_encryption();
 
 	$reviews = if_reviews_google_fetch_reviews();
 

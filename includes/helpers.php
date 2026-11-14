@@ -73,7 +73,14 @@ function if_reviews_default_options() {
  */
 function if_reviews_get_options() {
 
-	$saved = get_option( IF_REVIEWS_OPTION_KEY, array() );
+	$saved = get_option( IF_REVIEWS_OPTION_KEY, null );
+
+	// Store the defaults once, autoloaded, so sites that never saved the
+	// settings do not pay an extra database query on every page view.
+	if ( null === $saved ) {
+		add_option( IF_REVIEWS_OPTION_KEY, if_reviews_default_options() );
+		$saved = array();
+	}
 
 	if ( ! is_array( $saved ) ) {
 		$saved = array();
@@ -356,13 +363,13 @@ function if_reviews_get_initials( $name ) {
 	$words = preg_split( '/\s+/u', $name );
 
 	if ( count( $words ) === 1 ) {
-		return mb_strtoupper( mb_substr( $words[0], 0, 2 ) );
+		return if_reviews_strtoupper( mb_substr( $words[0], 0, 2 ) );
 	}
 
 	$first = $words[0];
 	$last  = $words[ count( $words ) - 1 ];
 
-	return mb_strtoupper( mb_substr( $first, 0, 1 ) . mb_substr( $last, 0, 1 ) );
+	return if_reviews_strtoupper( mb_substr( $first, 0, 1 ) . mb_substr( $last, 0, 1 ) );
 }
 
 /**
@@ -448,7 +455,7 @@ function if_reviews_avatar_index( $seed, $count ) {
 		return 0;
 	}
 
-	$hash = crc32( mb_strtolower( trim( (string) $seed ) ) );
+	$hash = crc32( if_reviews_strtolower( trim( (string) $seed ) ) );
 
 	// crc32() is signed on 32-bit PHP builds.
 	return (int) ( abs( $hash ) % $count );
@@ -575,4 +582,65 @@ function if_reviews_asset_version( $relative_path ) {
 	$path = IF_REVIEWS_PATH . ltrim( $relative_path, '/' );
 
 	return file_exists( $path ) ? (string) filemtime( $path ) : IF_REVIEWS_VERSION;
+}
+
+/* ------------------------------------------------------------------
+ * Multibyte-safe string helpers
+ *
+ * WordPress polyfills mb_substr() and mb_strlen() only; these work on
+ * servers without PHP's mbstring extension too.
+ * ---------------------------------------------------------------- */
+
+/**
+ * Upper-case a string.
+ *
+ * @param string $value Text.
+ * @return string
+ */
+function if_reviews_strtoupper( $value ) {
+	return function_exists( 'mb_strtoupper' ) ? mb_strtoupper( (string) $value, 'UTF-8' ) : strtoupper( (string) $value );
+}
+
+/**
+ * Lower-case a string.
+ *
+ * @param string $value Text.
+ * @return string
+ */
+function if_reviews_strtolower( $value ) {
+	return function_exists( 'mb_strtolower' ) ? mb_strtolower( (string) $value, 'UTF-8' ) : strtolower( (string) $value );
+}
+
+/**
+ * Whether one string contains another.
+ *
+ * @param string $haystack Text to search.
+ * @param string $needle   Text to find.
+ * @return bool
+ */
+function if_reviews_str_contains( $haystack, $needle ) {
+	return false !== strpos( (string) $haystack, (string) $needle );
+}
+
+/* ------------------------------------------------------------------
+ * Long-running work (imports, Google syncs)
+ * ---------------------------------------------------------------- */
+
+/**
+ * Prepare for a request that writes many reviews: defer category counts,
+ * and allow more time and memory where the host permits it.
+ */
+function if_reviews_begin_bulk() {
+	wp_defer_term_counting( true );
+	wp_raise_memory_limit( 'admin' );
+	if ( function_exists( 'set_time_limit' ) ) {
+		@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled by the host.
+	}
+}
+
+/**
+ * Finish bulk work: recount categories once.
+ */
+function if_reviews_end_bulk() {
+	wp_defer_term_counting( false );
 }
