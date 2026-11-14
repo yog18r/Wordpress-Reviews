@@ -1,6 +1,7 @@
 # Keeps the actions used by the release and lint workflows current.
-# Dependabot opens a pull request when one of them has a new major
-# version; merging it is the only maintenance needed.
+# The workflows pin each action to an exact commit (with the version in a
+# comment); Dependabot opens a pull request that moves the pin when a new
+# release comes out. Merging it is the only maintenance needed.
 #
 # The plugin's own runtime dependency (vendor/plugin-update-checker) is a
 # vendored copy, not a package, so it is not tracked here. Watch

@@ -55,30 +55,103 @@ function if_reviews_google_defaults() {
 		'skipped'         => array(),
 		'last_sync'       => 0,
 		'last_result'     => array(),
+		'key_changed'     => 0,
 	);
 }
 
 /**
- * Current connection settings.
+ * Settings that are private and therefore stored encrypted.
+ *
+ * @return string[]
+ */
+function if_reviews_google_private_keys() {
+	return array( 'client_id', 'client_secret', 'refresh_token', 'access_token', 'account', 'location' );
+}
+
+/**
+ * Credentials defined in wp-config.php, which take precedence and are
+ * never written to the database.
+ *
+ * @return array Subset of client_id / client_secret.
+ */
+function if_reviews_google_constants() {
+	$out = array();
+	if ( defined( 'IF_REVIEWS_GOOGLE_CLIENT_ID' ) && '' !== (string) IF_REVIEWS_GOOGLE_CLIENT_ID ) {
+		$out['client_id'] = (string) IF_REVIEWS_GOOGLE_CLIENT_ID;
+	}
+	if ( defined( 'IF_REVIEWS_GOOGLE_CLIENT_SECRET' ) && '' !== (string) IF_REVIEWS_GOOGLE_CLIENT_SECRET ) {
+		$out['client_secret'] = (string) IF_REVIEWS_GOOGLE_CLIENT_SECRET;
+	}
+	return $out;
+}
+
+/**
+ * Current connection settings, decrypted.
+ *
+ * If a private value cannot be decrypted (the site's security keys have
+ * changed since it was saved) it comes back empty and key_changed is set,
+ * so the page can ask the owner to enter the secret and reconnect.
  *
  * @return array
  */
 function if_reviews_google_get() {
 	$saved = get_option( IF_REVIEWS_GOOGLE_OPTION, array() );
-	return wp_parse_args( is_array( $saved ) ? $saved : array(), if_reviews_google_defaults() );
+	$g     = wp_parse_args( is_array( $saved ) ? $saved : array(), if_reviews_google_defaults() );
+
+	foreach ( if_reviews_google_private_keys() as $key ) {
+		$plain = if_reviews_decrypt( $g[ $key ] );
+		if ( false === $plain ) {
+			$plain            = '';
+			$g['key_changed'] = 1;
+		}
+		$g[ $key ] = $plain;
+	}
+
+	return array_merge( $g, if_reviews_google_constants() );
 }
 
 /**
- * Merge values into the connection settings.
+ * Merge values into the connection settings and save them, encrypting the
+ * private ones.
  *
  * @param array $changes Keys to overwrite.
- * @return array The new settings.
+ * @return array The new settings, decrypted.
  */
 function if_reviews_google_update( $changes ) {
-	$new = array_merge( if_reviews_google_get(), $changes );
-	update_option( IF_REVIEWS_GOOGLE_OPTION, $new, false );
-	return $new;
+	$new   = array_merge( if_reviews_google_get(), $changes );
+	$store = $new;
+
+	foreach ( if_reviews_google_private_keys() as $key ) {
+		$store[ $key ] = if_reviews_encrypt( $new[ $key ] );
+	}
+
+	// Credentials from wp-config.php stay out of the database.
+	foreach ( array_keys( if_reviews_google_constants() ) as $key ) {
+		$store[ $key ] = '';
+	}
+
+	update_option( IF_REVIEWS_GOOGLE_OPTION, $store, false );
+	return array_merge( $new, if_reviews_google_constants() );
 }
+
+/**
+ * Encrypt values saved by versions before 2.4.3.
+ */
+function if_reviews_google_migrate_encryption() {
+	$saved = get_option( IF_REVIEWS_GOOGLE_OPTION );
+
+	if ( ! is_array( $saved ) || ! if_reviews_crypto_available() ) {
+		return;
+	}
+
+	foreach ( if_reviews_google_private_keys() as $key ) {
+		if ( ! empty( $saved[ $key ] ) && ! if_reviews_is_encrypted( $saved[ $key ] ) ) {
+			if_reviews_google_update( array() );
+			return;
+		}
+	}
+}
+add_action( 'admin_init', 'if_reviews_google_migrate_encryption' );
 
 /**
  * Whether a refresh token is stored and a location chosen.
@@ -162,6 +235,24 @@ function if_reviews_google_add_page() {
 add_action( 'admin_menu', 'if_reviews_google_add_page', 12 );
 
 /**
+ * Warnings about how private settings are protected on this site.
+ *
+ * @param array $g Connection settings.
+ */
+function if_reviews_google_print_security_notices( $g ) {
+
+	if ( $g['key_changed'] ) {
+		echo '<div class="notice notice-error inline"><p>' . esc_html__( 'The saved Google connection could not be decrypted, usually because this site\'s security keys in wp-config.php have changed. Enter the Client ID and Client Secret again, then connect. Your reviews are not affected.', 'if-reviews' ) . '</p></div>';
+	}
+
+	if ( ! if_reviews_crypto_available() ) {
+		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'This server cannot encrypt data (PHP\'s sodium functions are missing), so the Google credentials are stored unencrypted. Ask your host to enable the sodium extension.', 'if-reviews' ) . '</p></div>';
+	} elseif ( 'database' === if_reviews_crypto_key_source() ) {
+		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'This site\'s wp-config.php has no security keys of its own, so the key that encrypts your Google credentials is kept in the database beside them. Add keys from api.wordpress.org/secret-key/1.1/salt/ to wp-config.php, or define IF_REVIEWS_ENCRYPTION_KEY there. You will need to enter the Client Secret and connect again afterwards.', 'if-reviews' ) . '</p></div>';
+	}
+}
+
+/**
  * Render the page.
  */
 function if_reviews_google_render_page() {
@@ -179,6 +270,7 @@ function if_reviews_google_render_page() {
 		<h1><?php esc_html_e( 'Google Business Profile import', 'if-reviews' ); ?></h1>
 
 		<?php if_reviews_google_print_notice(); ?>
+		<?php if_reviews_google_print_security_notices( $g ); ?>
 
 		<p style="max-width: 760px;">
 			<?php esc_html_e( 'Copy the reviews from one Google Business Profile location into this site and keep them up to date. This is optional and uses your own Google Cloud project: the plugin never talks to Google unless you connect it here, and nothing is shared with anyone else.', 'if-reviews' ); ?>
@@ -266,7 +358,7 @@ function if_reviews_google_render_page() {
 				<ol>
 					<li>
 						<strong><?php esc_html_e( 'Check you qualify.', 'if-reviews' ); ?></strong>
-						<?php esc_html_e( 'Google requires a Business Profile that is verified, at least 60 days old and lists this website. Do every step below signed in to the Google account that owns or manages that profile.', 'if-reviews' ); ?>
+						<?php esc_html_e( 'Google requires a Business Profile that is verified, at least 60 days old and lists this website. Do every step below signed in to the Google account that owns or manages that profile. For the least risk, connect with an account that is a Manager of the profile rather than its Owner: if the connection were ever misused, a Manager cannot remove the owner or transfer the profile.', 'if-reviews' ); ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Create a Cloud project.', 'if-reviews' ); ?></strong>
@@ -302,6 +394,11 @@ function if_reviews_google_render_page() {
 					<li><?php esc_html_e( 'Security → Access and data control → Google Cloud session control: if "Require reauthentication" is on, tick "Exempt trusted apps" and save. (This plugin does not use Google Cloud scopes, so the policy should not apply to it, but the exemption removes any doubt.)', 'if-reviews' ); ?></li>
 				</ol>
 				<p class="description"><?php esc_html_e( 'If the connection ever stops working, this page tells you and shows a Reconnect button. No reviews are lost.', 'if-reviews' ); ?></p>
+				<h4 style="margin: 16px 0 6px;"><?php esc_html_e( 'Keeping the connection safe', 'if-reviews' ); ?></h4>
+				<ul style="list-style: disc; margin-left: 1.4em;">
+					<li><?php esc_html_e( 'Do not add other people to the Cloud project: anyone on it can see the Client Secret.', 'if-reviews' ); ?></li>
+					<li><?php esc_html_e( 'Now and then, check myaccount.google.com/permissions for the account you connected, and remove the app there when a site is retired. Disconnecting here does the same.', 'if-reviews' ); ?></li>
+				</ul>
 			</details>
 
 			<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
@@ -317,13 +414,23 @@ function if_reviews_google_render_page() {
 					</tr>
 					<tr>
 						<th scope="row"><label for="if_google_client_id"><?php esc_html_e( 'Client ID', 'if-reviews' ); ?></label></th>
-						<td><input type="text" id="if_google_client_id" name="client_id" class="large-text code" value="<?php echo esc_attr( $g['client_id'] ); ?>" autocomplete="off"></td>
+						<td>
+							<?php if ( defined( 'IF_REVIEWS_GOOGLE_CLIENT_ID' ) && '' !== (string) IF_REVIEWS_GOOGLE_CLIENT_ID ) : ?>
+								<p><?php esc_html_e( 'Set in wp-config.php (IF_REVIEWS_GOOGLE_CLIENT_ID).', 'if-reviews' ); ?></p>
+							<?php else : ?>
+								<input type="text" id="if_google_client_id" name="client_id" class="large-text code" value="<?php echo esc_attr( $g['client_id'] ); ?>" autocomplete="off">
+							<?php endif; ?>
+						</td>
 					</tr>
 					<tr>
 						<th scope="row"><label for="if_google_client_secret"><?php esc_html_e( 'Client Secret', 'if-reviews' ); ?></label></th>
 						<td>
-							<input type="password" id="if_google_client_secret" name="client_secret" class="large-text code" value="" placeholder="<?php echo '' !== $g['client_secret'] ? esc_attr__( 'Saved. Leave blank to keep it.', 'if-reviews' ) : ''; ?>" autocomplete="new-password">
-							<p class="description"><?php esc_html_e( 'Stored in this site\'s database, like other plugins\' API keys. Anyone with database access could read it, so keep database access and backups private.', 'if-reviews' ); ?></p>
+							<?php if ( defined( 'IF_REVIEWS_GOOGLE_CLIENT_SECRET' ) && '' !== (string) IF_REVIEWS_GOOGLE_CLIENT_SECRET ) : ?>
+								<p><?php esc_html_e( 'Set in wp-config.php (IF_REVIEWS_GOOGLE_CLIENT_SECRET).', 'if-reviews' ); ?></p>
+							<?php else : ?>
+								<input type="password" id="if_google_client_secret" name="client_secret" class="large-text code" value="" placeholder="<?php echo '' !== $g['client_secret'] ? esc_attr__( 'Saved. Leave blank to keep it.', 'if-reviews' ) : ''; ?>" autocomplete="new-password">
+							<?php endif; ?>
+							<p class="description"><?php esc_html_e( 'The Client ID, Client Secret and Google connection are stored encrypted, with a key from this site\'s wp-config.php, so a copy of the database alone cannot reveal them. To keep the ID and secret out of the database entirely, define IF_REVIEWS_GOOGLE_CLIENT_ID and IF_REVIEWS_GOOGLE_CLIENT_SECRET in wp-config.php.', 'if-reviews' ); ?></p>
 						</td>
 					</tr>
 				</table>
@@ -482,7 +589,12 @@ function if_reviews_google_handle_credentials() {
 		$secret = if_reviews_google_get()['client_secret'];
 	}
 
-	if_reviews_google_update( array( 'client_id' => $id, 'client_secret' => $secret ) );
+	// Values defined in wp-config.php win.
+	$constants = if_reviews_google_constants();
+	$id        = isset( $constants['client_id'] ) ? $constants['client_id'] : $id;
+	$secret    = isset( $constants['client_secret'] ) ? $constants['client_secret'] : $secret;
+
+	if_reviews_google_update( array( 'client_id' => $id, 'client_secret' => $secret, 'key_changed' => 0 ) );
 
 	if ( '' === $id || '' === $secret ) {
 		if_reviews_google_notice( 'warning', __( 'Both the Client ID and the Client Secret are needed before connecting.', 'if-reviews' ) );

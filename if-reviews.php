@@ -38,6 +38,7 @@ define( 'IF_REVIEWS_PLUGIN_BASENAME', plugin_basename( __FILE__ ) );
 define( 'IF_REVIEWS_GITHUB_URL', 'https://github.com/yog18r/Wordpress-Reviews/' );
 
 // Order matters: helpers and sources are used by everything after them.
+require_once IF_REVIEWS_PATH . 'includes/crypto.php';
 require_once IF_REVIEWS_PATH . 'includes/helpers.php';
 require_once IF_REVIEWS_PATH . 'includes/sources.php';
 require_once IF_REVIEWS_PATH . 'includes/settings.php';

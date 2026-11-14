@@ -3,7 +3,7 @@ name: Release
 # Publishing a new version:
 #   1. Bump the version in if-reviews.php (header + IF_REVIEWS_VERSION),
 #      readme.txt (Stable tag) and add a changelog entry in readme.txt.
-#   2. Commit, then:  git tag v2.0.1 && git push --tags
+#   2. Commit, then:  git tag -a vX.Y.Z -m "WP Reviews X.Y.Z" && git push origin main --tags
 # This workflow builds if-reviews.zip and attaches it to a GitHub Release.
 # Sites running the plugin pick the update up from there.
 
@@ -22,7 +22,9 @@ jobs:
 
     steps:
       - name: Check out code
-        uses: actions/checkout@v7
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Verify the version numbers match the tag
         run: |

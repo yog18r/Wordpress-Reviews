@@ -33,12 +33,15 @@ if ( is_array( $if_reviews_options ) && ! empty( $if_reviews_options['delete_on_
 }
 
 // Revoke the Google connection, if any, so the token stops working.
-$if_reviews_google = get_option( 'if_reviews_google', array() );
+require_once __DIR__ . '/includes/crypto.php';
 
-if ( is_array( $if_reviews_google ) && ! empty( $if_reviews_google['refresh_token'] ) ) {
+$if_reviews_google = get_option( 'if_reviews_google', array() );
+$if_reviews_token  = is_array( $if_reviews_google ) && ! empty( $if_reviews_google['refresh_token'] ) ? if_reviews_decrypt( $if_reviews_google['refresh_token'] ) : '';
+
+if ( is_string( $if_reviews_token ) && '' !== $if_reviews_token ) {
 	wp_remote_post(
 		'https://oauth2.googleapis.com/revoke',
-		array( 'timeout' => 10, 'body' => array( 'token' => $if_reviews_google['refresh_token'] ) )
+		array( 'timeout' => 10, 'body' => array( 'token' => $if_reviews_token ) )
 	);
 }
 

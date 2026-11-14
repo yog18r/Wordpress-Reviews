@@ -98,6 +98,7 @@ How the sync behaves:
 - Linked reviews take Google's reviewer name, rating, text and date, and follow later edits. Hidden, pinned and category settings are never touched.
 - A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
 - If the connection stops working, the page shows a Reconnect button.
+- The Client ID, Client Secret, token and account identifiers are stored encrypted with libsodium, keyed from the site's wp-config.php security keys (or `IF_REVIEWS_ENCRYPTION_KEY`). `IF_REVIEWS_GOOGLE_CLIENT_ID` and `IF_REVIEWS_GOOGLE_CLIENT_SECRET` in wp-config.php keep the credentials out of the database entirely.
 - Daily sync is a checkbox; it runs about once a day after you have applied a first preview.
 
 ## Updates
@@ -130,6 +131,7 @@ Layout of the repository:
 
 ```
 if-reviews.php          plugin bootstrap and constants
+includes/crypto.php     encryption for private stored values (libsodium)
 includes/helpers.php    options, sanitising, formatting helpers
 includes/sources.php    source registry and badge icons
 includes/post-type.php  the if_review post type and its admin list
@@ -165,7 +167,7 @@ Every push also runs `php -l` on PHP 7.4, 8.1 and 8.3.
 
 ## Contributing
 
-Issues and pull requests are welcome. Keep the plugin small: no build step, no framework, no network calls beyond the update check. If you add a source, use a simple single-colour SVG mark rather than a platform's official logo.
+Issues and pull requests are welcome. Keep the plugin small: no build step, no framework, no network calls beyond the update check. Anything new that the plugin stores and does not display publicly must go through `if_reviews_encrypt()` / `if_reviews_decrypt()`. If you add a source, use a simple single-colour SVG mark rather than a platform's official logo.
 
 ## Licence
 
