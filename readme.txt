@@ -1,5 +1,6 @@
 === WP Reviews ===
 Contributors: yog18r
+Donate link: https://github.com/sponsors/yog18r
 Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
