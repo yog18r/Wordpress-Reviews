@@ -2,7 +2,7 @@
 	"$schema": "https://schemas.wp.org/trunk/block.json",
 	"apiVersion": 3,
 	"name": "if-reviews/reviews",
-	"version": "2.4.3",
+	"version": "2.4.4",
 	"title": "Reviews",
 	"category": "widgets",
 	"icon": "star-filled",

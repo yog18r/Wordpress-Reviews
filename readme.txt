@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.3
+Stable tag: 2.4.4
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -227,6 +227,14 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.4 =
+* Security: encryption now fails closed. If the server cannot encrypt, the plugin stores nothing private instead of storing it in plain text.
+* Security: connecting to Google is turned off on sites whose wp-config.php has no security keys of its own, because the encryption key would then sit in the database beside the data. The Google import page explains how to add keys; an existing connection keeps syncing meanwhile.
+* Improved: when you add security keys or a dedicated `IF_REVIEWS_ENCRYPTION_KEY`, saved credentials move to the new key automatically, with no need to connect again.
+* Improved: reviews are cached between page views and the cache is cleared whenever a review, its details or its categories change, so pages stay fast on sites with thousands of reviews.
+* Improved: in the Google import preview, an unrecognised choice falls back to the suggested action.
+* Development: a regression test suite (`tests/run.sh`) runs the plugin in a throwaway WordPress with Google's API mocked, and runs on every push.
+
 = 2.4.3 =
 * Security: anything the plugin stores that is not shown publicly is now encrypted. The Google Client ID, Client Secret, connection tokens and account identifiers are sealed with libsodium using a key from your wp-config.php, so a copy of the database alone, such as a leaked backup or a staging site, cannot reveal them. Existing values are encrypted automatically the next time you open an admin page.
 * New: optional wp-config.php constants. `IF_REVIEWS_GOOGLE_CLIENT_ID` and `IF_REVIEWS_GOOGLE_CLIENT_SECRET` keep the credentials out of the database entirely, and `IF_REVIEWS_ENCRYPTION_KEY` sets a dedicated encryption key.
@@ -303,6 +311,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.4 =
+Hardens how Google credentials are stored and speeds up pages on sites with many reviews. No action needed on most sites.
 
 = 2.4.3 =
 Encrypts stored Google credentials and tokens. No action needed; existing values are encrypted automatically.
