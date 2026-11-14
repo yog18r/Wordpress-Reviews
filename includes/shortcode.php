@@ -76,6 +76,126 @@ function if_reviews_build_review( $id, $options = null ) {
  */
 function if_reviews_get_reviews() {
 
+	/**
+	 * Filter the loaded reviews before stats and display.
+	 *
+	 * @param array[] $reviews Review arrays.
+	 */
+	return apply_filters( 'if_reviews_reviews', if_reviews_get_reviews_cached() );
+}
+
+/**
+ * Reviews from the cache, or loaded and cached.
+ *
+ * The cache holds the built review arrays so pages showing reviews do not
+ * load every review's data on each view. It is cleared whenever a review,
+ * its details or its categories change, and its key covers the settings,
+ * language, date format and sources the arrays depend on.
+ *
+ * @return array[]
+ */
+function if_reviews_get_reviews_cached() {
+
+	$key    = md5(
+		wp_json_encode(
+			array(
+				IF_REVIEWS_VERSION,
+				if_reviews_get_options(),
+				get_locale(),
+				apply_filters( 'if_reviews_date_format', 'F Y' ), // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals -- the plugin's own filter.
+				array_keys( if_reviews_get_sources() ),
+			)
+		)
+	);
+	$cached = get_transient( 'if_reviews_review_cache' );
+
+	if ( is_array( $cached ) && isset( $cached['key'], $cached['reviews'] ) && $cached['key'] === $key ) {
+		return $cached['reviews'];
+	}
+
+	$reviews = if_reviews_load_reviews();
+
+	set_transient( 'if_reviews_review_cache', array( 'key' => $key, 'reviews' => $reviews ), DAY_IN_SECONDS );
+	if_reviews_flush_review_cache( 'built' );
+
+	return $reviews;
+}
+
+/**
+ * Clear the review cache. Called on every change to reviews; clears at most
+ * once until the cache is next rebuilt, so bulk imports stay fast.
+ *
+ * @param string $state 'built' after the cache is rebuilt; anything else clears.
+ */
+function if_reviews_flush_review_cache( $state = '' ) {
+	static $clean = null;
+
+	if ( 'built' === $state ) {
+		$clean = true;
+		return;
+	}
+
+	if ( false !== $clean ) {
+		delete_transient( 'if_reviews_review_cache' );
+		$clean = false;
+	}
+}
+
+/**
+ * Hooks that clear the review cache.
+ */
+function if_reviews_flush_on_post( $post_id ) {
+	if ( 'if_review' === get_post_type( $post_id ) ) {
+		if_reviews_flush_review_cache();
+	}
+}
+add_action( 'save_post_if_review', 'if_reviews_flush_review_cache' );
+add_action( 'before_delete_post', 'if_reviews_flush_on_post' );
+add_action( 'trashed_post', 'if_reviews_flush_on_post' );
+add_action( 'untrashed_post', 'if_reviews_flush_on_post' );
+
+/**
+ * Clear the cache when any of the plugin's review meta changes (bulk
+ * actions and the Google sync update meta without saving the post).
+ *
+ * @param int    $meta_id   Meta ID.
+ * @param int    $object_id Post ID.
+ * @param string $meta_key  Meta key.
+ */
+function if_reviews_flush_on_meta( $meta_id, $object_id, $meta_key ) {
+	if ( 0 === strpos( (string) $meta_key, '_if_' ) ) {
+		if_reviews_flush_review_cache();
+	}
+}
+add_action( 'added_post_meta', 'if_reviews_flush_on_meta', 10, 3 );
+add_action( 'updated_post_meta', 'if_reviews_flush_on_meta', 10, 3 );
+add_action( 'deleted_post_meta', 'if_reviews_flush_on_meta', 10, 3 );
+
+/**
+ * Clear the cache when review categories are assigned, renamed or deleted.
+ *
+ * @param mixed  $a        Object or term ID (unused).
+ * @param mixed  $b        Terms or term taxonomy ID (unused).
+ * @param mixed  $c        Unused.
+ * @param string $taxonomy Taxonomy.
+ */
+function if_reviews_flush_on_terms( $a, $b = null, $c = null, $taxonomy = '' ) {
+	if ( 'if_review_category' === $taxonomy ) {
+		if_reviews_flush_review_cache();
+	}
+}
+add_action( 'set_object_terms', 'if_reviews_flush_on_terms', 10, 4 );
+add_action( 'edited_if_review_category', 'if_reviews_flush_review_cache' );
+add_action( 'delete_if_review_category', 'if_reviews_flush_review_cache' );
+add_action( 'update_option_if_reviews_options', 'if_reviews_flush_review_cache' );
+
+/**
+ * Load every published review from the database.
+ *
+ * @return array[]
+ */
+function if_reviews_load_reviews() {
+
 	$ids = get_posts(
 		array(
 			'post_type'              => 'if_review',
@@ -104,12 +224,7 @@ function if_reviews_get_reviews() {
 		$reviews[] = if_reviews_build_review( $id, $options );
 	}
 
-	/**
-	 * Filter the loaded reviews before stats and display.
-	 *
-	 * @param array[] $reviews Review arrays.
-	 */
-	return apply_filters( 'if_reviews_reviews', $reviews );
+	return $reviews;
 }
 
 /**

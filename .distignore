@@ -9,6 +9,7 @@
 /README.md
 /CONTRIBUTING.md
 /assets/screenshots
+/tests
 /*.zip
 .DS_Store
 Thumbs.db

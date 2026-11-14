@@ -1,0 +1,26 @@
+name: Tests
+
+# Runs tests/run.sh: the plugin in a throwaway WordPress (Docker), with
+# Google's API mocked. Covers permissions, CSV escaping, the Google import
+# and sync, encryption and key changes, the review cache and uninstall.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  wordpress:
+    name: WordPress regression tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Run tests
+        run: bash tests/run.sh

@@ -135,12 +135,23 @@ function if_reviews_google_update( $changes ) {
 }
 
 /**
- * Encrypt values saved by versions before 2.4.3.
+ * Re-save private values that are not sealed with the current key: plain
+ * values from before 2.4.3, and values sealed with an earlier key (for
+ * example before security keys were added to wp-config.php).
  */
 function if_reviews_google_migrate_encryption() {
 	$saved = get_option( IF_REVIEWS_GOOGLE_OPTION );
 
 	if ( ! is_array( $saved ) || ! if_reviews_crypto_available() ) {
+		return;
+	}
+
+	if_reviews_crypto_used_old_key( false );
+	$g = if_reviews_google_get();
+
+	if ( if_reviews_crypto_used_old_key() && ! $g['key_changed'] ) {
+		if_reviews_google_update( array() );
+		if_reviews_crypto_used_old_key( false );
 		return;
 	}
 
@@ -246,9 +257,12 @@ function if_reviews_google_print_security_notices( $g ) {
 	}
 
 	if ( ! if_reviews_crypto_available() ) {
-		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'This server cannot encrypt data (PHP\'s sodium functions are missing), so the Google credentials are stored unencrypted. Ask your host to enable the sodium extension.', 'if-reviews' ) . '</p></div>';
+		echo '<div class="notice notice-error inline"><p><strong>' . esc_html__( 'Connecting is turned off: this server cannot encrypt data.', 'if-reviews' ) . '</strong> ' . esc_html__( 'PHP\'s sodium functions are missing, so the plugin will not store your Google credentials or connection. Ask your host to enable the sodium extension.', 'if-reviews' ) . '</p></div>';
 	} elseif ( 'database' === if_reviews_crypto_key_source() ) {
-		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'This site\'s wp-config.php has no security keys of its own, so the key that encrypts your Google credentials is kept in the database beside them. Add keys from api.wordpress.org/secret-key/1.1/salt/ to wp-config.php, or define IF_REVIEWS_ENCRYPTION_KEY there. You will need to enter the Client Secret and connect again afterwards.', 'if-reviews' ) . '</p></div>';
+		echo '<div class="notice notice-error inline"><p><strong>' . esc_html__( 'Connecting is turned off until this site has security keys in wp-config.php.', 'if-reviews' ) . '</strong> ' . esc_html__( 'Without them, the key that encrypts your Google credentials would sit in the database beside them, so a leaked backup could reveal them. To fix it:', 'if-reviews' ) . '</p><ol>'
+			. '<li>' . wp_kses_post( __( 'Open <a href="https://api.wordpress.org/secret-key/1.1/salt/" target="_blank" rel="noopener">api.wordpress.org/secret-key/1.1/salt/</a>. It shows eight lines of new random keys.', 'if-reviews' ) ) . '</li>'
+			. '<li>' . esc_html__( 'Paste them into wp-config.php, replacing any lines that say "put your unique phrase here". (Or add one line instead: define( \'IF_REVIEWS_ENCRYPTION_KEY\', \'any long random text\' );)', 'if-reviews' ) . '</li>'
+			. '</ol><p>' . esc_html__( 'New keys sign everyone out once. Anything already saved here is moved to the new key automatically; you do not need to connect again. An existing connection keeps syncing in the meantime.', 'if-reviews' ) . '</p></div>';
 	}
 }
 
@@ -304,7 +318,7 @@ function if_reviews_google_render_page() {
 						<form method="post" action="<?php echo esc_url( $admin_post ); ?>" style="margin: 0 0 10px;">
 							<input type="hidden" name="action" value="if_reviews_google_connect">
 							<?php wp_nonce_field( 'if_reviews_google_connect' ); ?>
-							<?php submit_button( __( 'Reconnect', 'if-reviews' ), 'primary', 'submit', false ); ?>
+							<?php submit_button( __( 'Reconnect', 'if-reviews' ), 'primary', 'submit', false, if_reviews_crypto_secure() ? '' : array( 'disabled' => 'disabled' ) ); ?>
 						</form>
 					</div>
 				<?php endif; ?>
@@ -438,7 +452,9 @@ function if_reviews_google_render_page() {
 			</form>
 
 			<h2 style="margin-top: 32px;"><?php esc_html_e( 'Step 2: Connect', 'if-reviews' ); ?></h2>
-			<?php if ( $has_creds ) : ?>
+			<?php if ( ! if_reviews_crypto_secure() ) : ?>
+				<p class="description"><?php esc_html_e( 'Connecting is turned off on this site; see the message at the top of the page.', 'if-reviews' ); ?></p>
+			<?php elseif ( $has_creds ) : ?>
 				<p style="max-width: 760px;"><?php esc_html_e( 'Google will ask you to sign in as the profile\'s owner or manager and allow this site to read its reviews. If you see "Google hasn\'t verified this app", that is your own app: click Advanced, then "Go to" your app name.', 'if-reviews' ); ?></p>
 				<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
 					<input type="hidden" name="action" value="if_reviews_google_connect">
@@ -612,6 +628,12 @@ add_action( 'admin_post_if_reviews_google_credentials', 'if_reviews_google_handl
  */
 function if_reviews_google_handle_connect() {
 	if_reviews_google_guard( 'if_reviews_google_connect' );
+
+	if ( ! if_reviews_crypto_secure() ) {
+		if_reviews_google_notice( 'error', __( 'Connecting is turned off until this site can store the connection securely. See the message on this page.', 'if-reviews' ) );
+		wp_safe_redirect( if_reviews_google_page_url() );
+		exit;
+	}
 
 	$g = if_reviews_google_get();
 
@@ -1735,6 +1757,11 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 
 		$decision = isset( $decisions[ $review['id'] ] ) ? $decisions[ $review['id'] ] : $review['default'];
 
+		// Anything other than the choices the preview offers means "use the default".
+		if ( ! in_array( $decision, array( 'import', 'skip', 'link' ), true ) && ! preg_match( '/^link:\d+$/', $decision ) ) {
+			$decision = $review['default'];
+		}
+
 		if ( 'link' === $decision ) {
 			$decision = isset( $plan['matches'][ $review['id'] ][0] ) ? 'link:' . $plan['matches'][ $review['id'] ][0]['post_id'] : 'import';
 		}
@@ -1750,7 +1777,8 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 		if ( 0 === strpos( $decision, 'link:' ) ) {
 			$post_id = (int) substr( $decision, 5 );
 
-			// Only reviews offered in the preview can be linked, each once.
+			// Any Google review on this site that is not linked yet can be
+			// linked (the preview lists them all), each to one Google review.
 			if ( isset( $existing[ $post_id ] ) && '' === $existing[ $post_id ]['google_id'] && ! isset( $taken[ $post_id ] ) && 'if_review' === get_post_type( $post_id ) ) {
 				$taken[ $post_id ] = true;
 				if_reviews_google_write_review( $post_id, $review );

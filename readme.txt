@@ -159,10 +159,12 @@ No, deliberately. Google does not show review stars for reviews a business publi
 
 Anything the plugin stores that is not shown publicly, such as the Google Client ID, Client Secret, connection token and account identifiers, is encrypted before it is saved, using a key derived from the security keys in your wp-config.php. A copy of the database on its own, such as a leaked backup or a staging site, cannot reveal them. Reviews are not encrypted, because they are public anyway.
 
+If the server cannot encrypt, the plugin stores nothing private rather than storing it in plain text. If wp-config.php has no security keys of its own (WordPress then keeps them in the database), connecting to Google is turned off until you add them; the Google import page shows how, and anything already saved moves to the new key by itself.
+
 For more control, add these to wp-config.php:
 
 * `define( 'IF_REVIEWS_GOOGLE_CLIENT_ID', '...' );` and `define( 'IF_REVIEWS_GOOGLE_CLIENT_SECRET', '...' );` keep the credentials out of the database entirely.
-* `define( 'IF_REVIEWS_ENCRYPTION_KEY', '...' );` (any long random string) sets a dedicated encryption key. Use this if a security plugin changes your WordPress security keys from time to time, because changing the key means entering the Client Secret and connecting to Google again.
+* `define( 'IF_REVIEWS_ENCRYPTION_KEY', '...' );` (any long random string) sets a dedicated encryption key. Use this if a security plugin changes your WordPress security keys from time to time: when the keys change and the old ones are gone, the saved connection cannot be read and you have to enter the Client Secret and connect again.
 
 Connect with a Google account that is a Manager of the profile rather than its Owner, so a misused connection could never remove the owner or transfer the profile.
 

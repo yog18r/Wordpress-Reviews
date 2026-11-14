@@ -54,6 +54,8 @@ wp_clear_scheduled_hook( 'if_reviews_google_sync_event' );
 global $wpdb;
 $wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_if\\_reviews\\_%' OR option_name LIKE '\\_transient\\_timeout\\_if\\_reviews\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off cleanup on uninstall, constant query.
 
+delete_transient( 'if_reviews_review_cache' );
+
 // Update-checker housekeeping (safe if the keys do not exist).
 delete_option( 'external_updates-if-reviews' );
 delete_site_option( 'external_updates-if-reviews' );

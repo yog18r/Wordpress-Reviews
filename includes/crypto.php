@@ -12,6 +12,13 @@
  * own, such as a leaked backup or a staging clone, cannot be decrypted.
  * Define IF_REVIEWS_ENCRYPTION_KEY in wp-config.php to use a dedicated key.
  *
+ * Encryption fails closed: if it is unavailable, private values are not
+ * stored at all rather than stored in plain text.
+ *
+ * When the key source changes (security keys added to wp-config.php, or a
+ * dedicated key defined), values sealed with the previous key are still
+ * readable once and are then re-encrypted with the current key.
+ *
  * This file is also loaded by uninstall.php, so it must not depend on the
  * rest of the plugin.
  *
@@ -32,7 +39,31 @@ if ( ! defined( 'IF_REVIEWS_CRYPTO_PREFIX' ) ) {
  * @return bool
  */
 function if_reviews_crypto_available() {
-	return function_exists( 'sodium_crypto_secretbox' ) && function_exists( 'sodium_crypto_secretbox_open' );
+	$available = function_exists( 'sodium_crypto_secretbox' ) && function_exists( 'sodium_crypto_secretbox_open' );
+
+	/**
+	 * Filter whether encryption is available. Returning false stops the
+	 * plugin storing private values at all; it never makes it store them
+	 * unencrypted.
+	 *
+	 * @param bool $available
+	 */
+	return (bool) apply_filters( 'if_reviews_crypto_available', $available );
+}
+
+/**
+ * Whether the security keys in wp-config.php are real (not missing or the
+ * sample placeholder).
+ *
+ * @return bool
+ */
+function if_reviews_crypto_config_keys_set() {
+	foreach ( array( 'SECURE_AUTH_KEY', 'SECURE_AUTH_SALT' ) as $name ) {
+		if ( ! defined( $name ) || '' === (string) constant( $name ) || 'put your unique phrase here' === constant( $name ) ) {
+			return false;
+		}
+	}
+	return true;
 }
 
 /**
@@ -48,35 +79,86 @@ function if_reviews_crypto_key_source() {
 		return 'constant';
 	}
 
-	foreach ( array( 'SECURE_AUTH_KEY', 'SECURE_AUTH_SALT' ) as $name ) {
-		if ( ! defined( $name ) || '' === (string) constant( $name ) || 'put your unique phrase here' === constant( $name ) ) {
-			return 'database';
-		}
-	}
-
-	return 'config';
+	return if_reviews_crypto_config_keys_set() ? 'config' : 'database';
 }
 
 /**
- * The 32-byte encryption key.
+ * Whether private values are protected from a database-only leak: encryption
+ * works and the key is not kept in the database.
+ *
+ * @return bool
+ */
+function if_reviews_crypto_secure() {
+	return if_reviews_crypto_available() && 'database' !== if_reviews_crypto_key_source();
+}
+
+/**
+ * Turn key material into a 32-byte key.
+ *
+ * @param string $material Secret material.
+ * @return string Raw bytes.
+ */
+function if_reviews_crypto_derive( $material ) {
+	return hash_hmac( 'sha256', 'if-reviews-encryption-v1', (string) $material, true );
+}
+
+/**
+ * The current 32-byte encryption key.
  *
  * @return string Raw bytes.
  */
 function if_reviews_crypto_key() {
+	$keys = if_reviews_crypto_keys();
+	return $keys[0];
+}
 
-	switch ( if_reviews_crypto_key_source() ) {
-		case 'constant':
-			$material = (string) IF_REVIEWS_ENCRYPTION_KEY;
-			break;
-		case 'config':
-			$material = SECURE_AUTH_KEY . SECURE_AUTH_SALT;
-			break;
-		default:
-			// WordPress keeps generated keys in the database; still better than nothing.
-			$material = wp_salt( 'secure_auth' );
+/**
+ * Keys to try when decrypting: the current key first, then keys an
+ * earlier configuration of this site would have used.
+ *
+ * @return string[] Raw 32-byte keys.
+ */
+function if_reviews_crypto_keys() {
+
+	$source    = if_reviews_crypto_key_source();
+	$materials = array();
+
+	if ( 'constant' === $source ) {
+		$materials[] = (string) IF_REVIEWS_ENCRYPTION_KEY;
 	}
 
-	return hash_hmac( 'sha256', 'if-reviews-encryption-v1', $material, true );
+	if ( if_reviews_crypto_config_keys_set() ) {
+		$materials[] = SECURE_AUTH_KEY . SECURE_AUTH_SALT;
+	}
+
+	// The keys WordPress generates and keeps in the database when
+	// wp-config.php has none. Current key only when nothing better exists;
+	// otherwise kept for reading values saved before keys were added.
+	$db_key  = get_site_option( 'secure_auth_key' );
+	$db_salt = get_site_option( 'secure_auth_salt' );
+
+	if ( 'database' === $source ) {
+		$materials[] = wp_salt( 'secure_auth' );
+	} elseif ( $db_key && $db_salt ) {
+		$materials[] = $db_key . $db_salt;
+	}
+
+	return array_values( array_unique( array_map( 'if_reviews_crypto_derive', $materials ) ) );
+}
+
+/**
+ * Note, or ask, whether a value was just read with an older key and should
+ * be saved again.
+ *
+ * @param bool|null $set True to record it; null to read.
+ * @return bool
+ */
+function if_reviews_crypto_used_old_key( $set = null ) {
+	static $used = false;
+	if ( null !== $set ) {
+		$used = (bool) $set;
+	}
+	return $used;
 }
 
 /**
@@ -90,16 +172,27 @@ function if_reviews_is_encrypted( $value ) {
 }
 
 /**
- * Encrypt a string for storage. Empty strings stay empty.
+ * Encrypt a string for storage.
+ *
+ * Empty strings stay empty. If encryption is unavailable an empty string is
+ * returned, so the value is never stored in plain text.
  *
  * @param string $plain Value.
- * @return string Prefixed, base64-encoded nonce and ciphertext.
+ * @return string Prefixed, base64-encoded nonce and ciphertext, or ''.
  */
 function if_reviews_encrypt( $plain ) {
 
 	$plain = (string) $plain;
 
-	if ( '' === $plain || if_reviews_is_encrypted( $plain ) || ! if_reviews_crypto_available() ) {
+	if ( '' === $plain ) {
+		return '';
+	}
+
+	if ( ! if_reviews_crypto_available() ) {
+		return '';
+	}
+
+	if ( if_reviews_is_encrypted( $plain ) ) {
 		return $plain;
 	}
 
@@ -116,7 +209,7 @@ function if_reviews_encrypt( $plain ) {
  *
  * @param string $stored Stored value.
  * @return string|false The plain value, or false when it cannot be
- *                      decrypted (usually because the site's keys changed).
+ *                      decrypted with the current or an earlier key.
  */
 function if_reviews_decrypt( $stored ) {
 
@@ -136,11 +229,18 @@ function if_reviews_decrypt( $stored ) {
 		return false;
 	}
 
-	$plain = sodium_crypto_secretbox_open(
-		substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ),
-		substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ),
-		if_reviews_crypto_key()
-	);
+	$nonce  = substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+	$sealed = substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 
-	return false === $plain ? false : $plain;
+	foreach ( if_reviews_crypto_keys() as $index => $key ) {
+		$plain = sodium_crypto_secretbox_open( $sealed, $nonce, $key );
+		if ( false !== $plain ) {
+			if ( $index > 0 ) {
+				if_reviews_crypto_used_old_key( true );
+			}
+			return $plain;
+		}
+	}
+
+	return false;
 }
