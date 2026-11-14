@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.2
+Stable tag: 2.4.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -224,6 +224,13 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.3 =
+* Security: anything the plugin stores that is not shown publicly is now encrypted. The Google Client ID, Client Secret, connection tokens and account identifiers are sealed with libsodium using a key from your wp-config.php, so a copy of the database alone, such as a leaked backup or a staging site, cannot reveal them. Existing values are encrypted automatically the next time you open an admin page.
+* New: optional wp-config.php constants. `IF_REVIEWS_GOOGLE_CLIENT_ID` and `IF_REVIEWS_GOOGLE_CLIENT_SECRET` keep the credentials out of the database entirely, and `IF_REVIEWS_ENCRYPTION_KEY` sets a dedicated encryption key.
+* New: the Google import page warns if the server cannot encrypt, or if wp-config.php has no security keys of its own. If the keys change, it asks you to enter the Client Secret and connect again.
+* Docs: the setup guide recommends connecting as a Manager of the profile rather than its Owner, keeping the Cloud project private, and checking connected apps from time to time.
+* Release pipeline: GitHub Actions are pinned to exact commits.
+
 = 2.4.2 =
 * Security: CSV export could be tricked by review text containing a backslash and quote into placing a live spreadsheet formula in the file. Fixed for export and import.
 * Security: only Editors and Administrators can now add or edit reviews. Previously Authors and Contributors could too, which let them change the rating shown on the site.
@@ -293,6 +300,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.3 =
+Encrypts stored Google credentials and tokens. No action needed; existing values are encrypted automatically.
 
 = 2.4.2 =
 Security fixes for CSV export and review permissions, plus a Reconnect button for the Google import. Recommended for all sites.
