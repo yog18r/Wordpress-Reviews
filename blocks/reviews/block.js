@@ -113,6 +113,45 @@
 					),
 					el(
 						PanelBody,
+						{ title: __('Style', 'if-reviews'), initialOpen: false },
+						el(SelectControl, {
+							label: __('Colour scheme', 'if-reviews'),
+							value: a.scheme,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Light', 'if-reviews'), value: 'light' },
+								{ label: __('Dark', 'if-reviews'), value: 'dark' },
+								{ label: __("Match the visitor's device", 'if-reviews'), value: 'auto' }
+							],
+							help: __('Dark suits dark page sections.', 'if-reviews'),
+							onChange: function (value) { set({ scheme: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Card style', 'if-reviews'),
+							value: a.cardStyle,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Soft shadow', 'if-reviews'), value: 'shadow' },
+								{ label: __('Outlined', 'if-reviews'), value: 'outlined' },
+								{ label: __('Flat', 'if-reviews'), value: 'flat' },
+								{ label: __('Minimal (dividers)', 'if-reviews'), value: 'minimal' }
+							],
+							onChange: function (value) { set({ cardStyle: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Spacing', 'if-reviews'),
+							value: a.density,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Compact', 'if-reviews'), value: 'compact' },
+								{ label: __('Comfortable', 'if-reviews'), value: 'comfortable' },
+								{ label: __('Spacious', 'if-reviews'), value: 'spacious' }
+							],
+							onChange: function (value) { set({ density: value }); }
+						})
+					),
+					el(
+						PanelBody,
 						{ title: __('Header and sources', 'if-reviews'), initialOpen: false },
 						el(SelectControl, {
 							label: __('Summary header', 'if-reviews'),

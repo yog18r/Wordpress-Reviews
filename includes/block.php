@@ -63,10 +63,14 @@ function if_reviews_render_block( $attributes ) {
 
 	$atts = array();
 
-	foreach ( array( 'layout', 'order', 'source', 'category', 'title' ) as $key ) {
+	foreach ( array( 'layout', 'order', 'source', 'category', 'title', 'scheme', 'density' ) as $key ) {
 		if ( ! empty( $attributes[ $key ] ) ) {
 			$atts[ $key ] = $attributes[ $key ];
 		}
+	}
+
+	if ( ! empty( $attributes['cardStyle'] ) ) {
+		$atts['card_style'] = $attributes['cardStyle'];
 	}
 
 	if ( ! empty( $attributes['columns'] ) ) {

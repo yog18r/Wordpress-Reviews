@@ -124,6 +124,10 @@ function if_reviews_build_dynamic_css() {
 	$css .= '--if-text-color:' . esc_attr( $options['text_color'] ) . ';';
 	$css .= '--if-meta-color:' . esc_attr( $options['meta_color'] ) . ';';
 	$css .= '--if-accent-contrast:' . esc_attr( if_reviews_contrast_text( $options['accent_color'] ) ) . ';';
+
+	if ( '' !== $options['star_color'] ) {
+		$css .= '--if-star-color:' . esc_attr( $options['star_color'] ) . ';';
+	}
 	$css .= '}';
 
 	// One class per palette colour. Each card picks its class from a hash

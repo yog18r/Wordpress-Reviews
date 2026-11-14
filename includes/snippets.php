@@ -52,7 +52,7 @@ function if_review_single_shortcode( $atts = array() ) {
 
 	ob_start();
 	?>
-	<div class="if-reviews-wrap if-featured">
+	<div class="<?php echo esc_attr( implode( ' ', array_merge( array( 'if-reviews-wrap', 'if-featured' ), if_reviews_style_classes( $options ) ) ) ); ?>">
 		<?php if_reviews_render_card( $review, $options, false, 'if-featured-card' ); ?>
 	</div>
 	<?php
@@ -112,7 +112,7 @@ function if_reviews_rating_shortcode( $atts = array() ) {
 
 	ob_start();
 	?>
-	<span class="if-reviews-wrap if-rating-badge"><?php
+	<span class="<?php echo esc_attr( implode( ' ', array_merge( array( 'if-reviews-wrap', 'if-rating-badge' ), preg_grep( '/^if-text-/', if_reviews_style_classes( if_reviews_get_options() ) ) ) ) ); ?>"><?php
 	if ( $show_stars ) {
 		if_reviews_render_stars( $stats['average'], 'if-stars if-stars-small', 1 );
 	}

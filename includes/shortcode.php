@@ -63,6 +63,7 @@ function if_reviews_build_review( $id, $options = null ) {
 		'pinned'         => ( '1' === get_post_meta( $id, '_if_pinned', true ) ),
 		'categories'     => array_values( $categories ),
 		'source'         => if_reviews_slim_source( if_reviews_get_review_source( $id ) ),
+		'synced'         => '' !== (string) get_post_meta( $id, '_if_google_review_id', true ),
 	);
 }
 
@@ -548,6 +549,9 @@ function if_reviews_shortcode( $atts = array() ) {
 			'buttons'     => $options['cta_enabled'],
 			'paginate'    => 0,
 			'autoplay'    => $options['carousel_autoplay'],
+			'scheme'      => '',
+			'card_style'  => '',
+			'density'     => '',
 		),
 		$atts,
 		'if_reviews'
@@ -621,10 +625,20 @@ function if_reviews_shortcode( $atts = array() ) {
 	$instance++;
 
 	$id      = 'if-reviews-' . $instance;
-	$classes = array(
-		'if-reviews-wrap',
-		'if-layout-' . $layout,
-		'if-columns-' . $columns,
+	$classes = array_merge(
+		array(
+			'if-reviews-wrap',
+			'if-layout-' . $layout,
+			'if-columns-' . $columns,
+		),
+		if_reviews_style_classes(
+			$options,
+			array(
+				'color_scheme' => sanitize_key( $atts['scheme'] ),
+				'card_style'   => sanitize_key( $atts['card_style'] ),
+				'density'      => sanitize_key( $atts['density'] ),
+			)
+		)
 	);
 
 	ob_start();
@@ -1065,6 +1079,10 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 					<?php echo esc_html( $link_label ); ?><span aria-hidden="true"> ↗</span><span class="if-sr-only"> <?php esc_html_e( '(opens in a new tab)', 'if-reviews' ); ?></span>
 				</a>
 			</p>
+		<?php endif; ?>
+
+		<?php if ( ! empty( $options['show_import_label'] ) && ! empty( $review['synced'] ) ) : ?>
+			<p class="if-review-provenance"><?php esc_html_e( 'Imported from Google', 'if-reviews' ); ?></p>
 		<?php endif; ?>
 
 	</article>

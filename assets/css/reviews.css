@@ -8,6 +8,8 @@
 
 .if-reviews-wrap {
   --if-gap: 20px;
+  --if-card-pad: 20px 22px;
+  --if-avatar-size: 42px;
   box-sizing: border-box;
 }
 
@@ -54,7 +56,7 @@
 
 .if-reviews-title {
   margin: 0 0 2px;
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.3;
 }
@@ -66,7 +68,7 @@
 }
 
 .if-reviews-score {
-  font-size: 26px;
+  font-size: calc(26px * var(--if-text-scale, 1));
   font-weight: 700;
   line-height: 1;
 }
@@ -74,7 +76,7 @@
 .if-reviews-meta {
   margin: 4px 0 0;
   color: inherit; /* On the page background, so the page's text colour reads on light and dark themes. */
-  font-size: 13px;
+  font-size: calc(13px * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -84,7 +86,7 @@
 .if-stars {
   position: relative;
   display: inline-block;
-  font-size: 18px;
+  font-size: calc(18px * var(--if-text-scale, 1));
   line-height: 1;
   letter-spacing: 2px;
   white-space: nowrap;
@@ -101,11 +103,11 @@
   inset-inline-start: 0; /* Fills from the right in right-to-left languages. */
   overflow: hidden;
   white-space: nowrap;
-  color: var(--if-accent-color, #f5a623);
+  color: var(--if-star-color, var(--if-accent-color, #f5a623));
 }
 
 .if-stars-small {
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -123,13 +125,31 @@
 .if-columns-3 .if-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .if-columns-4 .if-cards { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 
-@media (max-width: 900px) {
+/* Columns follow the width the widget actually has, so a three-column
+   grid in a narrow sidebar or column drops to two or one. */
+.if-layout-grid .if-cards-outer {
+  container-type: inline-size;
+}
+
+@container (max-width: 600px) {
   .if-layout-grid .if-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .if-layout-grid.if-columns-1 .if-cards { grid-template-columns: minmax(0, 1fr); }
 }
 
-@media (max-width: 600px) {
+@container (max-width: 420px) {
   .if-layout-grid .if-cards { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Browsers without container queries: go by the screen width instead. */
+@supports not (container-type: inline-size) {
+  @media (max-width: 900px) {
+    .if-layout-grid .if-cards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .if-layout-grid.if-columns-1 .if-cards { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  @media (max-width: 600px) {
+    .if-layout-grid .if-cards { grid-template-columns: minmax(0, 1fr); }
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -141,11 +161,11 @@
 }
 
 .if-layout-list .if-review-card {
-  padding: 22px 26px;
+  padding: var(--if-list-pad, 22px 26px);
 }
 
 .if-layout-list .if-review-text {
-  font-size: 15px;
+  font-size: calc(15px * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -252,7 +272,7 @@
   background: var(--if-card-bg-color, #fff);
   border: 1px solid var(--if-border-color, #d6d6d6);
   border-radius: var(--if-border-radius, 14px);
-  padding: 20px 22px;
+  padding: var(--if-card-pad, 20px 22px);
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.04);
   transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
@@ -283,11 +303,11 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  width: 42px;
-  height: 42px;
+  width: var(--if-avatar-size, 42px);
+  height: var(--if-avatar-size, 42px);
   border-radius: 50%;
   font-weight: 600;
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   color: #fff;
   background: linear-gradient(135deg, #4285f4, #1a73e8);
 }
@@ -299,7 +319,7 @@
 .if-reviewer-name {
   margin: 0;
   font-weight: 600;
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   line-height: 1.3;
 }
 
@@ -309,7 +329,7 @@
   align-items: center;
   gap: 2px 6px;
   margin: 2px 0 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--if-text-scale, 1));
   color: var(--if-meta-color, #5f6368);
 }
 
@@ -336,7 +356,7 @@
 
 .if-review-text {
   margin: 0;
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   line-height: 1.65;
   color: var(--if-text-color, #4b5563);
   white-space: pre-line;
@@ -356,7 +376,7 @@
   background: none;
   color: var(--if-meta-color, #6b7280);
   font: inherit;
-  font-size: 13px;
+  font-size: calc(13px * var(--if-text-scale, 1));
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -371,7 +391,7 @@
 /* Link to the original review */
 .if-review-link {
   margin: 10px 0 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--if-text-scale, 1));
 }
 
 .if-review-link a {
@@ -402,7 +422,7 @@
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
   font: inherit;
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
@@ -444,11 +464,11 @@
 .if-featured .if-featured-card .if-avatar {
   width: 52px;
   height: 52px;
-  font-size: 17px;
+  font-size: calc(17px * var(--if-text-scale, 1));
 }
 
 .if-featured .if-featured-card .if-review-text {
-  font-size: 17px;
+  font-size: calc(17px * var(--if-text-scale, 1));
   line-height: 1.7;
 }
 
@@ -460,23 +480,23 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: 15px;
+  font-size: calc(15px * var(--if-text-scale, 1));
   font-weight: 600;
   white-space: nowrap;
 }
 
 .if-rating-badge .if-stars {
-  font-size: 16px;
+  font-size: calc(16px * var(--if-text-scale, 1));
 }
 
 .if-rating-count {
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   font-weight: 400;
   color: inherit; /* On the page background: follow the page's text colour. */
 }
 
 .if-rating-count .if-rating-value {
-  font-size: 15px;
+  font-size: calc(15px * var(--if-text-scale, 1));
   font-weight: 600;
 }
 
@@ -511,7 +531,7 @@
   border-radius: 999px;
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -551,7 +571,7 @@
 
 .if-cta-heading {
   margin: 0 0 12px;
-  font-size: 15px;
+  font-size: calc(15px * var(--if-text-scale, 1));
   font-weight: 600;
 }
 
@@ -571,7 +591,7 @@
   border-radius: 999px;
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
-  font-size: 14px;
+  font-size: calc(14px * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
@@ -612,6 +632,131 @@
 
   .if-layout-carousel .if-cards {
     scroll-behavior: auto;
+  }
+}
+
+/* ------------------------------------------------------------------
+ * Appearance options (Reviews → Display Settings → Appearance, or the
+ * scheme / card_style / density shortcode attributes)
+ * ---------------------------------------------------------------- */
+
+/* Colour scheme: dark. Uses its own card colours; star and accent colours
+   come from the settings. Two classes beat the settings' one-class rule. */
+.if-reviews-wrap.if-scheme-dark {
+  --if-card-bg-color: #1f2937;
+  --if-border-color: #374151;
+  --if-text-color: #e5e7eb;
+  --if-meta-color: #a8b0bd;
+}
+
+.if-scheme-dark .if-review-card,
+.if-scheme-dark .if-show-more,
+.if-scheme-dark .if-cta-button,
+.if-scheme-dark .if-carousel-btn {
+  box-shadow: none;
+}
+
+@media (prefers-color-scheme: dark) {
+  .if-reviews-wrap.if-scheme-auto {
+    --if-card-bg-color: #1f2937;
+    --if-border-color: #374151;
+    --if-text-color: #e5e7eb;
+    --if-meta-color: #a8b0bd;
+  }
+
+  .if-scheme-auto .if-review-card,
+  .if-scheme-auto .if-show-more,
+  .if-scheme-auto .if-cta-button,
+  .if-scheme-auto .if-carousel-btn {
+    box-shadow: none;
+  }
+}
+
+/* Card styles. */
+.if-card-outlined .if-review-card {
+  box-shadow: none;
+  border-width: 1.5px;
+}
+
+.if-card-flat .if-review-card {
+  box-shadow: none;
+  border-color: transparent;
+}
+
+.if-card-minimal .if-review-card {
+  padding-inline: 0;
+  border: 0;
+  border-bottom: 1px solid var(--if-border-color, #d6d6d6);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  color: inherit; /* No card background, so follow the page's text colour. */
+}
+
+.if-card-minimal .if-review-text {
+  color: inherit;
+}
+
+.if-card-minimal.if-layout-carousel .if-review-card {
+  border-bottom: 0;
+  border-inline-end: 1px solid var(--if-border-color, #d6d6d6);
+  padding-inline-end: var(--if-gap);
+}
+
+/* Optional hover lift. */
+.if-hover-lift .if-review-card {
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.if-hover-lift .if-review-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08);
+}
+
+/* Spacing. */
+.if-reviews-wrap.if-density-compact {
+  --if-gap: 12px;
+  --if-card-pad: 14px 16px;
+  --if-list-pad: 14px 18px;
+  --if-avatar-size: 34px;
+}
+
+.if-reviews-wrap.if-density-spacious {
+  --if-gap: 28px;
+  --if-card-pad: 28px 30px;
+  --if-list-pad: 30px 34px;
+  --if-avatar-size: 48px;
+}
+
+.if-density-compact .if-reviews-header {
+  margin-bottom: 14px;
+}
+
+.if-density-compact .if-card-top {
+  margin-bottom: 6px;
+}
+
+/* Text size. */
+.if-reviews-wrap.if-text-small {
+  --if-text-scale: 0.9;
+}
+
+.if-reviews-wrap.if-text-large {
+  --if-text-scale: 1.15;
+}
+
+/* "Imported from Google" under synced reviews. */
+.if-review-provenance {
+  margin: 8px 0 0;
+  font-size: calc(12px * var(--if-text-scale, 1));
+  color: var(--if-meta-color, #6b7280);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .if-hover-lift .if-review-card,
+  .if-hover-lift .if-review-card:hover {
+    transition: none;
+    transform: none;
   }
 }
 

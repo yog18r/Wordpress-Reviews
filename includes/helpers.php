@@ -34,6 +34,13 @@ function if_reviews_default_options() {
 		'text_color'    => '#4b5563',
 		'meta_color'    => '#6b7280',
 		'avatar_colors' => '4285f4,34a853,ea4335,fbbc04',
+		// Blank = the accent colour.
+		'star_color'    => '',
+		'color_scheme'  => 'light',
+		'card_style'    => 'shadow',
+		'hover_lift'    => 0,
+		'density'       => 'comfortable',
+		'text_size'     => 'default',
 
 		// Display (defaults for the shortcode; each can be overridden
 		// per shortcode with an attribute of the same name).
@@ -51,6 +58,8 @@ function if_reviews_default_options() {
 		// 0 = always show full text; otherwise characters before "Read more".
 		'excerpt_length'    => 0,
 		'show_review_links' => 1,
+		// "Imported from Google" under reviews synced from Google.
+		'show_import_label' => 0,
 		// Seconds between automatic carousel moves; 0 = off.
 		'carousel_autoplay' => 0,
 
@@ -160,6 +169,14 @@ function if_reviews_sanitize_options( $input ) {
 		$output[ $field ] = $value ? $value : $defaults[ $field ];
 	}
 
+	$output['star_color'] = isset( $input['star_color'] ) && sanitize_hex_color( $input['star_color'] ) ? sanitize_hex_color( $input['star_color'] ) : '';
+
+	foreach ( if_reviews_style_choices() as $field => $choices ) {
+		$output[ $field ] = ( isset( $input[ $field ] ) && array_key_exists( $input[ $field ], $choices ) ) ? $input[ $field ] : $defaults[ $field ];
+	}
+
+	$output['hover_lift'] = isset( $input['hover_lift'] ) ? if_reviews_to_bool( $input['hover_lift'] ) : 0;
+
 	$output['border_radius'] = isset( $input['border_radius'] )
 		? max( 0, min( 60, absint( $input['border_radius'] ) ) )
 		: $defaults['border_radius'];
@@ -230,6 +247,7 @@ function if_reviews_sanitize_options( $input ) {
 	}
 
 	$output['show_review_links'] = isset( $input['show_review_links'] ) ? if_reviews_to_bool( $input['show_review_links'] ) : 0;
+	$output['show_import_label'] = isset( $input['show_import_label'] ) ? if_reviews_to_bool( $input['show_import_label'] ) : 0;
 
 	$output['carousel_autoplay'] = isset( $input['carousel_autoplay'] )
 		? max( 0, min( 60, absint( $input['carousel_autoplay'] ) ) )
@@ -643,4 +661,106 @@ function if_reviews_begin_bulk() {
  */
 function if_reviews_end_bulk() {
 	wp_defer_term_counting( false );
+}
+
+/* ------------------------------------------------------------------
+ * Appearance options
+ * ---------------------------------------------------------------- */
+
+/**
+ * The choice-type appearance settings and their allowed values.
+ *
+ * @return array<string, array<string, string>> setting => [ value => label ]
+ */
+function if_reviews_style_choices() {
+	return array(
+		'color_scheme' => array(
+			'light' => __( 'Light', 'if-reviews' ),
+			'dark'  => __( 'Dark', 'if-reviews' ),
+			'auto'  => __( "Match the visitor's device", 'if-reviews' ),
+		),
+		'card_style'   => array(
+			'shadow'   => __( 'Soft shadow', 'if-reviews' ),
+			'outlined' => __( 'Outlined', 'if-reviews' ),
+			'flat'     => __( 'Flat (no border or shadow)', 'if-reviews' ),
+			'minimal'  => __( 'Minimal (dividers, no cards)', 'if-reviews' ),
+		),
+		'density'      => array(
+			'compact'     => __( 'Compact', 'if-reviews' ),
+			'comfortable' => __( 'Comfortable', 'if-reviews' ),
+			'spacious'    => __( 'Spacious', 'if-reviews' ),
+		),
+		'text_size'    => array(
+			'small'   => __( 'Small', 'if-reviews' ),
+			'default' => __( 'Default', 'if-reviews' ),
+			'large'   => __( 'Large', 'if-reviews' ),
+		),
+	);
+}
+
+/**
+ * Wrapper classes for the appearance settings, with optional per-widget
+ * overrides (shortcode attributes or block options).
+ *
+ * @param array $options   Plugin options.
+ * @param array $overrides Any of color_scheme, card_style, density; '' = use the setting.
+ * @return string[]
+ */
+function if_reviews_style_classes( $options, $overrides = array() ) {
+
+	$choices = if_reviews_style_choices();
+	$classes = array();
+	$prefix  = array(
+		'color_scheme' => array( 'if-scheme-', 'light' ),
+		'card_style'   => array( 'if-card-', 'shadow' ),
+		'density'      => array( 'if-density-', 'comfortable' ),
+		'text_size'    => array( 'if-text-', 'default' ),
+	);
+
+	foreach ( $prefix as $field => $info ) {
+		$value = isset( $overrides[ $field ] ) && '' !== $overrides[ $field ] ? $overrides[ $field ] : $options[ $field ];
+		$value = array_key_exists( $value, $choices[ $field ] ) ? $value : $info[1];
+
+		// The defaults need no class: the base stylesheet is the default look.
+		if ( $value !== $info[1] ) {
+			$classes[] = $info[0] . $value;
+		}
+	}
+
+	if ( ! empty( $options['hover_lift'] ) ) {
+		$classes[] = 'if-hover-lift';
+	}
+
+	return $classes;
+}
+
+/**
+ * WCAG contrast ratio between two hex colours (1 to 21).
+ *
+ * @param string $a Hex colour.
+ * @param string $b Hex colour.
+ * @return float
+ */
+function if_reviews_contrast_ratio( $a, $b ) {
+
+	$luminance = function ( $hex ) {
+		$hex = ltrim( (string) $hex, '#' );
+		if ( 3 === strlen( $hex ) ) {
+			$hex = $hex[0] . $hex[0] . $hex[1] . $hex[1] . $hex[2] . $hex[2];
+		}
+		if ( 6 !== strlen( $hex ) || ! ctype_xdigit( $hex ) ) {
+			return 1.0;
+		}
+		$channels = array();
+		foreach ( array( 0, 2, 4 ) as $i ) {
+			$c          = hexdec( substr( $hex, $i, 2 ) ) / 255;
+			$channels[] = $c <= 0.03928 ? $c / 12.92 : pow( ( $c + 0.055 ) / 1.055, 2.4 );
+		}
+		return 0.2126 * $channels[0] + 0.7152 * $channels[1] + 0.0722 * $channels[2];
+	};
+
+	$la = $luminance( $a );
+	$lb = $luminance( $b );
+
+	return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
 }

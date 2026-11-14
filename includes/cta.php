@@ -171,7 +171,7 @@ function if_reviews_buttons_shortcode( $atts = array() ) {
 	if_reviews_enqueue_assets();
 
 	ob_start();
-	echo '<div class="if-reviews-wrap if-buttons-only">';
+	echo '<div class="' . esc_attr( implode( ' ', array_merge( array( 'if-reviews-wrap', 'if-buttons-only' ), if_reviews_style_classes( $options ) ) ) ) . '">';
 	if_reviews_render_cta( $options, sanitize_text_field( $atts['heading'] ) );
 	echo '</div>';
 

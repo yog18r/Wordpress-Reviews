@@ -265,6 +265,38 @@ switch ( $phase ) {
 		/* Multibyte helpers. */
 		ifr_check( 'ÉLAN' === if_reviews_strtoupper( 'élan' ) && 'élan' === if_reviews_strtolower( 'ÉLAN' ), 'multibyte case helpers' );
 
+		/* Appearance options (2.6.0). */
+		$clean = if_reviews_sanitize_options( array( 'color_scheme' => 'neon', 'card_style' => 'outlined', 'density' => 'compact', 'text_size' => 'huge', 'star_color' => 'not-a-colour', 'hover_lift' => '1' ) );
+		ifr_check( 'light' === $clean['color_scheme'] && 'outlined' === $clean['card_style'] && 'compact' === $clean['density'] && 'default' === $clean['text_size'] && '' === $clean['star_color'] && 1 === $clean['hover_lift'], 'appearance options sanitised (bad values fall back to defaults)' );
+		$opts = array_merge( if_reviews_get_options(), array( 'color_scheme' => 'dark', 'card_style' => 'shadow', 'density' => 'comfortable', 'text_size' => 'large', 'hover_lift' => 0 ) );
+		ifr_check( array( 'if-scheme-dark', 'if-text-large' ) === if_reviews_style_classes( $opts ), 'classes only for non-default choices' );
+		ifr_check( array( 'if-scheme-light', 'if-card-minimal', 'if-text-large' ) === if_reviews_style_classes( $opts, array( 'color_scheme' => 'light', 'card_style' => 'minimal', 'density' => 'bogus' ) ) || array( 'if-card-minimal', 'if-text-large' ) === if_reviews_style_classes( $opts, array( 'color_scheme' => 'light', 'card_style' => 'minimal', 'density' => 'bogus' ) ), 'per-widget overrides win; unknown values ignored' );
+		$html = do_shortcode( '[if_reviews limit="2" scheme="dark" card_style="outlined" density="spacious"]' );
+		ifr_check( false !== strpos( $html, 'if-scheme-dark' ) && false !== strpos( $html, 'if-card-outlined' ) && false !== strpos( $html, 'if-density-spacious' ), 'shortcode style attributes become classes' );
+		$block = if_reviews_render_block( array( 'limit' => 2, 'scheme' => 'auto', 'cardStyle' => 'flat' ) );
+		ifr_check( false !== strpos( $block, 'if-scheme-auto' ) && false !== strpos( $block, 'if-card-flat' ), 'block style options become classes' );
+		$saved = get_option( 'if_reviews_options' );
+		update_option( 'if_reviews_options', array_merge( $saved, array( 'star_color' => '#ffbf00' ) ) );
+		ifr_check( false !== strpos( if_reviews_build_dynamic_css(), '--if-star-color:#ffbf00' ), 'star colour in the generated CSS' );
+		ifr_check( 21.0 === round( if_reviews_contrast_ratio( '#000000', '#ffffff' ), 1 ) && 1.0 === round( if_reviews_contrast_ratio( '#777', '#777777' ), 1 ), 'contrast ratio' );
+
+		/* "Imported from Google" only when switched on, and only on synced reviews. */
+		$synced = array_values( array_filter( if_reviews_get_reviews(), function ( $r ) { return ! empty( $r['synced'] ); } ) );
+		$typed  = array_values( array_filter( if_reviews_get_reviews(), function ( $r ) { return empty( $r['synced'] ); } ) );
+		$label  = function ( $review, $on ) {
+			ob_start();
+			if_reviews_render_card( $review, array_merge( if_reviews_get_options(), array( 'show_import_label' => $on ) ) );
+			return false !== strpos( ob_get_clean(), 'Imported from Google' );
+		};
+		ifr_check( ! empty( $synced ) && $label( $synced[0], 1 ) && ! $label( $synced[0], 0 ) && ! $label( $typed[0], 1 ), 'import label on synced reviews only, when switched on' );
+
+		/* Settings page preview renders with the real card markup. */
+		ob_start();
+		if_reviews_render_style_preview();
+		$preview = ob_get_clean();
+		ifr_check( false !== strpos( $preview, 'id="if-reviews-preview"' ) && 2 === substr_count( $preview, '<article class="if-review-card' ) && false !== strpos( $preview, 'id="if-reviews-preset"' ), 'settings preview and presets render' );
+		update_option( 'if_reviews_options', $saved );
+
 		/* Revoke sends the token in the body. */
 		if_reviews_google_revoke( 'rt-xyz' );
 		$seen = get_option( 'ifr_test_revoked' );
