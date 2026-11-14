@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.1
+Stable tag: 2.4.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -211,6 +211,14 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.2 =
+* Security: CSV export could be tricked by review text containing a backslash and quote into placing a live spreadsheet formula in the file. Fixed for export and import.
+* Security: only Editors and Administrators can now add or edit reviews. Previously Authors and Contributors could too, which let them change the rating shown on the site.
+* Security: the Google Client Secret is no longer sent back to the settings page (leave the field blank to keep the saved one), the sign-in callback checks its security token before anything else, and admin notices are shown as plain text.
+* Hardening: disconnecting sends the token to Google in the request body, deleting the plugin also revokes the Google connection and clears temporary data, and backslashes in review text are no longer stripped when saving.
+* New: a Reconnect button on the Google import page when Google stops accepting the connection. Reconnecting keeps your location, settings and sync history.
+* Docs: the readme and in-app help were corrected where they no longer matched the plugin, and shortened throughout.
+
 = 2.4.1 =
 * Fixed: in the Google import preview, a Google review the matcher did not pair with an existing review could only be imported or skipped. The Action menu now also lists every other unlinked Google review on the site, so you can link any of them by hand.
 * Improved: rating-only reviews with the same reviewer name and rating are now offered as a possible match even when their dates are far apart or the site's copy has no date.
@@ -272,6 +280,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.2 =
+Security fixes for CSV export and review permissions, plus a Reconnect button for the Google import. Recommended for all sites.
 
 = 2.4.1 =
 Lets you link any existing Google review by hand in the Google import preview.
