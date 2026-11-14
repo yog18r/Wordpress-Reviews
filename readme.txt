@@ -4,7 +4,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.4.0
+Stable tag: 2.4.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -206,6 +206,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.4.1 =
+* Fixed: in the Google import preview, a Google review the matcher did not pair with an existing review could only be imported or skipped. The Action menu now also lists every other unlinked Google review on the site, so you can link any of them by hand.
+* Improved: rating-only reviews with the same reviewer name and rating are now offered as a possible match even when their dates are far apart or the site's copy has no date.
+
 = 2.4.0 =
 * New: **Google Business Profile import** (Reviews → Google import). Connect your own, Google-approved Cloud project with OAuth and the plugin reads every review of one location through the Business Profile API. The first sync is a preview in which reviews you had already entered by hand are matched by reviewer name, rating and text and linked instead of duplicated, with each match yours to confirm or change. Later syncs, on demand or once a day, update edited reviews, import new ones and mark reviews that have gone from Google as "No longer on Google" without deleting them. Hidden, pinned and category settings are never overwritten. Off until you connect it; the plugin still makes no request to Google otherwise.
 * Docs: the readme now explains that the plugin deliberately emits no review schema, and why.
@@ -263,6 +267,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.4.1 =
+Lets you link any existing Google review by hand in the Google import preview.
 
 = 2.4.0 =
 Adds an optional Google Business Profile import using your own Google Cloud project. Nothing changes unless you connect it.
