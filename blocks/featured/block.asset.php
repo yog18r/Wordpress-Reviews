@@ -15,5 +15,5 @@ return array(
 		'wp-server-side-render',
 		'wp-api-fetch',
 	),
-	'version'      => '2.6.0',
+	'version'      => '2.7.0',
 );

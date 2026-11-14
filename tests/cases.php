@@ -267,7 +267,7 @@ switch ( $phase ) {
 
 		/* Appearance options (2.6.0). */
 		$clean = if_reviews_sanitize_options( array( 'color_scheme' => 'neon', 'card_style' => 'outlined', 'density' => 'compact', 'text_size' => 'huge', 'star_color' => 'not-a-colour', 'hover_lift' => '1' ) );
-		ifr_check( 'light' === $clean['color_scheme'] && 'outlined' === $clean['card_style'] && 'compact' === $clean['density'] && 'default' === $clean['text_size'] && '' === $clean['star_color'] && 1 === $clean['hover_lift'], 'appearance options sanitised (bad values fall back to defaults)' );
+		ifr_check( 'theme' === $clean['color_scheme'] && 'outlined' === $clean['card_style'] && 'compact' === $clean['density'] && 'default' === $clean['text_size'] && '' === $clean['star_color'] && 1 === $clean['hover_lift'], 'appearance options sanitised (bad values fall back to defaults)' );
 		$opts = array_merge( if_reviews_get_options(), array( 'color_scheme' => 'dark', 'card_style' => 'shadow', 'density' => 'comfortable', 'text_size' => 'large', 'hover_lift' => 0 ) );
 		ifr_check( array( 'if-scheme-dark', 'if-text-large' ) === if_reviews_style_classes( $opts ), 'classes only for non-default choices' );
 		ifr_check( array( 'if-scheme-light', 'if-card-minimal', 'if-text-large' ) === if_reviews_style_classes( $opts, array( 'color_scheme' => 'light', 'card_style' => 'minimal', 'density' => 'bogus' ) ) || array( 'if-card-minimal', 'if-text-large' ) === if_reviews_style_classes( $opts, array( 'color_scheme' => 'light', 'card_style' => 'minimal', 'density' => 'bogus' ) ), 'per-widget overrides win; unknown values ignored' );
@@ -279,6 +279,24 @@ switch ( $phase ) {
 		update_option( 'if_reviews_options', array_merge( $saved, array( 'star_color' => '#ffbf00' ) ) );
 		ifr_check( false !== strpos( if_reviews_build_dynamic_css(), '--if-star-color:#ffbf00' ), 'star colour in the generated CSS' );
 		ifr_check( 21.0 === round( if_reviews_contrast_ratio( '#000000', '#ffffff' ), 1 ) && 1.0 === round( if_reviews_contrast_ratio( '#777', '#777777' ), 1 ), 'contrast ratio' );
+
+		/* Match my theme: the default for new sites, kept off for updated ones. */
+		ifr_check( 'theme' === if_reviews_default_options()['color_scheme'], 'new sites default to Match my theme' );
+		ifr_check( in_array( 'if-scheme-theme', if_reviews_style_classes( array_merge( if_reviews_get_options(), array( 'color_scheme' => 'theme' ) ) ), true ), 'theme scheme gets its class' );
+		$keep = get_option( 'if_reviews_options' );
+		$old  = $keep;
+		unset( $old['color_scheme'] );
+		update_option( 'if_reviews_options', $old );
+		update_option( 'if_reviews_version', '2.5.0' );
+		if_reviews_upgrade();
+		ifr_check( 'light' === get_option( 'if_reviews_options' )['color_scheme'], 'updated site with saved settings keeps the light look' );
+		delete_option( 'if_reviews_options' );
+		update_option( 'if_reviews_version', '2.4.0' );
+		if_reviews_upgrade();
+		ifr_check( 'light' === get_option( 'if_reviews_options' )['color_scheme'], 'updated site on default settings keeps the light look' );
+		update_option( 'if_reviews_options', $keep );
+		update_option( 'if_reviews_version', IF_REVIEWS_VERSION );
+		ifr_check( 0 === count( array_diff( array( '#dfd08d' ), array( '#dfd08d' ) ) ) && is_array( if_reviews_theme_palette() ), 'theme palette reader returns a list' );
 
 		/* "Imported from Google" only when switched on, and only on synced reviews. */
 		$synced = array_values( array_filter( if_reviews_get_reviews(), function ( $r ) { return ! empty( $r['synced'] ); } ) );

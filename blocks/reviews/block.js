@@ -119,11 +119,12 @@
 							value: a.scheme,
 							options: [
 								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Match my theme', 'if-reviews'), value: 'theme' },
 								{ label: __('Light', 'if-reviews'), value: 'light' },
 								{ label: __('Dark', 'if-reviews'), value: 'dark' },
-								{ label: __("Match the visitor's device", 'if-reviews'), value: 'auto' }
+								{ label: __("Follow the visitor's device", 'if-reviews'), value: 'auto' }
 							],
-							help: __('Dark suits dark page sections.', 'if-reviews'),
+							help: __('"Match my theme" follows your theme\'s colours, including its dark mode.', 'if-reviews'),
 							onChange: function (value) { set({ scheme: value }); }
 						}),
 						el(SelectControl, {

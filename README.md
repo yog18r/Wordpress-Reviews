@@ -48,7 +48,7 @@ Consumer protection law in many countries (the Australian Consumer Law, the US F
 - **"Leave us a review" buttons** to your review page on each platform, with guidance on finding the direct links. Off by default; also available on their own via `[if_reviews_buttons]`.
 - **Categories** to show the right reviews on each page, **pinned reviews**, **numbered pagination** and **carousel autoplay** for large sets.
 - **Featured Review** and **Rating Badge** blocks and shortcodes for landing pages, headers and footers.
-- **Styling from a settings screen**: presets with a live preview, light/dark/auto colour schemes, card styles (shadow, outlined, flat, minimal), spacing, text size, separate star and accent colours, corner radius and a cycling avatar palette. Scheme, card style and spacing can be set per shortcode (`scheme`, `card_style`, `density`) or block.
+- **Styling from a settings screen**: presets with a live preview, a "Match my theme" colour scheme (colours derived from the page with `color-mix()` and `currentColor`, so it follows any theme and its dark mode), light/dark/auto schemes, card styles (shadow, outlined, flat, minimal), spacing, text size, separate star and accent colours, corner radius and a cycling avatar palette. Scheme, card style and spacing can be set per shortcode (`scheme`, `card_style`, `density`) or block.
 - **Lightweight**: one small stylesheet and one small script, loaded only where the shortcode renders. No jQuery, and no external requests apart from the update check, unless you connect Google.
 - **Automatic updates** from this repository's releases.
 - Translation-ready and accessible.

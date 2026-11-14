@@ -640,13 +640,40 @@
  * scheme / card_style / density shortcode attributes)
  * ---------------------------------------------------------------- */
 
-/* Colour scheme: dark. Uses its own card colours; star and accent colours
-   come from the settings. Two classes beat the settings' one-class rule. */
+/* Colour scheme: match my theme. No colours of its own: text follows the
+   page, cards are a faint tint of the page's text colour over whatever is
+   behind them, so light, dark and any theme switch are followed instantly.
+   Two classes beat the settings' one-class rule. */
+.if-reviews-wrap.if-scheme-theme {
+  --if-card-bg-color: color-mix(in srgb, currentColor 5%, transparent);
+  --if-border-color: color-mix(in srgb, currentColor 16%, transparent);
+  --if-text-color: currentColor;
+  --if-meta-color: color-mix(in srgb, currentColor 72%, transparent);
+}
+
+/* Browsers without color-mix(): neutral greys that sit on light or dark. */
+@supports not (color: color-mix(in srgb, red 50%, blue)) {
+  .if-reviews-wrap.if-scheme-theme {
+    --if-card-bg-color: rgba(128, 128, 128, 0.08);
+    --if-border-color: rgba(128, 128, 128, 0.3);
+    --if-meta-color: currentColor;
+  }
+}
+
+.if-scheme-theme .if-review-card,
+.if-scheme-theme .if-show-more,
+.if-scheme-theme .if-cta-button,
+.if-scheme-theme .if-carousel-btn {
+  box-shadow: none;
+}
+
+/* Colour scheme: dark. Neutral near-black cards; star and accent colours
+   come from the settings. */
 .if-reviews-wrap.if-scheme-dark {
-  --if-card-bg-color: #1f2937;
-  --if-border-color: #374151;
-  --if-text-color: #e5e7eb;
-  --if-meta-color: #a8b0bd;
+  --if-card-bg-color: #1c1c1c;
+  --if-border-color: #333333;
+  --if-text-color: #e8e8e8;
+  --if-meta-color: #a6a6a6;
 }
 
 .if-scheme-dark .if-review-card,
@@ -658,10 +685,10 @@
 
 @media (prefers-color-scheme: dark) {
   .if-reviews-wrap.if-scheme-auto {
-    --if-card-bg-color: #1f2937;
-    --if-border-color: #374151;
-    --if-text-color: #e5e7eb;
-    --if-meta-color: #a8b0bd;
+    --if-card-bg-color: #1c1c1c;
+    --if-border-color: #333333;
+    --if-text-color: #e8e8e8;
+    --if-meta-color: #a6a6a6;
   }
 
   .if-scheme-auto .if-review-card,

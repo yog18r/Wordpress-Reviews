@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.6.0
+Stable tag: 2.7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you tick "Show buttons" and add a link.
 * **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
-* **Styling without CSS**: one-click style presets with a live preview; light, dark or match-the-device colour schemes; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
+* **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests apart from the update check, unless you connect Google.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
@@ -72,7 +72,7 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews buttons="yes"]` — force the "Leave us a review" buttons on (or `"no"` to hide them) for this instance.
 * `[if_reviews category="mortgages"]` — only reviews in a category (by slug; comma-separate several). The header describes that subset.
 * `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated shortcode per page.
-* `[if_reviews scheme="dark" card_style="outlined" density="compact"]` — style for this instance only: scheme `light`, `dark` or `auto`; card style `shadow`, `outlined`, `flat` or `minimal`; density `compact`, `comfortable` or `spacious`.
+* `[if_reviews scheme="dark" card_style="outlined" density="compact"]` — style for this instance only: scheme `theme`, `light`, `dark` or `auto`; card style `shadow`, `outlined`, `flat` or `minimal`; density `compact`, `comfortable` or `spacious`.
 * `[if_reviews layout="carousel" autoplay="6"]` — the carousel moves on every six seconds; `0` disables it.
 * `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review.
 * `[if_reviews_rating]` — inline "★★★★★ 4.8 from 120 reviews" badge. Accepts `source` and `category`; `stars="no"` or `count="no"` trims it.
@@ -209,9 +209,13 @@ Yes: `[if_reviews source="google"]` on one page and `[if_reviews]` on another. E
 
 A carousel keeps the page short: `[if_reviews layout="carousel"]`. If you prefer a grid, cap it and let visitors expand: `[if_reviews limit="6"]`. Both can be set as defaults in Display Settings.
 
+= Will the reviews follow my theme's dark mode? =
+
+Yes, with the colour scheme "Match my theme" (the default on new sites). The reviews then have no fixed colours of their own: text uses your page's text colour, and cards are a faint tint of it over whatever is behind them. When your theme switches between light and dark, whether from the visitor's device setting or a switch on your site, the reviews change with it instantly. Your star, accent and avatar colours stay as you set them. Dark-mode plugins that invert the whole page with a filter are the exception: they also invert the stars.
+
 = Can I change the colours to match my site? =
 
-Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme (light, dark, or match the visitor's device), card style, spacing, text size, star and accent colours, card colours, corner radius and avatar colours. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews block.
+Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme ("Match my theme", light, dark, or follow the visitor's device), card style, spacing, text size, star and accent colours, card colours, corner radius and avatar colours. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews block.
 
 = What happens to my reviews if I delete the plugin? =
 
@@ -230,6 +234,12 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.7.0 =
+* New: **"Match my theme" colour scheme**. Reviews take your theme's own text and background colours instead of fixed ones, so they fit any theme and follow its light/dark switch instantly (tested against a Blocksy-style switch). It is the default for new sites; sites updated from earlier versions keep their current look until they choose it.
+* New: the colour pickers in Display Settings show your theme's palette as swatches, when the theme has one.
+* New: a "Match my theme" style preset, and a "Preview on a dark page" switch on the settings preview.
+* Changed: the Dark scheme uses neutral near-black cards instead of blue-grey.
 
 = 2.6.0 =
 * New: **style presets and a live preview** at the top of Reviews → Display Settings → Appearance. Pick Classic, Minimal, Outlined, Dark or Compact to fill in the settings, adjust anything, and watch the preview update before you save.
@@ -344,6 +354,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.7.0 =
+Adds a "Match my theme" colour scheme that follows your theme's colours and dark mode. Your current look is kept until you choose it.
 
 = 2.6.0 =
 Style presets with a live preview, dark mode, card styles, spacing and text size options. Your settings are kept; the one automatic change is that grids now choose their number of columns from the space they have rather than the screen width.

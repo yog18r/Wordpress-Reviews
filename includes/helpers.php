@@ -36,7 +36,9 @@ function if_reviews_default_options() {
 		'avatar_colors' => '4285f4,34a853,ea4335,fbbc04',
 		// Blank = the accent colour.
 		'star_color'    => '',
-		'color_scheme'  => 'light',
+		// New sites follow the theme; sites updated from older versions keep
+		// "light" (see if_reviews_upgrade()).
+		'color_scheme'  => 'theme',
 		'card_style'    => 'shadow',
 		'hover_lift'    => 0,
 		'density'       => 'comfortable',
@@ -675,9 +677,10 @@ function if_reviews_end_bulk() {
 function if_reviews_style_choices() {
 	return array(
 		'color_scheme' => array(
+			'theme' => __( 'Match my theme (recommended)', 'if-reviews' ),
 			'light' => __( 'Light', 'if-reviews' ),
 			'dark'  => __( 'Dark', 'if-reviews' ),
-			'auto'  => __( "Match the visitor's device", 'if-reviews' ),
+			'auto'  => __( "Light or dark, following the visitor's device", 'if-reviews' ),
 		),
 		'card_style'   => array(
 			'shadow'   => __( 'Soft shadow', 'if-reviews' ),
@@ -763,4 +766,55 @@ function if_reviews_contrast_ratio( $a, $b ) {
 	$lb = $luminance( $b );
 
 	return ( max( $la, $lb ) + 0.05 ) / ( min( $la, $lb ) + 0.05 );
+}
+
+/**
+ * One-off changes when the plugin is updated.
+ *
+ * 2.7.0 made "Match my theme" the default colour scheme. Sites that already
+ * existed keep the look they had: their settings get "light" if they have
+ * no colour scheme saved yet.
+ */
+function if_reviews_upgrade() {
+
+	if ( IF_REVIEWS_VERSION === get_option( 'if_reviews_version' ) ) {
+		return;
+	}
+
+	$saved = get_option( IF_REVIEWS_OPTION_KEY, null );
+
+	if ( is_array( $saved ) && ! isset( $saved['color_scheme'] ) ) {
+		$saved['color_scheme'] = 'light';
+		update_option( IF_REVIEWS_OPTION_KEY, $saved );
+	} elseif ( null === $saved && get_posts( array( 'post_type' => 'if_review', 'post_status' => 'any', 'posts_per_page' => 1, 'fields' => 'ids', 'no_found_rows' => true ) ) ) {
+		// Never saved the settings, but has reviews: an existing site on the defaults.
+		add_option( IF_REVIEWS_OPTION_KEY, array_merge( if_reviews_default_options(), array( 'color_scheme' => 'light' ) ) );
+	}
+}
+add_action( 'init', 'if_reviews_upgrade', 4 );
+
+/**
+ * Colours from the theme's palette (block themes and classic themes that
+ * register an editor palette), as hex values for the colour pickers.
+ *
+ * @return string[]
+ */
+function if_reviews_theme_palette() {
+
+	if ( ! function_exists( 'wp_get_global_settings' ) ) {
+		return array();
+	}
+
+	$palette = wp_get_global_settings( array( 'color', 'palette' ) );
+	$entries = isset( $palette['theme'] ) && is_array( $palette['theme'] ) ? $palette['theme'] : array();
+	$colours = array();
+
+	foreach ( $entries as $entry ) {
+		// Some themes give "var(--x, #hex)"; keep the hex part.
+		if ( isset( $entry['color'] ) && preg_match( '/#(?:[0-9a-f]{6}|[0-9a-f]{3})\b/i', (string) $entry['color'], $m ) ) {
+			$colours[] = strtolower( $m[0] );
+		}
+	}
+
+	return array_slice( array_values( array_unique( $colours ) ), 0, 12 );
 }
