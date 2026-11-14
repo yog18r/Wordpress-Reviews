@@ -101,7 +101,7 @@ function if_reviews_render_block( $attributes ) {
 
 	if ( '' === $html ) {
 		return if_reviews_is_editor_preview()
-			? if_reviews_editor_notice( __( 'Nothing to show yet: there are no published reviews matching these settings. Add reviews under Reviews in the admin menu.', 'if-reviews' ) )
+			? if_reviews_editor_notice( __( 'Nothing to show yet: no published reviews match these settings. Add one under Reviews → Add New.', 'if-reviews' ) )
 			: '';
 	}
 

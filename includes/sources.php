@@ -67,7 +67,7 @@ function if_reviews_get_sources() {
 		),
 		'other'         => array(
 			'label'       => __( 'Other', 'if-reviews' ),
-			'description' => __( 'Any other platform. Enter its name in the custom label field.', 'if-reviews' ),
+			'description' => __( 'Any other platform. Enter its name in the Platform name field below.', 'if-reviews' ),
 			'icon'        => if_reviews_icon_bubble(),
 		),
 	);

@@ -43,13 +43,13 @@
 						el(TextControl, {
 							label: __('Only these sources', 'if-reviews'),
 							value: a.source,
-							help: __('Source keys, comma-separated, e.g. google. Blank for all.', 'if-reviews'),
+							help: __('Comma-separated source keys, e.g. google (listed at the bottom of Display Settings). Blank for all.', 'if-reviews'),
 							onChange: function (value) { set({ source: value }); }
 						}),
 						el(TextControl, {
 							label: __('Only these categories', 'if-reviews'),
 							value: a.category,
-							help: __('Category slugs, comma-separated. Blank for all.', 'if-reviews'),
+							help: __('Comma-separated category slugs, e.g. mortgages (see Reviews → Categories). Blank for all.', 'if-reviews'),
 							onChange: function (value) { set({ category: value }); }
 						})
 					)

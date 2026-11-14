@@ -32,9 +32,24 @@ if ( is_array( $if_reviews_options ) && ! empty( $if_reviews_options['delete_on_
 	}
 }
 
+// Revoke the Google connection, if any, so the token stops working.
+$if_reviews_google = get_option( 'if_reviews_google', array() );
+
+if ( is_array( $if_reviews_google ) && ! empty( $if_reviews_google['refresh_token'] ) ) {
+	wp_remote_post(
+		'https://oauth2.googleapis.com/revoke',
+		array( 'timeout' => 10, 'body' => array( 'token' => $if_reviews_google['refresh_token'] ) )
+	);
+}
+
 delete_option( 'if_reviews_options' );
 delete_option( 'if_reviews_google' );
 wp_clear_scheduled_hook( 'if_reviews_google_sync_event' );
+
+// Short-lived data (Google sign-in state, location lists, previews, notices,
+// import results), stored per user.
+global $wpdb;
+$wpdb->query( "DELETE FROM {$wpdb->options} WHERE option_name LIKE '\\_transient\\_if\\_reviews\\_%' OR option_name LIKE '\\_transient\\_timeout\\_if\\_reviews\\_%'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery -- one-off cleanup on uninstall, constant query.
 
 // Update-checker housekeeping (safe if the keys do not exist).
 delete_option( 'external_updates-if-reviews' );

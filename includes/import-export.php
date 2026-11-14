@@ -132,7 +132,7 @@ function if_reviews_render_import_export_page() {
 		<?php endif; ?>
 
 		<h2><?php esc_html_e( 'Export', 'if-reviews' ); ?></h2>
-		<p><?php esc_html_e( 'Download every review, including hidden ones and drafts, as a UTF-8 CSV file. Useful as a backup, for editing in a spreadsheet, or for moving to another site.', 'if-reviews' ); ?></p>
+		<p><?php esc_html_e( 'Download every review, including hidden ones and drafts, as a CSV file. Use it as a backup, to edit in a spreadsheet, or to move to another site.', 'if-reviews' ); ?></p>
 		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 			<input type="hidden" name="action" value="if_reviews_export">
 			<?php wp_nonce_field( 'if_reviews_export' ); ?>
@@ -250,7 +250,7 @@ function if_reviews_write_csv( $out ) {
 
 	update_meta_cache( 'post', $ids );
 
-	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '\\' );
+	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '' );
 
 	foreach ( $ids as $id ) {
 
@@ -272,7 +272,7 @@ function if_reviews_write_csv( $out ) {
 			'status'        => get_post_status( $id ),
 		);
 
-		fputcsv( $out, array_map( 'if_reviews_csv_cell', $row ), ',', '"', '\\' );
+		fputcsv( $out, array_map( 'if_reviews_csv_cell', $row ), ',', '"', '' );
 	}
 }
 
@@ -291,9 +291,9 @@ function if_reviews_handle_csv_template() {
 
 	$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
-	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '\\' );
-	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://maps.app.goo.gl/example', 'Mortgages', 'yes', 'yes', 'publish' ), ',', '"', '\\' );
-	fputcsv( $out, array( 'Sam Lee', '2026-06-02', '8/10', 'Very helpful through a complicated process.', 'Tripadvisor', '', '', 'Insurance|Mortgages', '', 'yes', 'publish' ), ',', '"', '\\' );
+	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '' );
+	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://maps.app.goo.gl/example', 'Mortgages', 'yes', 'yes', 'publish' ), ',', '"', '' );
+	fputcsv( $out, array( 'Sam Lee', '2026-06-02', '8/10', 'Very helpful through a complicated process.', 'Tripadvisor', '', '', 'Insurance|Mortgages', '', 'yes', 'publish' ), ',', '"', '' );
 
 	fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
 	exit;
@@ -324,7 +324,9 @@ function if_reviews_csv_cell( $value ) {
 
 	$value = (string) $value;
 
-	if ( '' !== $value && in_array( $value[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
+	$first = ltrim( $value, " \n" );
+
+	if ( '' !== $first && in_array( $first[0], array( '=', '+', '-', '@', "\t", "\r" ), true ) ) {
 		return "'" . $value;
 	}
 
@@ -422,7 +424,7 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 
 	$first     = preg_replace( '/^\xEF\xBB\xBF/', '', $first );
 	$delimiter = ( substr_count( $first, ';' ) > substr_count( $first, ',' ) ) ? ';' : ',';
-	$headers   = str_getcsv( $first, $delimiter, '"', '\\' );
+	$headers   = str_getcsv( $first, $delimiter, '"', '' );
 	$columns   = array();
 	$aliases   = if_reviews_csv_aliases();
 	$known     = array_keys( if_reviews_csv_columns() );
@@ -454,7 +456,7 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 	$line       = 1;
 	$max_rows   = 5000;
 
-	while ( ( $row = fgetcsv( $handle, 0, $delimiter, '"', '\\' ) ) !== false ) {
+	while ( ( $row = fgetcsv( $handle, 0, $delimiter, '"', '' ) ) !== false ) {
 
 		$line++;
 
@@ -537,7 +539,8 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 		}
 
 		$post_id = wp_insert_post(
-			array(
+			wp_slash(
+				array(
 				'post_type'   => 'if_review',
 				'post_status' => $status,
 				'post_title'  => $name,
@@ -552,6 +555,7 @@ function if_reviews_import_csv_stream( $handle, $skip_duplicates ) {
 					'_if_display_on_website' => $display,
 					'_if_pinned'             => $pinned,
 				),
+				)
 			),
 			true
 		);

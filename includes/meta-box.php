@@ -209,7 +209,7 @@ function if_review_details_callback( $post ) {
 				<strong style="margin:0;"><?php esc_html_e( 'Display this review on the website', 'if-reviews' ); ?></strong>
 			</label>
 			<p class="description" style="margin-left:24px;">
-				<?php esc_html_e( 'Untick to hide this review from the cards. It stays saved here and still counts toward the overall rating and review count shown in the header, so the summary remains truthful.', 'if-reviews' ); ?>
+				<?php esc_html_e( 'Untick to hide this review from the cards. It stays saved and still counts toward the rating and review count in the header.', 'if-reviews' ); ?>
 			</p>
 		</div>
 
@@ -312,7 +312,7 @@ function if_save_review_details( $post_id ) {
 
 	if ( isset( $_POST['if_reviewer_name'] ) ) {
 		$reviewer_name = sanitize_text_field( wp_unslash( $_POST['if_reviewer_name'] ) );
-		update_post_meta( $post_id, '_if_reviewer_name', $reviewer_name );
+		update_post_meta( $post_id, '_if_reviewer_name', wp_slash( $reviewer_name ) );
 	}
 
 	/* Review date (Y-m-d or empty) --------------------------------- */
@@ -349,7 +349,7 @@ function if_save_review_details( $post_id ) {
 	}
 
 	if ( isset( $_POST['if_source_label'] ) ) {
-		update_post_meta( $post_id, '_if_source_label', sanitize_text_field( wp_unslash( $_POST['if_source_label'] ) ) );
+		update_post_meta( $post_id, '_if_source_label', wp_slash( sanitize_text_field( wp_unslash( $_POST['if_source_label'] ) ) ) );
 	}
 
 	/* Link to the original review ---------------------------------- */
@@ -361,7 +361,7 @@ function if_save_review_details( $post_id ) {
 	/* Review text -------------------------------------------------- */
 
 	if ( isset( $_POST['if_review_text'] ) ) {
-		update_post_meta( $post_id, '_if_review_text', sanitize_textarea_field( wp_unslash( $_POST['if_review_text'] ) ) );
+		update_post_meta( $post_id, '_if_review_text', wp_slash( sanitize_textarea_field( wp_unslash( $_POST['if_review_text'] ) ) ) );
 	}
 
 	/* Display on website ------------------------------------------- */

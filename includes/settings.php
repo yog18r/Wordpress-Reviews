@@ -46,7 +46,7 @@ function if_reviews_register_settings() {
 		'if_reviews_display_section',
 		__( 'Display', 'if-reviews' ),
 		function () {
-			echo '<p>' . esc_html__( 'Defaults for the [if_reviews] shortcode. Any of these can be overridden on an individual shortcode with an attribute of the same name (see the reference below).', 'if-reviews' ) . '</p>';
+			echo '<p>' . esc_html__( 'Defaults for the [if_reviews] shortcode and the Reviews block. Most can be changed for a single shortcode or block; see the shortcode reference below.', 'if-reviews' ) . '</p>';
 		},
 		'if-reviews-settings'
 	);
@@ -56,7 +56,7 @@ function if_reviews_register_settings() {
 			'type'        => 'checkbox',
 			'label'       => __( 'Summary header', 'if-reviews' ),
 			'text'        => __( 'Show the overall rating, review count and sources above the cards', 'if-reviews' ),
-			'description' => __( 'The header is calculated from every published review, including hidden ones, so it always reflects the full set.', 'if-reviews' ),
+			'description' => __( 'The header counts every published review, including hidden ones.', 'if-reviews' ),
 		),
 		'header_title'      => array(
 			'type'        => 'text',
@@ -106,14 +106,14 @@ function if_reviews_register_settings() {
 			'label'       => __( 'Carousel autoplay (seconds)', 'if-reviews' ),
 			'min'         => 0,
 			'max'         => 60,
-			'description' => __( '0 is off. Otherwise the carousel moves on by one card every so many seconds, pausing while a visitor hovers or focuses it, with a pause button. Visitors who prefer reduced motion never get autoplay.', 'if-reviews' ),
+			'description' => __( '0 turns autoplay off. Otherwise the carousel moves on one card every this many seconds. It pauses on hover or focus, has a pause button, and never runs for visitors who prefer reduced motion.', 'if-reviews' ),
 		),
 		'excerpt_length'    => array(
 			'type'        => 'number',
 			'label'       => __( '"Read more" after (characters)', 'if-reviews' ),
 			'min'         => 0,
 			'max'         => 5000,
-			'description' => __( '0 always shows the full text. Otherwise long reviews are cut at a word boundary near this many characters with a "Read more" button (minimum 40; try 280).', 'if-reviews' ),
+			'description' => __( '0 shows the full text. Otherwise longer reviews are cut at the nearest word, with a "Read more" button. Minimum 40; try 280.', 'if-reviews' ),
 		),
 		'show_review_links' => array(
 			'type'        => 'checkbox',
@@ -131,7 +131,7 @@ function if_reviews_register_settings() {
 				4 => __( 'Hide reviews rated below 4 stars', 'if-reviews' ),
 				5 => __( 'Hide reviews rated below 5 stars', 'if-reviews' ),
 			),
-			'description' => __( 'Opt-in. Reviews hidden this way are treated exactly like reviews you hide by hand: they stay in WordPress and still count toward the overall rating and review count in the header, so the summary remains truthful.', 'if-reviews' ),
+			'description' => __( 'Reviews hidden this way still count toward the rating and review count in the header, exactly like reviews you hide by hand.', 'if-reviews' ),
 		),
 	);
 
@@ -146,7 +146,7 @@ function if_reviews_register_settings() {
 		'if_reviews_cta_section',
 		__( '"Leave us a review" buttons', 'if-reviews' ),
 		function () {
-			echo '<p>' . esc_html__( 'Optional buttons under the widget that take visitors straight to your review page on each platform. Off by default. Add a link for every platform you want a button for; the buttons can also be placed on their own with the [if_reviews_buttons] shortcode.', 'if-reviews' ) . '</p>';
+			echo '<p>' . esc_html__( 'Optional buttons under the reviews that take visitors straight to your review page on each platform. Off by default. Add a link for each platform you want a button for. To place the buttons elsewhere, use the [if_reviews_buttons] shortcode.', 'if-reviews' ) . '</p>';
 		},
 		'if-reviews-settings'
 	);
@@ -155,14 +155,14 @@ function if_reviews_register_settings() {
 		'cta_enabled' => array(
 			'type'        => 'checkbox',
 			'label'       => __( 'Show buttons', 'if-reviews' ),
-			'text'        => __( 'Show the buttons under the reviews widget', 'if-reviews' ),
-			'description' => __( 'Only platforms with a link below get a button. Override per instance with buttons="yes" or "no" on the shortcode, or the block option.', 'if-reviews' ),
+			'text'        => __( 'Show the buttons under the reviews', 'if-reviews' ),
+			'description' => __( 'Only platforms with a link below get a button. To override for one shortcode, add buttons="yes" or buttons="no"; in the block, use the "Leave us a review" buttons option.', 'if-reviews' ),
 		),
 		'cta_heading' => array(
 			'type'        => 'text',
 			'label'       => __( 'Heading above the buttons', 'if-reviews' ),
 			'placeholder' => __( 'Had a good experience? Leave us a review.', 'if-reviews' ),
-			'description' => __( 'Blank uses the text shown as the placeholder. Enter a single hyphen (-) for no heading.', 'if-reviews' ),
+			'description' => __( 'Leave blank to use the text shown in grey. Enter a single hyphen (-) for no heading.', 'if-reviews' ),
 		),
 		'cta_new_tab' => array(
 			'type'  => 'checkbox',
@@ -186,7 +186,7 @@ function if_reviews_register_settings() {
 		'if_reviews_appearance_section',
 		__( 'Appearance', 'if-reviews' ),
 		function () {
-			echo '<p>' . esc_html__( 'Colours and shape of the widget. Changes apply immediately, site-wide.', 'if-reviews' ) . '</p>';
+			echo '<p>' . esc_html__( 'Colours and shape of the reviews display. Changes apply immediately, site-wide.', 'if-reviews' ) . '</p>';
 		},
 		'if-reviews-settings'
 	);
@@ -377,7 +377,7 @@ function if_reviews_render_field( $args ) {
 				</tbody>
 			</table>
 			<p class="description">
-				<?php esc_html_e( 'Leave the link blank for any platform you do not want a button for. Blank button text uses the placeholder shown.', 'if-reviews' ); ?>
+				<?php esc_html_e( 'Leave the link blank for any platform you do not want a button for. Leave the button text blank to use the text shown in grey.', 'if-reviews' ); ?>
 			</p>
 			<?php
 			break;
@@ -406,7 +406,7 @@ function if_reviews_render_field( $args ) {
 				</p>
 			</div>
 			<p class="description">
-				<?php esc_html_e( 'Each reviewer takes a colour from their name, so the same person is always the same colour. Where that would put two matching avatars next to each other, the next colour in the list is used instead. Text on each avatar is chosen automatically for contrast. Remove every colour to restore the defaults.', 'if-reviews' ); ?>
+				<?php esc_html_e( 'Each reviewer gets a colour based on their name, so the same person always has the same colour. If two neighbouring avatars would match, one takes the next colour in the list. Avatar text is set light or dark automatically. Remove every colour to restore the defaults.', 'if-reviews' ); ?>
 			</p>
 			<?php
 			break;
@@ -461,7 +461,7 @@ function if_reviews_render_settings_page() {
 				<tr><td><code>[if_reviews show_header="no"]</code></td><td><?php esc_html_e( 'Cards only, no summary header.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews title="What our clients say"]</code></td><td><?php esc_html_e( 'Custom header title for this instance.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews category="mortgages"]</code></td><td><?php esc_html_e( 'Only reviews in one category (by slug; comma-separate several). The header then describes that subset.', 'if-reviews' ); ?></td></tr>
-				<tr><td><code>[if_reviews paginate="12"]</code></td><td><?php esc_html_e( 'Numbered pages of twelve instead of a "Show more" button. Use one paginated widget per page.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews paginate="12"]</code></td><td><?php esc_html_e( 'Numbered pages of twelve instead of a "Show more" button. Use one paginated shortcode per page.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews layout="carousel" autoplay="6"]</code></td><td><?php esc_html_e( 'Carousel that moves on every six seconds (0 to disable).', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote. The ID is in the address bar when editing the review.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_rating]</code></td><td><?php esc_html_e( 'Inline badge: "★★★★★ 4.8 from 120 reviews". Accepts source and category; stars="no" or count="no" trims it.', 'if-reviews' ); ?></td></tr>

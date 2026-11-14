@@ -138,7 +138,7 @@ function if_reviews_google_print_notice() {
 	printf(
 		'<div class="notice notice-%1$s is-dismissible"><p>%2$s</p></div>',
 		esc_attr( in_array( $notice['type'], array( 'success', 'error', 'warning', 'info' ), true ) ? $notice['type'] : 'info' ),
-		wp_kses_post( $notice['message'] )
+		esc_html( $notice['message'] )
 	);
 }
 
@@ -207,7 +207,14 @@ function if_reviews_google_render_page() {
 					?>
 				</p>
 				<?php if ( $g['needs_reconnect'] ) : ?>
-					<div class="notice notice-error inline"><p><?php esc_html_e( 'Google no longer accepts the saved authorisation. Reconnect to continue syncing.', 'if-reviews' ); ?></p></div>
+					<div class="notice notice-error inline">
+						<p><?php esc_html_e( 'Google no longer accepts this site\'s connection, so syncing has stopped. Reconnect to carry on; your reviews, location and settings are kept.', 'if-reviews' ); ?></p>
+						<form method="post" action="<?php echo esc_url( $admin_post ); ?>" style="margin: 0 0 10px;">
+							<input type="hidden" name="action" value="if_reviews_google_connect">
+							<?php wp_nonce_field( 'if_reviews_google_connect' ); ?>
+							<?php submit_button( __( 'Reconnect', 'if-reviews' ), 'primary', 'submit', false ); ?>
+						</form>
+					</div>
 				<?php endif; ?>
 				<?php if_reviews_google_render_last_result( $g ); ?>
 
@@ -252,7 +259,7 @@ function if_reviews_google_render_page() {
 		<?php else : ?>
 			<h2><?php esc_html_e( 'Step 1: Google Cloud project', 'if-reviews' ); ?></h2>
 			<p style="max-width: 760px;">
-				<?php esc_html_e( 'Google only lets approved projects read Business Profile reviews, so this needs about an hour of one-off setup on Google\'s side, plus a wait for their approval. You do it once per site.', 'if-reviews' ); ?>
+				<?php esc_html_e( 'Google must approve your project before it can read reviews. Setup takes about an hour, plus a wait of days to weeks for the approval. You only do it once per site.', 'if-reviews' ); ?>
 			</p>
 			<details class="if-help if-setup-guide" style="max-width: 760px; margin-bottom: 16px;" <?php echo $has_creds ? '' : 'open'; ?>>
 				<summary><?php esc_html_e( 'How to get a Client ID and Client Secret (six steps)', 'if-reviews' ); ?></summary>
@@ -267,34 +274,34 @@ function if_reviews_google_render_page() {
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Ask Google for Business Profile API access.', 'if-reviews' ); ?></strong>
-						<?php echo wp_kses_post( __( 'Fill in <a href="https://support.google.com/business/contact/api_default" target="_blank" rel="noopener">Google\'s access request form</a>, choosing "Application for Basic API Access", with the project number and the email address that owns or manages the profile. Google reviews requests by hand; allow anything from a few days to a few weeks. You can check progress in the project under "IAM & Admin → Quotas": a quota of 0 for the Business Profile APIs means not yet approved, 300 means approved. Until then the APIs below do not exist in your project.', 'if-reviews' ) ); ?>
+						<?php echo wp_kses_post( __( 'Fill in <a href="https://support.google.com/business/contact/api_default" target="_blank" rel="noopener">Google\'s access request form</a>, choosing "Application for Basic API Access", with the project number and the email address that owns or manages the profile. Google checks each request by hand, which takes a few days to a few weeks. To check progress, open "IAM & Admin → Quotas" in the project: 0 for the Business Profile APIs means not yet approved, 300 means approved.', 'if-reviews' ) ); ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Enable three APIs.', 'if-reviews' ); ?></strong>
-						<?php esc_html_e( 'Once approved, open "APIs & Services → Library" and enable each of: My Business Account Management API, My Business Business Information API, and Google My Business API.', 'if-reviews' ); ?>
+						<?php esc_html_e( 'Open "APIs & Services → Library" and enable My Business Account Management API and My Business Business Information API. The third, Google My Business API, only appears in the Library once Google has approved your request; enable it then.', 'if-reviews' ); ?>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Set up the consent screen so the connection does not expire.', 'if-reviews' ); ?></strong>
-						<?php esc_html_e( 'Open "Google Auth Platform" (older consoles call it "OAuth consent screen"). Give the app a name, your email as the support and contact address, and under "Data access" add the scope https://www.googleapis.com/auth/business.manage. Then choose the audience that matches your account:', 'if-reviews' ); ?>
+						<?php esc_html_e( 'Open "Google Auth Platform" (older consoles call it "OAuth consent screen"). Enter an app name and your email address for support and contact. Under "Data access", add the scope https://www.googleapis.com/auth/business.manage. For the audience, choose the option that matches your account:', 'if-reviews' ); ?>
 						<ul>
-							<li><?php echo wp_kses_post( __( '<strong>Google Workspace account</strong> (your email is on your own domain): choose <strong>Internal</strong>. Nothing else is needed; the app never shows a warning and the connection does not expire.', 'if-reviews' ) ); ?></li>
-							<li><?php echo wp_kses_post( __( '<strong>Personal Google account</strong> (gmail.com): choose <strong>External</strong>, then on the Audience page click <strong>Publish app</strong> and confirm. Do not leave the app in "Testing": Google deliberately expires a Testing app\'s authorisation after 7 days, and you would have to reconnect every week. Publishing does not require Google\'s verification review for your own use; the only effect is a one-time "Google hasn\'t verified this app" screen when you connect, which you pass with Advanced → Go to (your app name).', 'if-reviews' ) ); ?></li>
+							<li><?php echo wp_kses_post( __( '<strong>Google Workspace account</strong> (your email is on your own domain): choose <strong>Internal</strong>. That is all: there is no warning screen and the connection does not expire.', 'if-reviews' ) ); ?></li>
+							<li><?php echo wp_kses_post( __( '<strong>Personal Google account</strong> (gmail.com): choose <strong>External</strong>, then on the Audience page click <strong>Publish app</strong> and confirm. If you leave the app in "Testing", Google ends the connection after 7 days and you must reconnect every week. Publishing needs no review by Google for your own use. You will see a "Google hasn\'t verified this app" screen once, when you connect: click Advanced → Go to (your app name).', 'if-reviews' ) ); ?></li>
 						</ul>
 					</li>
 					<li>
 						<strong><?php esc_html_e( 'Create the credentials.', 'if-reviews' ); ?></strong>
-						<?php esc_html_e( 'Under "Clients" (or "Credentials → Create credentials → OAuth client ID") choose "Web application", and paste the redirect URI shown below into "Authorised redirect URIs", exactly as shown. Google then displays the Client ID and Client Secret; copy both into the fields below and save.', 'if-reviews' ); ?>
+						<?php esc_html_e( 'Under "Clients" (or "Credentials → Create credentials → OAuth client ID") choose "Web application", and paste the redirect URI shown below into "Authorised redirect URIs", exactly as shown. Google then shows a Client ID and Client Secret: copy both into the fields below and click Save and continue.', 'if-reviews' ); ?>
 					</li>
 				</ol>
 				<h4 style="margin: 16px 0 6px;"><?php esc_html_e( 'If your Google account is managed by a Workspace administrator', 'if-reviews' ); ?></h4>
 				<p class="description" style="max-width: 720px;">
-					<?php esc_html_e( 'Two Workspace policies can get in the way: an API controls setting that blocks unapproved apps, and a Google Cloud session policy that can force a fresh sign-in every few hours (16 hours is a common setting). Marking this app as trusted deals with both. An administrator does this in the Admin console:', 'if-reviews' ); ?>
+					<?php esc_html_e( 'Two Workspace policies can block the connection: an API controls setting that blocks unapproved apps, and a Google Cloud session policy that forces a new sign-in every few hours (often 16). Marking this app as trusted fixes both. An administrator does this in the Admin console:', 'if-reviews' ); ?>
 				</p>
 				<ol>
 					<li><?php esc_html_e( 'Security → Access and data control → API controls → "Manage Third-Party App Access" → "Add app" → search by the Client ID from step 6 → select it → set access to Trusted for the organisation (or the unit the connecting account belongs to) → save.', 'if-reviews' ); ?></li>
-					<li><?php esc_html_e( 'Security → Access and data control → Google Cloud session control: if "Require reauthentication" is turned on, tick "Exempt trusted apps" and save. (That policy is written for apps that request Google Cloud scopes; this plugin asks only for Business Profile access, so it should not be affected, but exempting trusted apps removes any doubt.)', 'if-reviews' ); ?></li>
+					<li><?php esc_html_e( 'Security → Access and data control → Google Cloud session control: if "Require reauthentication" is on, tick "Exempt trusted apps" and save. (This plugin does not use Google Cloud scopes, so the policy should not apply to it, but the exemption removes any doubt.)', 'if-reviews' ); ?></li>
 				</ol>
-				<p class="description"><?php esc_html_e( 'If a connection does stop working, this page says so and offers a reconnect; nothing is lost in the meantime.', 'if-reviews' ); ?></p>
+				<p class="description"><?php esc_html_e( 'If the connection ever stops working, this page tells you and shows a Reconnect button. No reviews are lost.', 'if-reviews' ); ?></p>
 			</details>
 
 			<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
@@ -315,8 +322,8 @@ function if_reviews_google_render_page() {
 					<tr>
 						<th scope="row"><label for="if_google_client_secret"><?php esc_html_e( 'Client Secret', 'if-reviews' ); ?></label></th>
 						<td>
-							<input type="password" id="if_google_client_secret" name="client_secret" class="large-text code" value="<?php echo esc_attr( $g['client_secret'] ); ?>" autocomplete="new-password">
-							<p class="description"><?php esc_html_e( 'Stored in the WordPress options table, like other plugins\' API keys. Anyone with database access could read it; it only grants access to the reviews.', 'if-reviews' ); ?></p>
+							<input type="password" id="if_google_client_secret" name="client_secret" class="large-text code" value="" placeholder="<?php echo '' !== $g['client_secret'] ? esc_attr__( 'Saved. Leave blank to keep it.', 'if-reviews' ) : ''; ?>" autocomplete="new-password">
+							<p class="description"><?php esc_html_e( 'Stored in this site\'s database, like other plugins\' API keys. Anyone with database access could read it, so keep database access and backups private.', 'if-reviews' ); ?></p>
 						</td>
 					</tr>
 				</table>
@@ -325,7 +332,7 @@ function if_reviews_google_render_page() {
 
 			<h2 style="margin-top: 32px;"><?php esc_html_e( 'Step 2: Connect', 'if-reviews' ); ?></h2>
 			<?php if ( $has_creds ) : ?>
-				<p style="max-width: 760px;"><?php esc_html_e( 'You will be sent to Google to sign in as the profile\'s owner or manager and allow this site to read its reviews. If Google shows "Google hasn\'t verified this app", that is your own app from step 5: click Advanced, then "Go to" your app name, and continue.', 'if-reviews' ); ?></p>
+				<p style="max-width: 760px;"><?php esc_html_e( 'Google will ask you to sign in as the profile\'s owner or manager and allow this site to read its reviews. If you see "Google hasn\'t verified this app", that is your own app: click Advanced, then "Go to" your app name.', 'if-reviews' ); ?></p>
 				<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
 					<input type="hidden" name="action" value="if_reviews_google_connect">
 					<?php wp_nonce_field( 'if_reviews_google_connect' ); ?>
@@ -339,11 +346,11 @@ function if_reviews_google_render_page() {
 		<hr style="margin: 28px 0; max-width: 760px;">
 		<h2><?php esc_html_e( 'How the sync treats your reviews', 'if-reviews' ); ?></h2>
 		<ul style="max-width: 760px; list-style: disc; margin-left: 1.4em;">
-			<li><?php esc_html_e( 'Reviews already on this site with the source "Google" are matched to your profile on the first sync by reviewer name, rating and text. You approve each match in the preview; matched reviews are linked, not imported again.', 'if-reviews' ); ?></li>
-			<li><?php esc_html_e( 'Linked and imported reviews store Google\'s review ID. Later syncs use that ID alone, so renaming or editing on either side never creates a copy.', 'if-reviews' ); ?></li>
-			<li><?php esc_html_e( 'When a reviewer edits their review on Google, the rating, text and date here are replaced with the current version. Hidden, pinned and category settings are yours and are never touched.', 'if-reviews' ); ?></li>
-			<li><?php esc_html_e( 'When a review disappears from Google it is kept here but marked "No longer on Google" in the Reviews list, so you can decide what to do with it.', 'if-reviews' ); ?></li>
-			<li><?php esc_html_e( 'Every review on the profile is imported, including low ratings. Hide the ones you do not want shown; the summary header keeps counting them, as it does for reviews entered by hand.', 'if-reviews' ); ?></li>
+			<li><?php esc_html_e( 'On the first sync, reviews already on this site with the source "Google" are matched to your profile by reviewer name, rating and text. You approve each match in the preview, and matched reviews are linked, not imported again.', 'if-reviews' ); ?></li>
+			<li><?php esc_html_e( 'Once a review is linked or imported it is tracked by Google\'s review ID, so later edits on either side never create a copy. "Sync now" and the daily sync import new Google reviews, and link one automatically when it closely matches an unlinked review here. Use "Preview sync" if you want to check first.', 'if-reviews' ); ?></li>
+			<li><?php esc_html_e( 'Linked reviews take Google\'s version of the reviewer name, rating, text and date, now and whenever the reviewer edits them. Hidden, pinned and category settings are yours and are never touched.', 'if-reviews' ); ?></li>
+			<li><?php esc_html_e( 'A review that disappears from Google is kept here and marked "No longer on Google" in the Reviews list. You decide whether to keep, hide or delete it.', 'if-reviews' ); ?></li>
+			<li><?php esc_html_e( 'Every review on the profile is imported, including low ratings. Hide any you do not want shown; they still count in the summary header, like reviews entered by hand.', 'if-reviews' ); ?></li>
 		</ul>
 	</div>
 	<?php
@@ -470,6 +477,11 @@ function if_reviews_google_handle_credentials() {
 	$id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
 	$secret = isset( $_POST['client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['client_secret'] ) ) : '';
 
+	// The saved secret is never sent back to the page, so a blank field keeps it.
+	if ( '' === $secret ) {
+		$secret = if_reviews_google_get()['client_secret'];
+	}
+
 	if_reviews_google_update( array( 'client_id' => $id, 'client_secret' => $secret ) );
 
 	if ( '' === $id || '' === $secret ) {
@@ -501,7 +513,9 @@ function if_reviews_google_handle_connect() {
 	set_transient( 'if_reviews_google_state_' . get_current_user_id(), $state, 600 );
 
 	$url = add_query_arg(
-		array(
+		array_map(
+			'rawurlencode',
+			array(
 			'client_id'              => $g['client_id'],
 			'redirect_uri'           => if_reviews_google_redirect_uri(),
 			'response_type'          => 'code',
@@ -510,6 +524,7 @@ function if_reviews_google_handle_connect() {
 			'prompt'                 => 'consent',
 			'include_granted_scopes' => 'true',
 			'state'                  => $state,
+			)
 		),
 		IF_REVIEWS_GOOGLE_AUTH
 	);
@@ -538,14 +553,20 @@ function if_reviews_google_handle_callback() {
 	$error = isset( $_GET['error'] ) ? sanitize_text_field( wp_unslash( $_GET['error'] ) ) : '';
 	// phpcs:enable
 
-	if ( '' !== $error ) {
-		/* translators: %s: error code from Google */
-		if_reviews_google_notice( 'error', sprintf( __( 'Google did not grant access (%s).', 'if-reviews' ), $error ) );
+	if ( ! $expected || ! hash_equals( (string) $expected, $state ) ) {
+		if_reviews_google_notice( 'error', __( 'The sign-in could not be verified. Please try connecting again.', 'if-reviews' ) );
 		wp_safe_redirect( if_reviews_google_page_url() );
 		exit;
 	}
 
-	if ( ! $expected || ! hash_equals( (string) $expected, $state ) || '' === $code ) {
+	if ( '' !== $error ) {
+		/* translators: %s: error code from Google, such as access_denied */
+		if_reviews_google_notice( 'error', sprintf( __( 'Google did not grant access (%s).', 'if-reviews' ), sanitize_key( $error ) ) );
+		wp_safe_redirect( if_reviews_google_page_url() );
+		exit;
+	}
+
+	if ( '' === $code ) {
 		if_reviews_google_notice( 'error', __( 'The sign-in could not be verified. Please try connecting again.', 'if-reviews' ) );
 		wp_safe_redirect( if_reviews_google_page_url() );
 		exit;
@@ -569,7 +590,7 @@ function if_reviews_google_handle_callback() {
 	}
 
 	if ( empty( $token['refresh_token'] ) ) {
-		if_reviews_google_notice( 'error', __( 'Google did not return a refresh token. Remove this site\'s access at myaccount.google.com/permissions and connect again.', 'if-reviews' ) );
+		if_reviews_google_notice( 'error', __( 'Google did not give this site lasting access. Remove the app at myaccount.google.com/permissions, then click Connect to Google again.', 'if-reviews' ) );
 		wp_safe_redirect( if_reviews_google_page_url() );
 		exit;
 	}
@@ -583,13 +604,21 @@ function if_reviews_google_handle_callback() {
 		)
 	);
 
+	// Reconnecting: keep the location and everything synced so far.
+	if ( '' !== $g['location'] ) {
+		/* translators: %s: business location name */
+		if_reviews_google_notice( 'success', sprintf( __( 'Reconnected to "%s". Syncing will carry on as before.', 'if-reviews' ), '' !== $g['location_title'] ? $g['location_title'] : $g['location'] ) );
+		wp_safe_redirect( if_reviews_google_page_url() );
+		exit;
+	}
+
 	// Pick the location now when there is only one.
 	$locations = if_reviews_google_list_locations();
 
 	if ( ! is_wp_error( $locations ) && 1 === count( $locations ) ) {
 		if_reviews_google_select_location( $locations[0] );
 		/* translators: %s: business location name */
-		if_reviews_google_notice( 'success', sprintf( __( 'Connected to "%s". Run a preview to see what the first sync would do.', 'if-reviews' ), $locations[0]['title'] ) );
+		if_reviews_google_notice( 'success', sprintf( __( 'Connected to "%s". Click Preview sync to see what the first sync would do.', 'if-reviews' ), $locations[0]['title'] ) );
 	} else {
 		if ( ! is_wp_error( $locations ) ) {
 			set_transient( 'if_reviews_google_locations_' . get_current_user_id(), $locations, 600 );
@@ -619,7 +648,7 @@ function if_reviews_google_handle_location() {
 		if_reviews_google_select_location( $locations[ $index ] );
 		delete_transient( 'if_reviews_google_locations_' . get_current_user_id() );
 		/* translators: %s: business location name */
-		if_reviews_google_notice( 'success', sprintf( __( 'Connected to "%s". Run a preview to see what the first sync would do.', 'if-reviews' ), $locations[ $index ]['title'] ) );
+		if_reviews_google_notice( 'success', sprintf( __( 'Connected to "%s". Click Preview sync to see what the first sync would do.', 'if-reviews' ), $locations[ $index ]['title'] ) );
 	}
 
 	wp_safe_redirect( if_reviews_google_page_url() );
@@ -656,26 +685,37 @@ function if_reviews_google_handle_settings() {
 	if_reviews_google_update( array( 'auto_sync' => $auto ) );
 	if_reviews_google_schedule( $auto );
 
-	if_reviews_google_notice( 'success', $auto ? __( 'Automatic sync is on. It runs about once a day when the site has visitors.', 'if-reviews' ) : __( 'Automatic sync is off.', 'if-reviews' ) );
+	if_reviews_google_notice( 'success', $auto ? __( 'Automatic sync is on. It runs about once a day when the site has visitors, starting after you have applied your first preview.', 'if-reviews' ) : __( 'Automatic sync is off.', 'if-reviews' ) );
 	wp_safe_redirect( if_reviews_google_page_url() );
 	exit;
 }
 add_action( 'admin_post_if_reviews_google_settings', 'if_reviews_google_handle_settings' );
 
 /**
- * Revoke and forget the authorisation. Credentials and reviews stay.
+ * Ask Google to revoke a refresh token. Failures are ignored: the token is
+ * forgotten here either way, and the owner can remove access in their account.
+ *
+ * @param string $token Refresh token.
+ */
+function if_reviews_google_revoke( $token ) {
+	if ( '' === (string) $token ) {
+		return;
+	}
+	wp_remote_post(
+		IF_REVIEWS_GOOGLE_REVOKE,
+		array( 'timeout' => 15, 'body' => array( 'token' => $token ) )
+	);
+}
+
+/**
+ * Revoke and forget the connection. Credentials and reviews stay.
  */
 function if_reviews_google_handle_disconnect() {
 	if_reviews_google_guard( 'if_reviews_google_disconnect' );
 
 	$g = if_reviews_google_get();
 
-	if ( '' !== $g['refresh_token'] ) {
-		wp_remote_post(
-			add_query_arg( 'token', $g['refresh_token'], IF_REVIEWS_GOOGLE_REVOKE ),
-			array( 'timeout' => 15, 'headers' => array( 'Content-Type' => 'application/x-www-form-urlencoded' ) )
-		);
-	}
+	if_reviews_google_revoke( $g['refresh_token'] );
 
 	if_reviews_google_update(
 		array(
@@ -732,7 +772,7 @@ function if_reviews_google_handle_apply() {
 	$plan = get_transient( $key );
 
 	if ( ! is_array( $plan ) || empty( $plan['reviews'] ) ) {
-		if_reviews_google_notice( 'error', __( 'The preview has expired. Run it again.', 'if-reviews' ) );
+		if_reviews_google_notice( 'error', __( 'The preview has expired. Click Preview sync to run it again.', 'if-reviews' ) );
 		wp_safe_redirect( if_reviews_google_page_url() );
 		exit;
 	}
@@ -788,7 +828,7 @@ function if_reviews_google_render_preview() {
 	$plan = get_transient( 'if_reviews_google_plan_' . get_current_user_id() );
 
 	if ( ! is_array( $plan ) ) {
-		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'The preview has expired. Run it again.', 'if-reviews' ) . '</p></div>';
+		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'The preview has expired. Click Preview sync to run it again.', 'if-reviews' ) . '</p></div>';
 		return false;
 	}
 
@@ -1054,7 +1094,7 @@ function if_reviews_google_access_token() {
 		$detail = $token->get_error_data();
 		if ( is_array( $detail ) && isset( $detail['detail'] ) && false !== strpos( $detail['detail'], 'invalid_grant' ) ) {
 			if_reviews_google_update( array( 'needs_reconnect' => 1, 'access_token' => '', 'access_expires' => 0 ) );
-			return new WP_Error( 'if_google_reconnect', __( 'Google no longer accepts the saved authorisation (it may have expired or been revoked). Reconnect on the Google import page.', 'if-reviews' ) );
+			return new WP_Error( 'if_google_reconnect', __( 'Google no longer accepts this site\'s connection (it may have expired or been revoked). Click Reconnect on the Google import page.', 'if-reviews' ) );
 		}
 		return $token;
 	}
@@ -1079,6 +1119,11 @@ function if_reviews_google_access_token() {
  */
 function if_reviews_google_api_get( $url, $query = array() ) {
 
+	// Account and location names come from Google; refuse anything odd in the path.
+	if ( ! preg_match( '#^https://[a-z]+\.googleapis\.com/v\d+/[A-Za-z0-9_/-]+$#', $url ) ) {
+		return new WP_Error( 'if_google_bad_url', __( 'Unexpected account or location name from Google.', 'if-reviews' ) );
+	}
+
 	$token = if_reviews_google_access_token();
 
 	if ( is_wp_error( $token ) ) {
@@ -1086,7 +1131,7 @@ function if_reviews_google_api_get( $url, $query = array() ) {
 	}
 
 	$response = wp_remote_get(
-		add_query_arg( $query, $url ),
+		add_query_arg( array_map( 'rawurlencode', $query ), $url ),
 		array(
 			'timeout' => 30,
 			'headers' => array( 'Authorization' => 'Bearer ' . $token, 'Accept' => 'application/json' ),
@@ -1606,7 +1651,8 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 
 		if ( 'import' === $decision ) {
 			$post_id = wp_insert_post(
-				array(
+				wp_slash(
+					array(
 					'post_type'   => 'if_review',
 					'post_status' => 'publish',
 					'post_title'  => $review['name'],
@@ -1623,6 +1669,7 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 						'_if_google_review_id'   => $review['id'],
 						'_if_google_updated'     => $review['updated'],
 					),
+					)
 				),
 				true
 			);
@@ -1661,9 +1708,9 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
  */
 function if_reviews_google_write_review( $post_id, $review ) {
 
-	update_post_meta( $post_id, '_if_reviewer_name', $review['name'] );
+	update_post_meta( $post_id, '_if_reviewer_name', wp_slash( $review['name'] ) );
 	update_post_meta( $post_id, '_if_rating', $review['rating'] );
-	update_post_meta( $post_id, '_if_review_text', $review['text'] );
+	update_post_meta( $post_id, '_if_review_text', wp_slash( $review['text'] ) );
 	update_post_meta( $post_id, '_if_source', 'google' );
 	update_post_meta( $post_id, '_if_google_review_id', $review['id'] );
 	update_post_meta( $post_id, '_if_google_updated', $review['updated'] );

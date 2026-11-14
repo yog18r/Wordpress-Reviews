@@ -12,9 +12,9 @@ Show the reviews your business has already received, on your own site: per-revie
 
 == Description ==
 
-WP Reviews is a small, dependency-free way to display customer reviews on a WordPress site. You enter each review by hand in wp-admin: the reviewer's name, the date, a star rating, the review text, and where it was originally left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode then renders them as a card grid, a list or a carousel, with the overall rating, review count and a plain statement of where the reviews came from at the top.
+WP Reviews is a small, dependency-free way to display customer reviews on a WordPress site. Add each review in wp-admin, by hand, from a CSV file or with the optional Google import: the reviewer's name, the date, a star rating, the review text, and where it was left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode or block then shows them as a card grid, a list or a carousel, with the overall rating, the review count and a plain statement of where the reviews came from.
 
-**WP Reviews is a manual import tool.** It does not connect to Google, Facebook or any other service. Nothing is fetched and nothing is sent. Every review on your site is one you typed or pasted in yourself, which also means it keeps working if a platform changes its API, its pricing or its terms.
+**Your reviews live on your own site.** By default the plugin contacts no review platform: you type, paste or import each review, so it keeps working if a platform changes its API, pricing or terms. The one exception is the optional Google Business Profile import, which stays off until you connect it.
 
 = Use it honestly =
 
@@ -26,7 +26,7 @@ The plugin is built around one principle: the summary your visitors see should b
 * **Copy, don't edit.** Paste review text exactly as the reviewer wrote it, and use the same form of their name they used publicly.
 * **Link to the original.** Each review can carry a link to where it was left, shown as "View on Google" on the card, so visitors can check it for themselves.
 
-There is an opt-in setting to hide reviews below a star rating automatically. It is off by default, and it works exactly like hiding by hand: those reviews stay in WordPress and still count toward the average and the review count in the header. It changes which cards are shown, never the maths.
+An opt-in setting hides reviews below a chosen star rating automatically. It is off by default and works like hiding by hand: those reviews still count in the header.
 
 Consumer protection law in many countries, including the Australian Consumer Law, the United States FTC rule on consumer reviews and the United Kingdom's Digital Markets, Competition and Consumers Act, treats fabricated, edited or selectively presented reviews as misleading conduct. WP Reviews gives you the means to present reviews properly. Using it truthfully is your responsibility.
 
@@ -41,17 +41,17 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **Optional Google Business Profile import** using your own Google Cloud project: pull every review from one location, match the ones you had already entered by hand, keep edited reviews current and flag the ones Google removes. Off until you connect it.
 * **A block for the block editor** with a live preview and all the display options in the sidebar, alongside the `[if_reviews]` shortcode for widgets and templates.
 * **Optional link to the original review** on each card, and an opt-in setting to hide reviews below a chosen star rating (they still count in the header).
-* **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you add a link.
+* **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you tick "Show buttons" and add a link.
 * **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
 * **Styling without CSS**: accent, card, border and text colours, corner radius and a cycling avatar colour palette, all from a settings screen. Avatar text colour is picked automatically for contrast.
-* **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests unless you connect Google.
+* **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests apart from the update check, unless you connect Google.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
 
 = Sources and badges =
 
-Each review records where it was left. On the card the source appears as a small badge next to the date, for example "August 2026 · Google". Reviews marked "Direct" show no badge, because the header already states the mix of sources and a wall of identical badges adds nothing.
+Each review records where it was left. On the card the source appears as a small badge next to the date, for example "August 2026 · Google". Reviews marked "Direct" show no badge, because the header already states where the reviews came from.
 
 The icons are simple single-colour marks drawn for this plugin, not the platforms' official logos; the text label is what identifies the source. You can turn the icons off in Reviews → Display Settings and keep the text.
 
@@ -69,7 +69,7 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews title="What our clients say"]` — custom header title.
 * `[if_reviews buttons="yes"]` — force the "Leave us a review" buttons on (or `"no"` to hide them) for this instance.
 * `[if_reviews category="mortgages"]` — only reviews in a category (by slug; comma-separate several). The header describes that subset.
-* `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated widget per page.
+* `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated shortcode per page.
 * `[if_reviews layout="carousel" autoplay="6"]` — the carousel moves on every six seconds; `0` disables it.
 * `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review.
 * `[if_reviews_rating]` — inline "★★★★★ 4.8 from 120 reviews" badge. Accepts `source` and `category`; `stars="no"` or `count="no"` trims it.
@@ -81,7 +81,7 @@ The settings screen shows this reference with the list of source keys.
 
 In the block editor there are three blocks, all previewed with the same code that renders the front end:
 
-* **Reviews**: the widget. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. Supports wide and full alignment.
+* **Reviews**: the main reviews display. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. Supports wide and full alignment.
 * **Featured Review**: pick one review from a list to show it on its own as a highlighted quote.
 * **Rating Badge**: the compact "4.8 from 120 reviews" line, with optional source and category filters.
 
@@ -91,21 +91,23 @@ Under Reviews → Categories, create categories such as "Mortgage advice" or "In
 
 = "Leave us a review" buttons =
 
-Reviews → Display Settings → "Leave us a review" buttons. Tick "Show buttons", then paste the link to your review page for each platform you use; the row's "Where do I find this link?" note explains how to get the direct link for Google, Facebook, Trustpilot, Yelp and ProductReview.com.au. Button text defaults to "Review us on Google" and so on, and can be changed per platform. The buttons appear under the widget, open in a new tab by default, and can also be placed anywhere on their own with `[if_reviews_buttons]`.
+Reviews → Display Settings → "Leave us a review" buttons. Tick "Show buttons", then paste the link to your review page for each platform you use; the row's "Where do I find this link?" note explains how to get the direct link for Google, Facebook, Trustpilot, Yelp and ProductReview.com.au. Button text defaults to "Review us on Google" and so on, and can be changed per platform. The buttons appear under the reviews, open in a new tab by default, and can also be placed anywhere on their own with `[if_reviews_buttons]`.
 
 = Import and export =
 
-Reviews → Import / Export. Export downloads every review, including hidden ones and drafts, as a UTF-8 CSV. Import takes a CSV with a header row; only `reviewer_name` and `rating` are required, and the other columns are `review_date`, `review_text`, `source`, `source_label`, `review_url`, `display` and `status`. A template is available on the screen. Ratings written as fractions (4/5, 8/10) are converted to stars, platform names are matched to sources, and rows that match an existing review are skipped so a corrected file can be re-imported safely.
+Reviews → Import / Export. Export downloads every review, including hidden ones and drafts, as a CSV file. Import takes a CSV with a header row. Only `reviewer_name` and `rating` are required; the optional columns are `review_date`, `review_text`, `source`, `source_label`, `review_url`, `categories`, `pinned`, `display` and `status`. Download the template from the page to get started. Ratings written as fractions (4/5, 8/10) are converted to stars, platform names are matched to sources, and rows that match an existing review are skipped so a corrected file can be re-imported safely.
 
 = Google Business Profile import =
 
 Reviews → Google import. This is optional, off by default, and uses a Google Cloud project that you own; the plugin never contacts Google otherwise, and nothing passes through anyone else's servers.
 
-Google only lets approved projects read Business Profile reviews, so there is one-off setup on Google's side: a verified profile at least 60 days old that lists your website, a Cloud project, an access request that Google approves by hand (days to weeks), three APIs enabled, a consent screen and an OAuth client whose redirect URI is shown on the screen. The screen walks through all six steps. Two details matter for a connection that lasts: a Workspace account should set the consent screen's audience to Internal, and a personal Google account should choose External and then click "Publish app", because Google expires a Testing app's authorisation every 7 days. Where a Workspace administrator restricts third-party apps or enforces Google Cloud session re-authentication, marking the app as Trusted in the Admin console (API controls) and ticking "Exempt trusted apps" in Google Cloud session control keeps the connection alive; the screen gives the exact paths. Once connected, the plugin reads all reviews of one location, not the five the Places API returns, and because the data is read by the profile's owner there is no caching limit.
+Google only lets approved projects read Business Profile reviews, so there is one-off setup on Google's side, and the Google import page walks you through all six steps. You need a verified profile at least 60 days old that lists your website, a Cloud project, Google's approval of an access request (days to weeks), three APIs, a consent screen and an OAuth client.
 
-The first sync is a preview. Reviews already on the site with the source "Google" are matched to the profile by reviewer name, rating and text, and you approve each match before anything changes, so reviews you entered by hand are linked rather than duplicated. Every imported or linked review stores Google's review ID; later syncs, manual or once a day, use that ID alone. When a reviewer edits their review on Google, the rating, text and date here follow; showing, hiding, pinning and categories are yours and are never touched. A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
+To keep the connection from expiring, set the consent screen audience to Internal on a Google Workspace account, or to External followed by "Publish app" on a personal Google account (Google ends a Testing app's connection after 7 days). If a Workspace administrator restricts third-party apps, they also mark the app as Trusted in the Admin console; the page gives the exact steps. Once connected, the plugin reads every review for one location.
 
-All reviews on the profile are imported, low ratings included. Hide the ones you do not want shown; they still count in the summary header, exactly as hand-entered reviews do.
+The first sync is a preview. Reviews already on the site with the source "Google" are matched to the profile by reviewer name, rating and text, and you approve each match before anything changes, so reviews you entered by hand are linked, not duplicated. After that, "Sync now" or the optional daily sync imports new reviews and updates edited ones. Linked reviews take Google's reviewer name, rating, text and date; showing, hiding, pinning and categories stay as you set them. A new Google review that closely matches an unlinked review on the site is linked automatically, so click "Preview sync" first if you want to check. A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
+
+All reviews on the profile are imported, low ratings included. Hide any you do not want shown; they still count in the header.
 
 = Updates =
 
@@ -118,16 +120,19 @@ The plugin checks the project's GitHub releases and offers new versions on the P
 * `if_reviews_reviews` — filter the loaded reviews before stats and display.
 * `if_reviews_date_format` — PHP date format for review dates (default `F Y`).
 * `if_reviews_show_more_label` — label of the "Show more" button.
+* `if_reviews_cta_buttons` — alter the "Leave us a review" buttons.
+* `if_reviews_cta_help` — the "Where do I find this link?" help for each platform.
+* `if_reviews_google_fetched_reviews` — alter reviews fetched from Google before they are matched.
 * `if_reviews_update_checker_enabled` — disable GitHub update checks.
 
-Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_pinned` and `_if_display_on_website` ('1' or '0'), plus the `if_review_category` taxonomy. Settings live in one option, `if_reviews_options`.
+Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_pinned` and `_if_display_on_website` ('1' or '0'), plus the `if_review_category` taxonomy. Settings live in the `if_reviews_options` option and the Google connection in `if_reviews_google`. Google-synced reviews also carry `_if_google_review_id`, `_if_google_updated` and `_if_google_missing`.
 
 Source code, issues and releases: https://github.com/yog18r/Wordpress-Reviews
 
 == Installation ==
 
 1. Download `if-reviews.zip` from the latest release at https://github.com/yog18r/Wordpress-Reviews/releases
-2. In wp-admin go to Plugins → Add New → Upload Plugin, choose the zip and activate it.
+2. In wp-admin go to Plugins → Add New Plugin → Upload Plugin, choose the zip and activate it.
 3. Go to **Reviews → Add New** and enter your first review: name, date, rating, source and text.
 4. Optionally adjust colours and layout defaults under **Reviews → Display Settings**.
 5. Add `[if_reviews]` to a page.
@@ -142,15 +147,15 @@ Not by default. Every review is entered by hand or imported from a CSV, and the 
 
 = Why does the Google import need a Google Cloud project? Other plugins do not ask for one. =
 
-Plugins that import Google reviews "without an API key" route the request through their own servers, which read your public Maps page on your behalf, and the free tiers are capped because that service is what they sell. This plugin does not run a service. It uses Google's own Business Profile API, which returns every review and permits storing them, but which Google only opens to projects it has approved individually. That approval, and the OAuth client that goes with it, is the setup described on the Google import screen. It is a one-off and it keeps your reviews in your hands, with nothing passing through a third party.
+Plugins that import Google reviews "without an API key" send the request through their own servers and cap the free tier, because that service is what they sell. This plugin runs no service. It uses Google's own Business Profile API, which returns every review but is open only to projects Google has approved. That approval is the one-off setup described on the Google import page, and it means your reviews never pass through a third party.
 
 = Does the plugin add review schema (star ratings in search results)? =
 
-No, deliberately. Google's review snippet guidelines make a business's own reviews ineligible for star results: ratings must be sourced directly from users, must not be aggregated from other websites, and pages using LocalBusiness or Organization markup do not qualify when the business being reviewed controls the reviews shown, which includes embedded Google or Facebook review widgets. Reviews entered by hand and copied from Google, Facebook or Trustpilot fail all three tests. Adding AggregateRating markup would earn no rich result and risks a manual action for misleading structured data. The stars that appear beside your business in search come from your Google Business Profile, not from your website. The plugin therefore outputs plain, accessible HTML and no structured data.
+No, deliberately. Google does not show review stars for reviews a business publishes about itself, and that includes reviews copied from Google, Facebook or Trustpilot. Adding the markup anyway would earn nothing and risks a penalty for misleading structured data. The stars beside your business in search results come from your Google Business Profile, not your website. The plugin therefore outputs plain, accessible HTML with no structured data.
 
 = How do I hide a bad review without affecting the rating? =
 
-Edit the review and untick "Display this review on the website". It disappears from the cards but remains in WordPress and still counts toward the average and the review count in the header. That is deliberate: hiding a review from view is a presentation choice; removing it from the maths would make the summary untrue. You can also hide or show many at once with the bulk actions on the Reviews list.
+Edit the review and untick "Display this review on the website". It leaves the cards but still counts toward the average and review count in the header; removing it from the maths would make the summary untrue. To hide or show many at once, use the bulk actions on the Reviews list.
 
 = Why does the header say "Reviews" and not "Google Reviews"? =
 
@@ -158,7 +163,7 @@ The header names a platform only when every review in that shortcode came from i
 
 = Can I hide every review below a certain rating automatically? =
 
-Yes, if you choose to. Reviews → Display Settings → "Automatically hide low ratings" is off by default. Turn it on and reviews rated below your chosen number of stars disappear from the cards, while still counting toward the average and the review count in the header, just like reviews you hide by hand. The Reviews list marks them "Auto-hidden". Be aware that showing only your best reviews while advertising an average is the kind of thing consumer regulators look at; the header stays truthful, but the choice is yours.
+Yes. Reviews → Display Settings → "Automatically hide low ratings" is off by default. Turn it on and reviews below your chosen rating leave the cards but still count in the header, like reviews you hide by hand. The Reviews list marks them "Auto-hidden". Be aware that showing only your best reviews beside an average is something consumer regulators look at.
 
 = How do I import reviews from a spreadsheet? =
 

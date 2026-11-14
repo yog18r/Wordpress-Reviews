@@ -66,7 +66,21 @@ function if_register_reviews_post_type() {
 			// Only the title; every other field lives in the meta box.
 			'supports'          => array( 'title' ),
 			'menu_icon'         => if_reviews_menu_icon(),
+			// Editors and administrators only: an Author could otherwise
+			// publish reviews that change the rating shown on every page.
 			'capability_type'   => 'post',
+			'capabilities'      => array(
+				'edit_posts'             => 'edit_others_posts',
+				'create_posts'           => 'edit_others_posts',
+				'publish_posts'          => 'edit_others_posts',
+				'edit_published_posts'   => 'edit_others_posts',
+				'edit_private_posts'     => 'edit_others_posts',
+				'delete_posts'           => 'edit_others_posts',
+				'delete_published_posts' => 'edit_others_posts',
+				'delete_private_posts'   => 'edit_others_posts',
+				'delete_others_posts'    => 'edit_others_posts',
+				'read_private_posts'     => 'edit_others_posts',
+			),
 			'map_meta_cap'      => true,
 		)
 	);
@@ -182,7 +196,7 @@ function if_reviews_admin_column_content( $column, $post_id ) {
 			$rating = (int) get_post_meta( $post_id, '_if_rating', true );
 
 			if ( if_reviews_is_auto_hidden( $rating ) ) {
-				echo '<span class="if-admin-hidden" title="' . esc_attr__( 'Hidden by the minimum rating in Display Settings', 'if-reviews' ) . '">' . esc_html__( 'Auto-hidden', 'if-reviews' ) . '</span>';
+				echo '<span class="if-admin-hidden" title="' . esc_attr__( 'Hidden by "Automatically hide low ratings" in Display Settings', 'if-reviews' ) . '">' . esc_html__( 'Auto-hidden', 'if-reviews' ) . '</span>';
 			} elseif ( ! $shown ) {
 				echo '<span class="if-admin-hidden">' . esc_html__( 'Hidden', 'if-reviews' ) . '</span>';
 			} else {
