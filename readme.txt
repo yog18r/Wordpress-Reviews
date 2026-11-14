@@ -346,7 +346,7 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 == Upgrade Notice ==
 
 = 2.6.0 =
-Style presets with a live preview, dark mode, card styles, spacing and text size options. Existing sites look the same until you change a setting.
+Style presets with a live preview, dark mode, card styles, spacing and text size options. Your settings are kept; the one automatic change is that grids now choose their number of columns from the space they have rather than the screen width.
 
 = 2.5.0 =
 Much faster on sites with many reviews, plus accessibility and appearance fixes. Recommended.
