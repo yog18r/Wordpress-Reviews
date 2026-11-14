@@ -21,3 +21,4 @@
 /.editorconfig export-ignore
 /README.md export-ignore
 /assets/screenshots export-ignore
+/tests export-ignore
