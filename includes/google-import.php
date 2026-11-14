@@ -837,11 +837,27 @@ function if_reviews_google_render_preview() {
 				</tr>
 			</thead>
 			<tbody>
+			<?php
+			// Every Google review on the site not yet linked, so any of them can be linked by hand.
+			$linkable = array();
+			foreach ( $existing as $post_id => $e ) {
+				if ( '' === $e['google_id'] ) {
+					$linkable[ $post_id ] = $e;
+				}
+			}
+			uasort(
+				$linkable,
+				function ( $a, $b ) {
+					return strcasecmp( $a['name'], $b['name'] );
+				}
+			);
+			?>
 			<?php foreach ( $reviews as $r ) : ?>
 				<?php
 				$candidates = isset( $matches[ $r['id'] ] ) ? $matches[ $r['id'] ] : array();
 				$default    = $r['default'];
 				$linked     = isset( $r['linked_post'] ) ? (int) $r['linked_post'] : 0;
+				$others     = array_diff_key( $linkable, array_flip( wp_list_pluck( $candidates, 'post_id' ) ) );
 				?>
 				<tr>
 					<td>
@@ -886,6 +902,25 @@ function if_reviews_google_render_preview() {
 										?>
 									</option>
 								<?php endforeach; ?>
+								<?php if ( ! empty( $others ) ) : ?>
+									<optgroup label="<?php esc_attr_e( 'Link to another Google review on this site', 'if-reviews' ); ?>">
+										<?php foreach ( $others as $post_id => $e ) : ?>
+											<option value="link:<?php echo esc_attr( $post_id ); ?>">
+												<?php
+												echo esc_html(
+													sprintf(
+														/* translators: 1: reviewer name, 2: star rating, 3: review date */
+														__( '%1$s, %2$d stars (%3$s)', 'if-reviews' ),
+														$e['name'],
+														$e['rating'],
+														'' !== $e['date'] ? if_reviews_format_date( $e['date'] ) : __( 'no date', 'if-reviews' )
+													)
+												);
+												?>
+											</option>
+										<?php endforeach; ?>
+									</optgroup>
+								<?php endif; ?>
 								<option value="skip" <?php selected( 'skip', $default ); ?>><?php esc_html_e( 'Skip (do not import)', 'if-reviews' ); ?></option>
 							</select>
 						<?php endif; ?>
@@ -1358,7 +1393,8 @@ function if_reviews_google_similarity( $google, $local ) {
 		}
 	} elseif ( '' === $gt && '' === $lt ) {
 		// Rating-only reviews: name, rating and a close date is all there is.
-		$score = ( null !== $days && $days <= 45 ) ? 0.86 : 0.4;
+		// Without a close date it is still worth offering as a possible match.
+		$score = ( null !== $days && $days <= 45 ) ? 0.86 : 0.65;
 	} else {
 		$score = 0.3; // One has text, the other does not.
 	}
