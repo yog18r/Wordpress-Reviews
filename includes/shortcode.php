@@ -1076,7 +1076,14 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 			?>
 			<p class="if-review-link">
 				<a href="<?php echo esc_url( $review['url'] ); ?>" target="_blank" rel="noopener">
-					<?php echo esc_html( $link_label ); ?><span aria-hidden="true"> ↗</span><span class="if-sr-only"> <?php esc_html_e( '(opens in a new tab)', 'if-reviews' ); ?></span>
+					<?php
+					echo esc_html( $link_label );
+					// Screen readers list links by name, so say whose review
+					// each one opens. The visible words come first, so voice
+					// control still matches "View on Google".
+					if ( '' !== trim( $review['name'] ) ) :
+						?>
+<span class="if-sr-only"><?php echo esc_html( sprintf( /* translators: %s: reviewer name */ __( ', review by %s', 'if-reviews' ), $review['name'] ) ); ?></span><?php endif; ?><span aria-hidden="true"> ↗</span><span class="if-sr-only"> <?php esc_html_e( '(opens in a new tab)', 'if-reviews' ); ?></span>
 				</a>
 			</p>
 		<?php endif; ?>

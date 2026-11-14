@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.0
+Stable tag: 2.7.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -235,6 +235,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.7.1 =
+* Fixed: with "Match my theme", dates, "Read more" and "View on Google" links now meet the 4.5:1 contrast that small text needs on typical light themes (flagged by Google PageSpeed). They are still a little softer than the review text.
+* Improved: each "View on Google" link tells screen readers whose review it opens, so the links in a list are no longer identical.
+
 = 2.7.0 =
 * New: **"Match my theme" colour scheme**. Reviews take your theme's own text and background colours instead of fixed ones, so they fit any theme and follow its light/dark switch instantly (tested against a Blocksy-style switch). It is the default for new sites; sites updated from earlier versions keep their current look until they choose it.
 * New: the colour pickers in Display Settings show your theme's palette as swatches, when the theme has one.
@@ -354,6 +358,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.7.1 =
+Accessibility fixes: clearer dates and links with "Match my theme", and review links that name the reviewer for screen readers.
 
 = 2.7.0 =
 Adds a "Match my theme" colour scheme that follows your theme's colours and dark mode. Your current look is kept until you choose it.

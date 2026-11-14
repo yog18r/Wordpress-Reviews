@@ -280,6 +280,20 @@ switch ( $phase ) {
 		ifr_check( false !== strpos( if_reviews_build_dynamic_css(), '--if-star-color:#ffbf00' ), 'star colour in the generated CSS' );
 		ifr_check( 21.0 === round( if_reviews_contrast_ratio( '#000000', '#ffffff' ), 1 ) && 1.0 === round( if_reviews_contrast_ratio( '#777', '#777777' ), 1 ), 'contrast ratio' );
 
+		/* "View on" links name the reviewer for screen readers (2.7.1). */
+		$sample = array_values( if_reviews_get_reviews() )[0];
+		$sample = array_merge( $sample, array( 'name' => 'Suzy H', 'url' => 'https://example.com/r/1' ) );
+		$card_opts = array_merge( if_reviews_get_options(), array( 'show_review_links' => 1 ) );
+		ob_start();
+		if_reviews_render_card( $sample, $card_opts );
+		$card = ob_get_clean();
+		ifr_check( (bool) preg_match( '/>\s*View [^<]+<span class="if-sr-only">, review by Suzy H<\/span>/', $card ), 'review link names the reviewer after the visible words' );
+		ob_start();
+		if_reviews_render_card( array_merge( $sample, array( 'name' => '' ) ), $card_opts );
+		$card = ob_get_clean();
+		ifr_check( false !== strpos( $card, 'example.com/r/1' ) && false === strpos( $card, 'review by' ), 'no reviewer suffix when the name is empty' );
+		ifr_check( false !== strpos( file_get_contents( IF_REVIEWS_PATH . 'assets/css/reviews.css' ), 'currentColor 90%, transparent' ), 'theme scheme meta text at 90% strength' );
+
 		/* Match my theme: the default for new sites, kept off for updated ones. */
 		ifr_check( 'theme' === if_reviews_default_options()['color_scheme'], 'new sites default to Match my theme' );
 		ifr_check( in_array( 'if-scheme-theme', if_reviews_style_classes( array_merge( if_reviews_get_options(), array( 'color_scheme' => 'theme' ) ) ), true ), 'theme scheme gets its class' );

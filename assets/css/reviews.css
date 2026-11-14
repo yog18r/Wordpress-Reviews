@@ -648,7 +648,10 @@
   --if-card-bg-color: color-mix(in srgb, currentColor 5%, transparent);
   --if-border-color: color-mix(in srgb, currentColor 16%, transparent);
   --if-text-color: currentColor;
-  --if-meta-color: color-mix(in srgb, currentColor 72%, transparent);
+  /* 90% keeps dates and links softer than the review text while still
+     reaching 4.5:1 for small text on typical themes (72% fell short on
+     mid-grey body text). */
+  --if-meta-color: color-mix(in srgb, currentColor 90%, transparent);
 }
 
 /* Browsers without color-mix(): neutral greys that sit on light or dark. */
