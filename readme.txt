@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.7.1
+Stable tag: 2.8.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you tick "Show buttons" and add a link.
 * **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
-* **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
+* **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes, each with card colours you can change; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests apart from the update check, unless you connect Google.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
@@ -74,7 +74,7 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated shortcode per page.
 * `[if_reviews scheme="dark" card_style="outlined" density="compact"]` — style for this instance only: scheme `theme`, `light`, `dark` or `auto`; card style `shadow`, `outlined`, `flat` or `minimal`; density `compact`, `comfortable` or `spacious`.
 * `[if_reviews layout="carousel" autoplay="6"]` — the carousel moves on every six seconds; `0` disables it.
-* `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review.
+* `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review. Also takes `scheme`, `card_style` and `density`.
 * `[if_reviews_rating]` — inline "★★★★★ 4.8 from 120 reviews" badge. Accepts `source` and `category`; `stars="no"` or `count="no"` trims it.
 * `[if_reviews_buttons]` — the buttons on their own. `heading="..."` changes the heading; `heading="-"` removes it.
 
@@ -85,7 +85,7 @@ The settings screen shows this reference with the list of source keys.
 In the block editor there are three blocks, all previewed with the same code that renders the front end:
 
 * **Reviews**: the main reviews display. Every option in the sidebar starts at "Default", which follows Reviews → Display Settings; change only what should differ on that page. Supports wide and full alignment.
-* **Featured Review**: pick one review from a list to show it on its own as a highlighted quote.
+* **Featured Review**: pick one review from a searchable list to show it on its own as a highlighted quote, with its own colour scheme, card style and spacing if you like.
 * **Rating Badge**: the compact "4.8 from 120 reviews" line, with optional source and category filters.
 
 = Categories, pinning and pagination =
@@ -215,7 +215,7 @@ Yes, with the colour scheme "Match my theme" (the default on new sites). The rev
 
 = Can I change the colours to match my site? =
 
-Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme ("Match my theme", light, dark, or follow the visitor's device), card style, spacing, text size, star and accent colours, card colours, corner radius and avatar colours. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews block.
+Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme ("Match my theme", light, dark, or follow the visitor's device), card style, spacing, text size, star and accent colours, card colours (separate light and dark sets), corner radius and avatar colours. Only the settings that apply to your choices are shown. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews and Featured Review blocks.
 
 = What happens to my reviews if I delete the plugin? =
 
@@ -234,6 +234,12 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.8.0 =
+* New: **editable dark colours**. The Dark scheme's card background, border, text and date colours can now be changed and saved, like the light ones. "Light or dark, following the visitor's device" uses both sets.
+* Improved: Display Settings shows only the settings that apply. "Match my theme" hides the card colours it takes from your theme, Light and Dark show their own colours, and card styles hide what they don't use (Flat has no border, Minimal no card background or corners).
+* New: the **Featured Review** block and `[if_review]` shortcode take a colour scheme, card style and spacing of their own (`scheme`, `card_style`, `density`), like the Reviews block.
+* Changed: "Preview on a dark page" is now "Preview in dark mode", and with the device-following scheme it previews the dark colours.
 
 = 2.7.1 =
 * Fixed: with "Match my theme", dates, "Read more" and "View on Google" links now meet the 4.5:1 contrast that small text needs on typical light themes (flagged by Google PageSpeed). They are still a little softer than the review text.
@@ -358,6 +364,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.8.0 =
+Dark colours you can edit, a settings screen that shows only what applies, and style options for the Featured Review block. Your site looks the same after updating.
 
 = 2.7.1 =
 Accessibility fixes: clearer dates and links with "Match my theme", and review links that name the reviewer for screen readers.

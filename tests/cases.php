@@ -294,6 +294,23 @@ switch ( $phase ) {
 		ifr_check( false !== strpos( $card, 'example.com/r/1' ) && false === strpos( $card, 'review by' ), 'no reviewer suffix when the name is empty' );
 		ifr_check( false !== strpos( file_get_contents( IF_REVIEWS_PATH . 'assets/css/reviews.css' ), 'currentColor 90%, transparent' ), 'theme scheme meta text at 90% strength' );
 
+		/* Editable dark card colours (2.8.0). */
+		$clean = if_reviews_sanitize_options( array( 'dark_card_bg_color' => '#102030', 'dark_text_color' => 'nope' ) );
+		ifr_check( '#102030' === $clean['dark_card_bg_color'] && '#e8e8e8' === $clean['dark_text_color'], 'dark colours sanitised (bad values fall back to defaults)' );
+		$saved = get_option( 'if_reviews_options' );
+		update_option( 'if_reviews_options', array_merge( $saved, array( 'dark_card_bg_color' => '#102030', 'dark_meta_color' => '#c0c0c0' ) ) );
+		$dyn = if_reviews_build_dynamic_css();
+		ifr_check( false !== strpos( $dyn, '.if-reviews-wrap.if-scheme-dark{--if-card-bg-color:#102030;' ) && false !== strpos( $dyn, '--if-meta-color:#c0c0c0;' ), 'dark colours in the generated CSS for the Dark scheme' );
+		ifr_check( (bool) preg_match( '/@media \(prefers-color-scheme: dark\)\{\.if-reviews-wrap\.if-scheme-auto\{--if-card-bg-color:#102030;/', $dyn ), 'dark colours used by the device scheme on dark devices' );
+		update_option( 'if_reviews_options', $saved );
+
+		/* Featured review style options (2.8.0). */
+		$featured_id = array_values( wp_list_filter( if_reviews_get_reviews(), array( 'display' => true ) ) )[0]['id'];
+		$one = do_shortcode( '[if_review id="' . $featured_id . '" scheme="dark" card_style="minimal" density="compact"]' );
+		ifr_check( false !== strpos( $one, 'if-scheme-dark' ) && false !== strpos( $one, 'if-card-minimal' ) && false !== strpos( $one, 'if-density-compact' ), 'featured shortcode style attributes become classes' );
+		$one = if_reviews_render_featured_block( array( 'reviewId' => $featured_id, 'scheme' => 'auto', 'cardStyle' => 'outlined' ) );
+		ifr_check( false !== strpos( $one, 'if-scheme-auto' ) && false !== strpos( $one, 'if-card-outlined' ) && false !== strpos( $one, 'if-featured' ), 'Featured Review block style options become classes' );
+
 		/* Match my theme: the default for new sites, kept off for updated ones. */
 		ifr_check( 'theme' === if_reviews_default_options()['color_scheme'], 'new sites default to Match my theme' );
 		ifr_check( in_array( 'if-scheme-theme', if_reviews_style_classes( array_merge( if_reviews_get_options(), array( 'color_scheme' => 'theme' ) ) ), true ), 'theme scheme gets its class' );

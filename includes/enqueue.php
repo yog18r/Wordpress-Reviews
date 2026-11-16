@@ -130,6 +130,16 @@ function if_reviews_build_dynamic_css() {
 	}
 	$css .= '}';
 
+	// Dark card colours: always for the Dark scheme, and on dark devices for
+	// "following the visitor's device". Printed for every site, since one
+	// widget can pick a scheme of its own.
+	$dark = '--if-card-bg-color:' . esc_attr( $options['dark_card_bg_color'] ) . ';'
+		. '--if-border-color:' . esc_attr( $options['dark_border_color'] ) . ';'
+		. '--if-text-color:' . esc_attr( $options['dark_text_color'] ) . ';'
+		. '--if-meta-color:' . esc_attr( $options['dark_meta_color'] ) . ';';
+	$css .= '.if-reviews-wrap.if-scheme-dark{' . $dark . '}';
+	$css .= '@media (prefers-color-scheme: dark){.if-reviews-wrap.if-scheme-auto{' . $dark . '}}';
+
 	// One class per palette colour. Each card picks its class from a hash
 	// of the reviewer's name (see if_reviews_avatar_index()).
 	foreach ( if_reviews_get_avatar_colors( $options ) as $index => $hex ) {

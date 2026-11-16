@@ -128,7 +128,14 @@ function if_reviews_render_featured_block( $attributes ) {
 			: '';
 	}
 
-	$html = if_review_single_shortcode( array( 'id' => $id ) );
+	$html = if_review_single_shortcode(
+		array(
+			'id'         => $id,
+			'scheme'     => isset( $attributes['scheme'] ) ? $attributes['scheme'] : '',
+			'card_style' => isset( $attributes['cardStyle'] ) ? $attributes['cardStyle'] : '',
+			'density'    => isset( $attributes['density'] ) ? $attributes['density'] : '',
+		)
+	);
 
 	if ( '' === $html ) {
 		return if_reviews_is_editor_preview()

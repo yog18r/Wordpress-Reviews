@@ -23,7 +23,10 @@ function if_review_single_shortcode( $atts = array() ) {
 
 	$atts = shortcode_atts(
 		array(
-			'id' => 0,
+			'id'         => 0,
+			'scheme'     => '',
+			'card_style' => '',
+			'density'    => '',
 		),
 		$atts,
 		'if_review'
@@ -50,9 +53,18 @@ function if_review_single_shortcode( $atts = array() ) {
 
 	if_reviews_enqueue_assets();
 
+	$classes = if_reviews_style_classes(
+		$options,
+		array(
+			'color_scheme' => sanitize_key( $atts['scheme'] ),
+			'card_style'   => sanitize_key( $atts['card_style'] ),
+			'density'      => sanitize_key( $atts['density'] ),
+		)
+	);
+
 	ob_start();
 	?>
-	<div class="<?php echo esc_attr( implode( ' ', array_merge( array( 'if-reviews-wrap', 'if-featured' ), if_reviews_style_classes( $options ) ) ) ); ?>">
+	<div class="<?php echo esc_attr( implode( ' ', array_merge( array( 'if-reviews-wrap', 'if-featured' ), $classes ) ) ); ?>">
 		<?php if_reviews_render_card( $review, $options, false, 'if-featured-card' ); ?>
 	</div>
 	<?php

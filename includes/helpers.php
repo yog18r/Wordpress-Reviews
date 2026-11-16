@@ -27,22 +27,28 @@ function if_reviews_default_options() {
 
 	return array(
 		// Appearance.
-		'accent_color'  => '#f5a623',
-		'card_bg_color' => '#ffffff',
-		'border_color'  => '#d6d6d6',
-		'border_radius' => 14,
-		'text_color'    => '#4b5563',
-		'meta_color'    => '#6b7280',
-		'avatar_colors' => '4285f4,34a853,ea4335,fbbc04',
+		'accent_color'       => '#f5a623',
+		'card_bg_color'      => '#ffffff',
+		'border_color'       => '#d6d6d6',
+		'border_radius'      => 14,
+		'text_color'         => '#4b5563',
+		'meta_color'         => '#6b7280',
+		// Card colours for the Dark scheme, and for dark devices with
+		// "Light or dark, following the visitor's device".
+		'dark_card_bg_color' => '#1c1c1c',
+		'dark_border_color'  => '#333333',
+		'dark_text_color'    => '#e8e8e8',
+		'dark_meta_color'    => '#a6a6a6',
+		'avatar_colors'      => '4285f4,34a853,ea4335,fbbc04',
 		// Blank = the accent colour.
-		'star_color'    => '',
+		'star_color'         => '',
 		// New sites follow the theme; sites updated from older versions keep
 		// "light" (see if_reviews_upgrade()).
-		'color_scheme'  => 'theme',
-		'card_style'    => 'shadow',
-		'hover_lift'    => 0,
-		'density'       => 'comfortable',
-		'text_size'     => 'default',
+		'color_scheme'       => 'theme',
+		'card_style'         => 'shadow',
+		'hover_lift'         => 0,
+		'density'            => 'comfortable',
+		'text_size'          => 'default',
 
 		// Display (defaults for the shortcode; each can be overridden
 		// per shortcode with an attribute of the same name).
@@ -162,7 +168,7 @@ function if_reviews_sanitize_options( $input ) {
 
 	/* Appearance ------------------------------------------------ */
 
-	$color_fields = array( 'accent_color', 'card_bg_color', 'border_color', 'text_color', 'meta_color' );
+	$color_fields = array( 'accent_color', 'card_bg_color', 'border_color', 'text_color', 'meta_color', 'dark_card_bg_color', 'dark_border_color', 'dark_text_color', 'dark_meta_color' );
 
 	foreach ( $color_fields as $field ) {
 

@@ -670,8 +670,8 @@
   box-shadow: none;
 }
 
-/* Colour scheme: dark. Neutral near-black cards; star and accent colours
-   come from the settings. */
+/* Colour scheme: dark. These are the defaults; the dark card colours in
+   the settings are printed after this file and replace them. */
 .if-reviews-wrap.if-scheme-dark {
   --if-card-bg-color: #1c1c1c;
   --if-border-color: #333333;

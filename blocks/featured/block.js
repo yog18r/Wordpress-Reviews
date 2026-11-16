@@ -17,6 +17,7 @@
 	var ServerSideRender = wp.serverSideRender;
 	var useState = wp.element.useState;
 	var useEffect = wp.element.useEffect;
+	var DEFAULT_LABEL = __('Default (from Display Settings)', 'if-reviews');
 
 	// Loaded once per editor session and shared by every Featured Review block.
 	var cache = null;
@@ -95,6 +96,45 @@
 						PanelBody,
 						{ title: __('Review', 'if-reviews'), initialOpen: true },
 						picker
+					),
+					el(
+						PanelBody,
+						{ title: __('Style', 'if-reviews'), initialOpen: false },
+						el(SelectControl, {
+							label: __('Colour scheme', 'if-reviews'),
+							value: a.scheme,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Match my theme', 'if-reviews'), value: 'theme' },
+								{ label: __('Light', 'if-reviews'), value: 'light' },
+								{ label: __('Dark', 'if-reviews'), value: 'dark' },
+								{ label: __("Follow the visitor's device", 'if-reviews'), value: 'auto' }
+							],
+							onChange: function (value) { set({ scheme: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Card style', 'if-reviews'),
+							value: a.cardStyle,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Soft shadow', 'if-reviews'), value: 'shadow' },
+								{ label: __('Outlined', 'if-reviews'), value: 'outlined' },
+								{ label: __('Flat', 'if-reviews'), value: 'flat' },
+								{ label: __('Minimal (no card)', 'if-reviews'), value: 'minimal' }
+							],
+							onChange: function (value) { set({ cardStyle: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Spacing', 'if-reviews'),
+							value: a.density,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Compact', 'if-reviews'), value: 'compact' },
+								{ label: __('Comfortable', 'if-reviews'), value: 'comfortable' },
+								{ label: __('Spacious', 'if-reviews'), value: 'spacious' }
+							],
+							onChange: function (value) { set({ density: value }); }
+						})
 					)
 				),
 				el(

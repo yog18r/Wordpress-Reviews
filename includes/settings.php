@@ -206,7 +206,7 @@ function if_reviews_register_settings() {
 			'type'        => 'select',
 			'label'       => __( 'Colour scheme', 'if-reviews' ),
 			'choices'     => $choices['color_scheme'],
-			'description' => __( '"Match my theme" uses your theme\'s own text and background colours, so the reviews follow its light and dark modes (including a light/dark switch on your site) with nothing to set. Light and Dark use the card colours below and their own dark palette. Star, accent and avatar colours apply in every scheme.', 'if-reviews' ),
+			'description' => __( '"Match my theme" takes the text and card colours from your theme, so the reviews follow its light and dark modes (including a light/dark switch on your site). Light and Dark each have card colours you can change below; following the visitor\'s device uses both. Only the settings that apply to your choices are shown.', 'if-reviews' ),
 		),
 		'card_style'   => array(
 			'type'    => 'select',
@@ -236,7 +236,18 @@ function if_reviews_register_settings() {
 		add_settings_field( $key, $field['label'], 'if_reviews_render_field', 'if-reviews-settings', 'if_reviews_appearance_section', $field );
 	}
 
-	$star_contrast = if_reviews_contrast_ratio( '' !== $options['star_color'] ? $options['star_color'] : $options['accent_color'], $options['card_bg_color'] );
+	// Check the stars against the card backgrounds the saved scheme uses.
+	// "Match my theme" takes its background from the page, so it can't be checked here.
+	$star          = '' !== $options['star_color'] ? $options['star_color'] : $options['accent_color'];
+	$star_contrast = 21;
+	$backgrounds   = array(
+		'light' => array( $options['card_bg_color'] ),
+		'dark'  => array( $options['dark_card_bg_color'] ),
+		'auto'  => array( $options['card_bg_color'], $options['dark_card_bg_color'] ),
+	);
+	foreach ( isset( $backgrounds[ $options['color_scheme'] ] ) ? $backgrounds[ $options['color_scheme'] ] : array() as $background ) {
+		$star_contrast = min( $star_contrast, if_reviews_contrast_ratio( $star, $background ) );
+	}
 
 	add_settings_field(
 		'star_color',
@@ -256,11 +267,15 @@ function if_reviews_register_settings() {
 	);
 
 	$color_fields = array(
-		'accent_color'  => array( __( 'Accent colour', 'if-reviews' ), __( 'Used for the stars (unless a star colour is set), highlights and the current page number.', 'if-reviews' ) ),
-		'card_bg_color' => array( __( 'Card background colour', 'if-reviews' ), __( 'This and the next three apply to the Light scheme only; "Match my theme" and Dark set their own.', 'if-reviews' ) ),
-		'border_color'  => array( __( 'Card border colour', 'if-reviews' ), '' ),
-		'text_color'    => array( __( 'Review text colour', 'if-reviews' ), '' ),
-		'meta_color'    => array( __( 'Meta text colour', 'if-reviews' ), __( 'Used for the review count line, dates and source badges.', 'if-reviews' ) ),
+		'accent_color'       => array( __( 'Accent colour', 'if-reviews' ), __( 'Used for the stars (unless a star colour is set), highlights and the current page number.', 'if-reviews' ) ),
+		'card_bg_color'      => array( __( 'Card background', 'if-reviews' ), '' ),
+		'border_color'       => array( __( 'Card border', 'if-reviews' ), '' ),
+		'text_color'         => array( __( 'Review text', 'if-reviews' ), '' ),
+		'meta_color'         => array( __( 'Dates and labels', 'if-reviews' ), __( 'The review count line, dates, source badges and links. Small text: aim for 4.5:1 contrast with the card.', 'if-reviews' ) ),
+		'dark_card_bg_color' => array( __( 'Card background (dark)', 'if-reviews' ), '' ),
+		'dark_border_color'  => array( __( 'Card border (dark)', 'if-reviews' ), '' ),
+		'dark_text_color'    => array( __( 'Review text (dark)', 'if-reviews' ), '' ),
+		'dark_meta_color'    => array( __( 'Dates and labels (dark)', 'if-reviews' ), __( 'The Default button on each colour restores the original.', 'if-reviews' ) ),
 	);
 
 	foreach ( $color_fields as $key => $field ) {
@@ -530,7 +545,7 @@ function if_reviews_render_settings_page() {
 				<tr><td><code>[if_reviews scheme="dark"]</code></td><td><?php esc_html_e( 'Colour scheme for this instance: theme (match my theme), light, dark or auto (follow the visitor\'s device).', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews card_style="outlined"]</code></td><td><?php esc_html_e( 'Card style for this instance: shadow, outlined, flat or minimal.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews density="compact"]</code></td><td><?php esc_html_e( 'Spacing for this instance: compact, comfortable or spacious.', 'if-reviews' ); ?></td></tr>
-				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote. The ID is in the address bar when editing the review.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote (or use the Featured Review block). The ID is in the address bar when editing the review. Accepts scheme, card_style and density too.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_rating]</code></td><td><?php esc_html_e( 'Inline badge: "★★★★★ 4.8 from 120 reviews". Accepts source and category; stars="no" or count="no" trims it.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews buttons="yes"]</code></td><td><?php esc_html_e( 'Force the "Leave us a review" buttons on (or "no" to hide them) for this instance.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_buttons]</code></td><td><?php esc_html_e( 'The "Leave us a review" buttons on their own, anywhere. Add heading="..." for a different heading or heading="-" for none.', 'if-reviews' ); ?></td></tr>
@@ -606,13 +621,12 @@ jQuery(function ($) {
 
 	var preview = $('#if-reviews-preview');
 	var field = function (key) { return $('[name="if_reviews_options[' + key + ']"]'); };
-	var pickerVars = {
-		accent_color: '--if-accent-color',
-		star_color: '--if-star-color',
-		card_bg_color: '--if-card-bg-color',
-		border_color: '--if-border-color',
-		text_color: '--if-text-color',
-		meta_color: '--if-meta-color'
+	// Card colours: [light field, dark field].
+	var cardVars = {
+		'--if-card-bg-color': ['card_bg_color', 'dark_card_bg_color'],
+		'--if-border-color': ['border_color', 'dark_border_color'],
+		'--if-text-color': ['text_color', 'dark_text_color'],
+		'--if-meta-color': ['meta_color', 'dark_meta_color']
 	};
 	var classFields = {
 		color_scheme: ['if-scheme-', 'light'],
@@ -630,13 +644,32 @@ jQuery(function ($) {
 	function refresh() {
 		if (!preview.length) { return; }
 		var scheme = field('color_scheme').val();
-		var deviceDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-		var darkScheme = scheme === 'dark' || (scheme === 'auto' && deviceDark);
-		// "Match my theme" and the dark scheme bring their own card colours
-		// (as on the site), so only star and accent come from the fields.
-		$.each(pickerVars, function (key, cssVar) {
-			var cardColour = key !== 'accent_color' && key !== 'star_color';
-			setVar(cssVar, (darkScheme || scheme === 'theme') && cardColour ? '' : field(key).val());
+		var card = field('card_style').val();
+		var darkPage = scheme === 'dark' || $('#if-reviews-preview-dark').is(':checked');
+		// "Following the visitor's device" previews its dark colours in dark mode.
+		var useDark = scheme === 'dark' || (scheme === 'auto' && darkPage);
+		setVar('--if-accent-color', field('accent_color').val());
+		setVar('--if-star-color', field('star_color').val());
+		// "Match my theme" takes its card colours from the page, as on the site.
+		$.each(cardVars, function (cssVar, keys) {
+			setVar(cssVar, scheme === 'theme' ? '' : field(keys[useDark ? 1 : 0]).val());
+		});
+
+		// Show only the settings that apply to the current choices.
+		var showLight = scheme === 'light' || scheme === 'auto';
+		var showDark = scheme === 'dark' || scheme === 'auto';
+		$.each({
+			card_bg_color: showLight && card !== 'minimal',
+			border_color: showLight && card !== 'flat',
+			text_color: showLight,
+			meta_color: showLight,
+			dark_card_bg_color: showDark && card !== 'minimal',
+			dark_border_color: showDark && card !== 'flat',
+			dark_text_color: showDark,
+			dark_meta_color: showDark,
+			border_radius: card !== 'minimal'
+		}, function (key, show) {
+			field(key).closest('tr').toggle(show);
 		});
 		setVar('--if-border-radius', (parseInt(field('border_radius').val(), 10) || 0) + 'px');
 		$.each(classFields, function (key, info) {
@@ -647,7 +680,7 @@ jQuery(function ($) {
 			if (value && value !== info[1]) { preview.addClass(info[0] + value); }
 		});
 		preview.toggleClass('if-hover-lift', field('hover_lift').is(':checked'));
-		$('.if-style-preview').toggleClass('if-preview-dark', darkScheme || $('#if-reviews-preview-dark').is(':checked'));
+		$('.if-style-preview').toggleClass('if-preview-dark', darkPage);
 	}
 
 	// Colour pickers report changes through their own callbacks.
@@ -671,7 +704,7 @@ jQuery(function ($) {
 		classic: { color_scheme: 'light', card_style: 'shadow', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, accent_color: '#f5a623', star_color: '', card_bg_color: '#ffffff', border_color: '#d6d6d6', text_color: '#4b5563', meta_color: '#6b7280' },
 		minimal: { color_scheme: 'light', card_style: 'minimal', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 0, accent_color: '#1f2937', star_color: '#f5a623', card_bg_color: '#ffffff', border_color: '#e5e7eb', text_color: '#374151', meta_color: '#6b7280' },
 		outlined: { color_scheme: 'light', card_style: 'outlined', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 8, accent_color: '#2563eb', star_color: '#f5a623', card_bg_color: '#ffffff', border_color: '#cbd5e1', text_color: '#334155', meta_color: '#64748b' },
-		dark: { color_scheme: 'dark', card_style: 'flat', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, accent_color: '#fbbf24', star_color: '', card_bg_color: '#ffffff', border_color: '#d6d6d6', text_color: '#4b5563', meta_color: '#6b7280' },
+		dark: { color_scheme: 'dark', card_style: 'flat', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, accent_color: '#fbbf24', star_color: '', dark_card_bg_color: '#1c1c1c', dark_border_color: '#333333', dark_text_color: '#e8e8e8', dark_meta_color: '#a6a6a6' },
 		compact: { color_scheme: 'light', card_style: 'outlined', density: 'compact', text_size: 'small', hover_lift: false, border_radius: 8, accent_color: '#f5a623', star_color: '', card_bg_color: '#ffffff', border_color: '#d6d6d6', text_color: '#4b5563', meta_color: '#6b7280' }
 	};
 
@@ -794,7 +827,7 @@ function if_reviews_render_style_preview() {
 			<option value="compact"><?php esc_html_e( 'Compact (sidebars)', 'if-reviews' ); ?></option>
 		</select>
 		<button type="button" class="button" id="if-reviews-preset-apply"><?php esc_html_e( 'Apply to the fields below', 'if-reviews' ); ?></button>
-		<label style="margin-inline-start:auto"><input type="checkbox" id="if-reviews-preview-dark"> <?php esc_html_e( 'Preview on a dark page', 'if-reviews' ); ?></label>
+		<label style="margin-inline-start:auto"><input type="checkbox" id="if-reviews-preview-dark"> <?php esc_html_e( 'Preview in dark mode', 'if-reviews' ); ?></label>
 		<span id="if-reviews-preset-note" class="description" hidden><?php esc_html_e( 'Applied to the preview. Save Changes to use it on your site.', 'if-reviews' ); ?></span>
 	</div>
 	<div class="if-style-preview<?php echo 'dark' === $options['color_scheme'] ? ' if-preview-dark' : ''; ?>" aria-label="<?php esc_attr_e( 'Preview', 'if-reviews' ); ?>">
