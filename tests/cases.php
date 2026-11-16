@@ -304,12 +304,46 @@ switch ( $phase ) {
 		ifr_check( (bool) preg_match( '/@media \(prefers-color-scheme: dark\)\{\.if-reviews-wrap\.if-scheme-auto\{--if-card-bg-color:#102030;/', $dyn ), 'dark colours used by the device scheme on dark devices' );
 		update_option( 'if_reviews_options', $saved );
 
+		/* Dark star and accent colours, layout options (2.9.0). */
+		$clean = if_reviews_sanitize_options( array( 'dark_accent_color' => '#123456', 'dark_star_color' => 'x', 'summary_position' => 'diagonal', 'card_align' => 'center', 'avatar_shape' => 'square', 'theme_dark_selector' => '.dark}body{color:red} </style><script>', 'show_date' => '1' ) );
+		ifr_check( '#123456' === $clean['dark_accent_color'] && '' === $clean['dark_star_color'], 'dark accent kept, bad dark star blanked' );
+		ifr_check( 'top' === $clean['summary_position'] && 'center' === $clean['card_align'] && 'square' === $clean['avatar_shape'], 'layout options sanitised' );
+		ifr_check( false === strpbrk( $clean['theme_dark_selector'], '{}<>;/' ), 'dark mode selector cannot break out of the stylesheet' );
+		ifr_check( 1 === $clean['show_date'] && 0 === $clean['show_source_badge'], 'date and source switches saved' );
+
+		$saved = get_option( 'if_reviews_options' );
+		update_option( 'if_reviews_options', array_merge( $saved, array( 'dark_accent_color' => '#123456', 'dark_star_color' => '#abcdef' ) ) );
+		$dyn = if_reviews_build_dynamic_css();
+		ifr_check( (bool) preg_match( '/\.if-reviews-wrap\.if-scheme-dark\{[^}]*--if-accent-color:#123456;[^}]*--if-star-color:#abcdef;/', $dyn ), 'dark accent and star in the Dark scheme CSS' );
+		ifr_check( false !== strpos( $dyn, ':is([data-color-mode*="dark"], [data-theme="dark"], .dark-mode, .is-dark-theme, .dark) .if-reviews-wrap.if-scheme-theme{--if-accent-color:#123456;' ), 'dark accent follows the theme\'s dark mode with Match my theme' );
+		update_option( 'if_reviews_options', array_merge( $saved, array( 'dark_accent_color' => '#123456', 'theme_dark_selector' => '' ) ) );
+		ifr_check( false !== strpos( if_reviews_build_dynamic_css(), '@media (prefers-color-scheme: dark){.if-reviews-wrap.if-scheme-theme{--if-accent-color:#123456;' ), 'no dark mode selector: follow the device' );
+		update_option( 'if_reviews_options', $saved );
+		ifr_check( false === strpos( if_reviews_build_dynamic_css(), 'if-scheme-theme{' ), 'no theme dark rule when no dark accent or star is set' );
+
+		$html = do_shortcode( '[if_reviews limit="2" summary="left" summary_align="center" card_align="end"]' );
+		ifr_check( false !== strpos( $html, 'if-has-side-summary' ) && false !== strpos( $html, 'if-summary-left' ) && strpos( $html, 'if-reviews-header' ) < strpos( $html, 'class="if-reviews-main"' ), 'summary beside the reviews' );
+		ifr_check( false !== strpos( $html, 'if-summary-align-center' ) && false !== strpos( $html, 'if-align-end' ), 'alignment attributes become classes' );
+		$html = do_shortcode( '[if_reviews limit="2" summary="bottom"]' );
+		ifr_check( strpos( $html, 'class="if-cards"' ) < strpos( $html, 'if-reviews-header' ) && false === strpos( $html, 'if-reviews-main' ), 'summary below the reviews' );
+		$html = do_shortcode( '[if_reviews limit="2" summary="right" show_header="no"]' );
+		ifr_check( false === strpos( $html, 'if-has-side-summary' ) && false === strpos( $html, 'if-reviews-header' ), 'no side column without a summary' );
+		$block = if_reviews_render_block( array( 'limit' => 2, 'summaryPosition' => 'right', 'cardAlign' => 'center' ) );
+		ifr_check( false !== strpos( $block, 'if-summary-right' ) && false !== strpos( $block, 'if-align-center' ), 'Reviews block layout options become classes' );
+
+		update_option( 'if_reviews_options', array_merge( $saved, array( 'avatar_shape' => 'none', 'show_date' => 0, 'show_source_badge' => 0 ) ) );
+		$html = do_shortcode( '[if_reviews limit="2"]' );
+		ifr_check( false === strpos( $html, 'class="if-avatar ' ) && false === strpos( $html, 'if-review-date' ), 'avatars, dates and sources can be turned off' );
+		update_option( 'if_reviews_options', $saved );
+
 		/* Featured review style options (2.8.0). */
 		$featured_id = array_values( wp_list_filter( if_reviews_get_reviews(), array( 'display' => true ) ) )[0]['id'];
 		$one = do_shortcode( '[if_review id="' . $featured_id . '" scheme="dark" card_style="minimal" density="compact"]' );
 		ifr_check( false !== strpos( $one, 'if-scheme-dark' ) && false !== strpos( $one, 'if-card-minimal' ) && false !== strpos( $one, 'if-density-compact' ), 'featured shortcode style attributes become classes' );
 		$one = if_reviews_render_featured_block( array( 'reviewId' => $featured_id, 'scheme' => 'auto', 'cardStyle' => 'outlined' ) );
 		ifr_check( false !== strpos( $one, 'if-scheme-auto' ) && false !== strpos( $one, 'if-card-outlined' ) && false !== strpos( $one, 'if-featured' ), 'Featured Review block style options become classes' );
+		$one = if_reviews_render_featured_block( array( 'reviewId' => $featured_id, 'cardAlign' => 'center' ) );
+		ifr_check( false !== strpos( $one, 'if-align-center' ), 'Featured Review block alignment' );
 
 		/* Match my theme: the default for new sites, kept off for updated ones. */
 		ifr_check( 'theme' === if_reviews_default_options()['color_scheme'], 'new sites default to Match my theme' );

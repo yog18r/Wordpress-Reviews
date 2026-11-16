@@ -552,6 +552,9 @@ function if_reviews_shortcode( $atts = array() ) {
 			'scheme'      => '',
 			'card_style'  => '',
 			'density'     => '',
+			'summary'     => '',
+			'summary_align' => '',
+			'card_align'  => '',
 		),
 		$atts,
 		'if_reviews'
@@ -624,21 +627,25 @@ function if_reviews_shortcode( $atts = array() ) {
 	static $instance = 0;
 	$instance++;
 
-	$id      = 'if-reviews-' . $instance;
-	$classes = array_merge(
+	$id        = 'if-reviews-' . $instance;
+	$overrides = array(
+		'color_scheme'     => sanitize_key( $atts['scheme'] ),
+		'card_style'       => sanitize_key( $atts['card_style'] ),
+		'density'          => sanitize_key( $atts['density'] ),
+		'summary_position' => sanitize_key( $atts['summary'] ),
+		'summary_align'    => sanitize_key( $atts['summary_align'] ),
+		'card_align'       => sanitize_key( $atts['card_align'] ),
+	);
+	$position  = if_reviews_style_value( $options, $overrides, 'summary_position' );
+	$side      = $show_header && in_array( $position, array( 'left', 'right' ), true );
+	$classes   = array_merge(
 		array(
 			'if-reviews-wrap',
 			'if-layout-' . $layout,
 			'if-columns-' . $columns,
 		),
-		if_reviews_style_classes(
-			$options,
-			array(
-				'color_scheme' => sanitize_key( $atts['scheme'] ),
-				'card_style'   => sanitize_key( $atts['card_style'] ),
-				'density'      => sanitize_key( $atts['density'] ),
-			)
-		)
+		if_reviews_style_classes( $options, $overrides ),
+		$side ? array( 'if-has-side-summary' ) : array()
 	);
 
 	ob_start();
@@ -660,8 +667,14 @@ function if_reviews_shortcode( $atts = array() ) {
 	>
 
 		<?php
-		if ( $show_header ) {
+		// The summary goes above, beside (in a column next to the rest) or
+		// below the reviews.
+		if ( $show_header && 'bottom' !== $position ) {
 			if_reviews_render_header( $stats, $title, $options );
+		}
+
+		if ( $side ) {
+			echo '<div class="if-reviews-main">';
 		}
 		?>
 
@@ -729,8 +742,16 @@ function if_reviews_shortcode( $atts = array() ) {
 		<?php endif; ?>
 
 		<?php
+		if ( $show_header && 'bottom' === $position ) {
+			if_reviews_render_header( $stats, $title, $options );
+		}
+
 		if ( $show_buttons ) {
 			if_reviews_render_cta( $options );
+		}
+
+		if ( $side ) {
+			echo '</div>';
 		}
 		?>
 
@@ -997,8 +1018,8 @@ function if_reviews_render_stars( $value, $class = 'if-stars', $decimals = 1 ) {
 function if_reviews_render_card( $review, $options, $hidden = false, $extra_class = '' ) {
 
 	$source = if_reviews_review_source( $review );
-	$badge  = if_reviews_source_has_badge( $source );
-	$date   = if_reviews_format_date( $review['date'] );
+	$badge  = ! empty( $options['show_source_badge'] ) && if_reviews_source_has_badge( $source );
+	$date   = ! empty( $options['show_date'] ) ? if_reviews_format_date( $review['date'] ) : '';
 
 	$avatar_index = isset( $review['avatar_index'] ) && null !== $review['avatar_index']
 		? (int) $review['avatar_index']
@@ -1021,12 +1042,15 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 
 		<div class="if-card-top">
 
-			<div class="<?php echo esc_attr( $avatar_class ); ?>" aria-hidden="true"><?php echo esc_html( $review['initials'] ); ?></div>
+			<?php if ( 'none' !== $options['avatar_shape'] ) : ?>
+				<div class="<?php echo esc_attr( $avatar_class ); ?>" aria-hidden="true"><?php echo esc_html( $review['initials'] ); ?></div>
+			<?php endif; ?>
 
 			<div class="if-card-meta">
 
 				<p class="if-reviewer-name"><?php echo esc_html( $review['name'] ); ?></p>
 
+				<?php if ( '' !== $date || $badge ) : ?>
 				<p class="if-review-date">
 					<?php if ( '' !== $date ) : ?>
 						<span class="if-review-date-text"><?php echo esc_html( $date ); ?></span>
@@ -1044,6 +1068,7 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 						</span>
 					<?php endif; ?>
 				</p>
+				<?php endif; ?>
 
 			</div>
 

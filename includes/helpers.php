@@ -39,9 +39,20 @@ function if_reviews_default_options() {
 		'dark_border_color'  => '#333333',
 		'dark_text_color'    => '#e8e8e8',
 		'dark_meta_color'    => '#a6a6a6',
+		// Blank = the same as the light accent / star colour.
+		'dark_accent_color'  => '',
+		'dark_star_color'    => '',
+		// "Match my theme": how to tell the theme is in dark mode, as CSS
+		// selectors for an ancestor of the reviews. Empty = the device setting.
+		'theme_dark_selector' => '[data-color-mode*="dark"], [data-theme="dark"], .dark-mode, .is-dark-theme, .dark',
 		'avatar_colors'      => '4285f4,34a853,ea4335,fbbc04',
 		// Blank = the accent colour.
 		'star_color'         => '',
+		// Layout.
+		'summary_position'   => 'top',
+		'summary_align'      => 'start',
+		'card_align'         => 'start',
+		'avatar_shape'       => 'circle',
 		// New sites follow the theme; sites updated from older versions keep
 		// "light" (see if_reviews_upgrade()).
 		'color_scheme'       => 'theme',
@@ -66,6 +77,8 @@ function if_reviews_default_options() {
 		// 0 = always show full text; otherwise characters before "Read more".
 		'excerpt_length'    => 0,
 		'show_review_links' => 1,
+		'show_date'         => 1,
+		'show_source_badge' => 1,
 		// "Imported from Google" under reviews synced from Google.
 		'show_import_label' => 0,
 		// Seconds between automatic carousel moves; 0 = off.
@@ -177,7 +190,14 @@ function if_reviews_sanitize_options( $input ) {
 		$output[ $field ] = $value ? $value : $defaults[ $field ];
 	}
 
-	$output['star_color'] = isset( $input['star_color'] ) && sanitize_hex_color( $input['star_color'] ) ? sanitize_hex_color( $input['star_color'] ) : '';
+	// Optional colours: blank falls back to another setting.
+	foreach ( array( 'star_color', 'dark_accent_color', 'dark_star_color' ) as $field ) {
+		$output[ $field ] = isset( $input[ $field ] ) && sanitize_hex_color( $input[ $field ] ) ? sanitize_hex_color( $input[ $field ] ) : '';
+	}
+
+	$output['theme_dark_selector'] = isset( $input['theme_dark_selector'] )
+		? if_reviews_sanitize_selector( $input['theme_dark_selector'] )
+		: $defaults['theme_dark_selector'];
 
 	foreach ( if_reviews_style_choices() as $field => $choices ) {
 		$output[ $field ] = ( isset( $input[ $field ] ) && array_key_exists( $input[ $field ], $choices ) ) ? $input[ $field ] : $defaults[ $field ];
@@ -255,6 +275,8 @@ function if_reviews_sanitize_options( $input ) {
 	}
 
 	$output['show_review_links'] = isset( $input['show_review_links'] ) ? if_reviews_to_bool( $input['show_review_links'] ) : 0;
+	$output['show_date']         = isset( $input['show_date'] ) ? if_reviews_to_bool( $input['show_date'] ) : 0;
+	$output['show_source_badge'] = isset( $input['show_source_badge'] ) ? if_reviews_to_bool( $input['show_source_badge'] ) : 0;
 	$output['show_import_label'] = isset( $input['show_import_label'] ) ? if_reviews_to_bool( $input['show_import_label'] ) : 0;
 
 	$output['carousel_autoplay'] = isset( $input['carousel_autoplay'] )
@@ -704,7 +726,65 @@ function if_reviews_style_choices() {
 			'default' => __( 'Default', 'if-reviews' ),
 			'large'   => __( 'Large', 'if-reviews' ),
 		),
+		'summary_position' => array(
+			'top'    => __( 'Above the reviews', 'if-reviews' ),
+			'bottom' => __( 'Below the reviews', 'if-reviews' ),
+			'left'   => __( 'Left of the reviews', 'if-reviews' ),
+			'right'  => __( 'Right of the reviews', 'if-reviews' ),
+		),
+		'summary_align'    => array(
+			'start'  => __( 'Left', 'if-reviews' ),
+			'center' => __( 'Centre', 'if-reviews' ),
+			'end'    => __( 'Right', 'if-reviews' ),
+		),
+		'card_align'       => array(
+			'start'  => __( 'Left', 'if-reviews' ),
+			'center' => __( 'Centre', 'if-reviews' ),
+			'end'    => __( 'Right', 'if-reviews' ),
+		),
+		'avatar_shape'     => array(
+			'circle'  => __( 'Circle', 'if-reviews' ),
+			'rounded' => __( 'Rounded square', 'if-reviews' ),
+			'square'  => __( 'Square', 'if-reviews' ),
+			'none'    => __( 'No avatar', 'if-reviews' ),
+		),
 	);
+}
+
+/**
+ * One appearance setting for a widget: its override when valid, else the
+ * saved setting, else the default.
+ *
+ * @param array  $options   Plugin options.
+ * @param array  $overrides Per-widget values; '' = use the setting.
+ * @param string $field     Key from if_reviews_style_choices().
+ * @return string
+ */
+function if_reviews_style_value( $options, $overrides, $field ) {
+
+	$choices = if_reviews_style_choices();
+	$value   = isset( $overrides[ $field ] ) && '' !== $overrides[ $field ] ? $overrides[ $field ] : $options[ $field ];
+
+	if ( ! array_key_exists( $value, $choices[ $field ] ) ) {
+		$value = array_key_exists( $options[ $field ], $choices[ $field ] ) ? $options[ $field ] : if_reviews_default_options()[ $field ];
+	}
+
+	return $value;
+}
+
+/**
+ * Keep a list of CSS selectors safe to print inside a stylesheet: only
+ * the characters selectors need, nothing that could end the rule or the
+ * <style> element.
+ *
+ * @param string $value Raw selectors, comma-separated.
+ * @return string
+ */
+function if_reviews_sanitize_selector( $value ) {
+
+	$value = preg_replace( '/[^A-Za-z0-9_\-\.\#\[\]=\"\'\*\^\$\|~:,() ]/', '', (string) $value );
+
+	return trim( preg_replace( '/\s+/', ' ', substr( $value, 0, 500 ) ) );
 }
 
 /**
@@ -717,18 +797,20 @@ function if_reviews_style_choices() {
  */
 function if_reviews_style_classes( $options, $overrides = array() ) {
 
-	$choices = if_reviews_style_choices();
 	$classes = array();
 	$prefix  = array(
-		'color_scheme' => array( 'if-scheme-', 'light' ),
-		'card_style'   => array( 'if-card-', 'shadow' ),
-		'density'      => array( 'if-density-', 'comfortable' ),
-		'text_size'    => array( 'if-text-', 'default' ),
+		'color_scheme'     => array( 'if-scheme-', 'light' ),
+		'card_style'       => array( 'if-card-', 'shadow' ),
+		'density'          => array( 'if-density-', 'comfortable' ),
+		'text_size'        => array( 'if-text-', 'default' ),
+		'summary_position' => array( 'if-summary-', 'top' ),
+		'summary_align'    => array( 'if-summary-align-', 'start' ),
+		'card_align'       => array( 'if-align-', 'start' ),
+		'avatar_shape'     => array( 'if-avatar-shape-', 'circle' ),
 	);
 
 	foreach ( $prefix as $field => $info ) {
-		$value = isset( $overrides[ $field ] ) && '' !== $overrides[ $field ] ? $overrides[ $field ] : $options[ $field ];
-		$value = array_key_exists( $value, $choices[ $field ] ) ? $value : $info[1];
+		$value = if_reviews_style_value( $options, $overrides, $field );
 
 		// The defaults need no class: the base stylesheet is the default look.
 		if ( $value !== $info[1] ) {

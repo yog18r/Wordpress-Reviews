@@ -149,6 +149,40 @@
 								{ label: __('Spacious', 'if-reviews'), value: 'spacious' }
 							],
 							onChange: function (value) { set({ density: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Summary position', 'if-reviews'),
+							value: a.summaryPosition,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Above the reviews', 'if-reviews'), value: 'top' },
+								{ label: __('Below the reviews', 'if-reviews'), value: 'bottom' },
+								{ label: __('Left of the reviews', 'if-reviews'), value: 'left' },
+								{ label: __('Right of the reviews', 'if-reviews'), value: 'right' }
+							],
+							onChange: function (value) { set({ summaryPosition: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Summary alignment', 'if-reviews'),
+							value: a.summaryAlign,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Left', 'if-reviews'), value: 'start' },
+								{ label: __('Centre', 'if-reviews'), value: 'center' },
+								{ label: __('Right', 'if-reviews'), value: 'end' }
+							],
+							onChange: function (value) { set({ summaryAlign: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Review alignment', 'if-reviews'),
+							value: a.cardAlign,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Left', 'if-reviews'), value: 'start' },
+								{ label: __('Centre', 'if-reviews'), value: 'center' },
+								{ label: __('Right', 'if-reviews'), value: 'end' }
+							],
+							onChange: function (value) { set({ cardAlign: value }); }
 						})
 					),
 					el(

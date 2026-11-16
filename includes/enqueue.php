@@ -137,8 +137,31 @@ function if_reviews_build_dynamic_css() {
 		. '--if-border-color:' . esc_attr( $options['dark_border_color'] ) . ';'
 		. '--if-text-color:' . esc_attr( $options['dark_text_color'] ) . ';'
 		. '--if-meta-color:' . esc_attr( $options['dark_meta_color'] ) . ';';
+
+	// Dark accent and star colours; blank ones inherit the light ones above.
+	$dark_marks = '';
+	if ( '' !== $options['dark_accent_color'] ) {
+		$dark_marks .= '--if-accent-color:' . esc_attr( $options['dark_accent_color'] ) . ';'
+			. '--if-accent-contrast:' . esc_attr( if_reviews_contrast_text( $options['dark_accent_color'] ) ) . ';';
+	}
+	if ( '' !== $options['dark_star_color'] ) {
+		$dark_marks .= '--if-star-color:' . esc_attr( $options['dark_star_color'] ) . ';';
+	}
+	$dark .= $dark_marks;
+
 	$css .= '.if-reviews-wrap.if-scheme-dark{' . $dark . '}';
 	$css .= '@media (prefers-color-scheme: dark){.if-reviews-wrap.if-scheme-auto{' . $dark . '}}';
+
+	// "Match my theme" takes its card colours from the page, but the dark
+	// accent and star colours need to know when the theme is dark: when an
+	// ancestor matches the dark-mode selectors (:is() skips any it can't
+	// read), or with none set, when the device is in dark mode.
+	if ( '' !== $dark_marks ) {
+		$selector = if_reviews_sanitize_selector( $options['theme_dark_selector'] );
+		$css     .= '' !== $selector
+			? ':is(' . $selector . ') .if-reviews-wrap.if-scheme-theme{' . $dark_marks . '}'
+			: '@media (prefers-color-scheme: dark){.if-reviews-wrap.if-scheme-theme{' . $dark_marks . '}}';
+	}
 
 	// One class per palette colour. Each card picks its class from a hash
 	// of the reviewer's name (see if_reviews_avatar_index()).

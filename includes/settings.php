@@ -127,6 +127,16 @@ function if_reviews_register_settings() {
 			'text'        => __( 'Show a "View on Google" style link on reviews that have a URL', 'if-reviews' ),
 			'description' => __( 'Set the URL on each review. Links open in a new tab and let visitors check the original.', 'if-reviews' ),
 		),
+		'show_date'         => array(
+			'type'  => 'checkbox',
+			'label' => __( 'Review dates', 'if-reviews' ),
+			'text'  => __( 'Show the date under the reviewer\'s name', 'if-reviews' ),
+		),
+		'show_source_badge' => array(
+			'type'  => 'checkbox',
+			'label' => __( 'Review source', 'if-reviews' ),
+			'text'  => __( 'Show where each review came from (for example "Google") under the reviewer\'s name', 'if-reviews' ),
+		),
 		'min_rating'        => array(
 			'type'        => 'select',
 			'label'       => __( 'Automatically hide low ratings', 'if-reviews' ),
@@ -229,6 +239,28 @@ function if_reviews_register_settings() {
 			'label'   => __( 'Text size', 'if-reviews' ),
 			'choices' => $choices['text_size'],
 		),
+		'summary_position' => array(
+			'type'        => 'select',
+			'label'       => __( 'Summary position', 'if-reviews' ),
+			'choices'     => $choices['summary_position'],
+			'description' => __( 'Where the rating summary sits. Beside the reviews moves it above them when there isn\'t room, such as on phones.', 'if-reviews' ),
+		),
+		'summary_align'    => array(
+			'type'    => 'select',
+			'label'   => __( 'Summary alignment', 'if-reviews' ),
+			'choices' => $choices['summary_align'],
+		),
+		'card_align'       => array(
+			'type'        => 'select',
+			'label'       => __( 'Review alignment', 'if-reviews' ),
+			'choices'     => $choices['card_align'],
+			'description' => __( 'Lines up the name, stars and text inside each review. Centred puts the avatar above the name.', 'if-reviews' ),
+		),
+		'avatar_shape'     => array(
+			'type'    => 'select',
+			'label'   => __( 'Avatars', 'if-reviews' ),
+			'choices' => $choices['avatar_shape'],
+		),
 	);
 
 	foreach ( $style_fields as $key => $field ) {
@@ -236,38 +268,58 @@ function if_reviews_register_settings() {
 		add_settings_field( $key, $field['label'], 'if_reviews_render_field', 'if-reviews-settings', 'if_reviews_appearance_section', $field );
 	}
 
-	// Check the stars against the card backgrounds the saved scheme uses.
-	// "Match my theme" takes its background from the page, so it can't be checked here.
-	$star          = '' !== $options['star_color'] ? $options['star_color'] : $options['accent_color'];
-	$star_contrast = 21;
-	$backgrounds   = array(
-		'light' => array( $options['card_bg_color'] ),
-		'dark'  => array( $options['dark_card_bg_color'] ),
-		'auto'  => array( $options['card_bg_color'], $options['dark_card_bg_color'] ),
+	// Check the stars against the card backgrounds the saved scheme uses,
+	// light and dark separately. "Match my theme" takes its background from
+	// the page, so it can't be checked here.
+	$light_star = '' !== $options['star_color'] ? $options['star_color'] : $options['accent_color'];
+	$dark_star  = $options['dark_star_color'];
+	if ( '' === $dark_star ) {
+		$dark_star = '' !== $options['star_color'] ? $options['star_color'] : ( '' !== $options['dark_accent_color'] ? $options['dark_accent_color'] : $options['accent_color'] );
+	}
+	$star_note = function ( $star, $background ) {
+		$ratio = if_reviews_contrast_ratio( $star, $background );
+		/* translators: %s: contrast ratio, e.g. 2.1 */
+		return $ratio < 3 ? ' ' . sprintf( __( 'Note: the stars contrast with the card background at only %s:1; 3:1 or more is easier to see.', 'if-reviews' ), number_format_i18n( $ratio, 1 ) ) : '';
+	};
+	$light_note = in_array( $options['color_scheme'], array( 'light', 'auto' ), true ) ? $star_note( $light_star, $options['card_bg_color'] ) : '';
+	$dark_note  = in_array( $options['color_scheme'], array( 'dark', 'auto' ), true ) ? $star_note( $dark_star, $options['dark_card_bg_color'] ) : '';
+
+	$mark_fields = array(
+		'star_color'        => array( __( 'Star colour', 'if-reviews' ), __( 'The filled part of the star ratings. Blank uses the accent colour.', 'if-reviews' ) . $light_note ),
+		'accent_color'      => array( __( 'Accent colour', 'if-reviews' ), __( 'Highlights: the border on buttons and arrows when hovered or focused, and the current page number.', 'if-reviews' ) ),
+		'dark_star_color'   => array( __( 'Star colour (dark)', 'if-reviews' ), __( 'Blank uses the light star colour.', 'if-reviews' ) . $dark_note ),
+		'dark_accent_color' => array( __( 'Accent colour (dark)', 'if-reviews' ), __( 'Blank uses the light accent colour.', 'if-reviews' ) ),
 	);
-	foreach ( isset( $backgrounds[ $options['color_scheme'] ] ) ? $backgrounds[ $options['color_scheme'] ] : array() as $background ) {
-		$star_contrast = min( $star_contrast, if_reviews_contrast_ratio( $star, $background ) );
+
+	foreach ( $mark_fields as $key => $field ) {
+		add_settings_field(
+			$key,
+			$field[0],
+			'if_reviews_render_field',
+			'if-reviews-settings',
+			'if_reviews_appearance_section',
+			array(
+				'key'         => $key,
+				'type'        => 'color',
+				'description' => $field[1],
+			)
+		);
 	}
 
 	add_settings_field(
-		'star_color',
-		__( 'Star colour', 'if-reviews' ),
+		'theme_dark_selector',
+		__( 'Theme dark mode', 'if-reviews' ),
 		'if_reviews_render_field',
 		'if-reviews-settings',
 		'if_reviews_appearance_section',
 		array(
-			'key'         => 'star_color',
-			'type'        => 'color',
-			'description' => __( 'Blank uses the accent colour. Gold stars with a brand-coloured accent is a common combination.', 'if-reviews' )
-				. ( $star_contrast < 3
-					/* translators: %s: contrast ratio, e.g. 2.1 */
-					? ' ' . sprintf( __( 'Note: the stars contrast with the card background at only %s:1; 3:1 or more is easier to see.', 'if-reviews' ), number_format_i18n( $star_contrast, 1 ) )
-					: '' ),
+			'key'         => 'theme_dark_selector',
+			'type'        => 'text',
+			'description' => __( 'How the reviews tell that your theme is in dark mode, so the dark star and accent colours apply: CSS selectors that match the page, or a section, in dark mode. The default covers common themes and dark mode plugins. Leave it empty if your theme switches with the visitor\'s device setting.', 'if-reviews' ),
 		)
 	);
 
 	$color_fields = array(
-		'accent_color'       => array( __( 'Accent colour', 'if-reviews' ), __( 'Used for the stars (unless a star colour is set), highlights and the current page number.', 'if-reviews' ) ),
 		'card_bg_color'      => array( __( 'Card background', 'if-reviews' ), '' ),
 		'border_color'       => array( __( 'Card border', 'if-reviews' ), '' ),
 		'text_color'         => array( __( 'Review text', 'if-reviews' ), '' ),
@@ -545,7 +597,9 @@ function if_reviews_render_settings_page() {
 				<tr><td><code>[if_reviews scheme="dark"]</code></td><td><?php esc_html_e( 'Colour scheme for this instance: theme (match my theme), light, dark or auto (follow the visitor\'s device).', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews card_style="outlined"]</code></td><td><?php esc_html_e( 'Card style for this instance: shadow, outlined, flat or minimal.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews density="compact"]</code></td><td><?php esc_html_e( 'Spacing for this instance: compact, comfortable or spacious.', 'if-reviews' ); ?></td></tr>
-				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote (or use the Featured Review block). The ID is in the address bar when editing the review. Accepts scheme, card_style and density too.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews summary="left"]</code></td><td><?php esc_html_e( 'Where the rating summary sits for this instance: top, bottom, left or right.', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_reviews summary_align="center" card_align="center"]</code></td><td><?php esc_html_e( 'Alignment of the summary and of the text inside each review: start (left), center or end (right).', 'if-reviews' ); ?></td></tr>
+				<tr><td><code>[if_review id="42"]</code></td><td><?php esc_html_e( 'One review on its own as a featured quote (or use the Featured Review block). The ID is in the address bar when editing the review. Accepts scheme, card_style, density and card_align too.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_rating]</code></td><td><?php esc_html_e( 'Inline badge: "★★★★★ 4.8 from 120 reviews". Accepts source and category; stars="no" or count="no" trims it.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews buttons="yes"]</code></td><td><?php esc_html_e( 'Force the "Leave us a review" buttons on (or "no" to hide them) for this instance.', 'if-reviews' ); ?></td></tr>
 				<tr><td><code>[if_reviews_buttons]</code></td><td><?php esc_html_e( 'The "Leave us a review" buttons on their own, anywhere. Add heading="..." for a different heading or heading="-" for none.', 'if-reviews' ); ?></td></tr>
@@ -632,8 +686,34 @@ jQuery(function ($) {
 		color_scheme: ['if-scheme-', 'light'],
 		card_style: ['if-card-', 'shadow'],
 		density: ['if-density-', 'comfortable'],
-		text_size: ['if-text-', 'default']
+		text_size: ['if-text-', 'default'],
+		summary_position: ['if-summary-', 'top'],
+		summary_align: ['if-summary-align-', 'start'],
+		card_align: ['if-align-', 'start'],
+		avatar_shape: ['if-avatar-shape-', 'circle']
 	};
+	var previewHeader = preview.children('.if-reviews-header');
+
+	// With the Dark scheme alone the light star and accent fields are hidden,
+	// so fill blank dark ones with the light colours they would use anyway.
+	// Switching away again clears any fill that wasn't changed, so blank
+	// still means "same as light" for the other schemes.
+	function fillDarkMarks(on) {
+		$.each({ dark_accent_color: 'accent_color', dark_star_color: 'star_color' }, function (dark, light) {
+			var input = field(dark);
+			var filled = input.data('ifFilled');
+			if (on && !input.val() && field(light).val()) {
+				input.data('ifFilled', field(light).val());
+				input.wpColorPicker('color', field(light).val());
+			} else if (!on && filled) {
+				input.removeData('ifFilled');
+				if (input.val() === filled) {
+					input.val('');
+					input.closest('.wp-picker-container').find('.wp-color-result').css('background-color', '');
+				}
+			}
+		});
+	}
 
 	function setVar(name, value) {
 		var el = preview.get(0);
@@ -648,17 +728,37 @@ jQuery(function ($) {
 		var darkPage = scheme === 'dark' || $('#if-reviews-preview-dark').is(':checked');
 		// "Following the visitor's device" previews its dark colours in dark mode.
 		var useDark = scheme === 'dark' || (scheme === 'auto' && darkPage);
-		setVar('--if-accent-color', field('accent_color').val());
-		setVar('--if-star-color', field('star_color').val());
+		fillDarkMarks(scheme === 'dark');
+		// Dark star and accent colours: blank ones fall back to the light ones.
+		// With "Match my theme", "Preview in dark mode" stands in for the theme's dark mode.
+		var darkMarks = useDark || (scheme === 'theme' && darkPage);
+		setVar('--if-accent-color', (darkMarks && field('dark_accent_color').val()) || field('accent_color').val());
+		setVar('--if-star-color', (darkMarks && field('dark_star_color').val()) || field('star_color').val());
 		// "Match my theme" takes its card colours from the page, as on the site.
 		$.each(cardVars, function (cssVar, keys) {
 			setVar(cssVar, scheme === 'theme' ? '' : field(keys[useDark ? 1 : 0]).val());
 		});
 
+		// Summary position: move the preview's summary like the site does.
+		var position = field('summary_position').val();
+		var side = position === 'left' || position === 'right';
+		if (position === 'bottom') { preview.append(previewHeader); } else { preview.prepend(previewHeader); }
+		$('#if-reviews-avatar-colors').closest('tr').toggle(field('avatar_shape').val() !== 'none');
+
 		// Show only the settings that apply to the current choices.
 		var showLight = scheme === 'light' || scheme === 'auto';
 		var showDark = scheme === 'dark' || scheme === 'auto';
+		var header = field('show_header').is(':checked');
+		previewHeader.toggle(header);
+		preview.toggleClass('if-has-side-summary', side && header);
 		$.each({
+			star_color: scheme !== 'dark',
+			accent_color: scheme !== 'dark',
+			dark_star_color: scheme !== 'light',
+			dark_accent_color: scheme !== 'light',
+			theme_dark_selector: scheme === 'theme',
+			summary_position: header,
+			summary_align: header,
 			card_bg_color: showLight && card !== 'minimal',
 			border_color: showLight && card !== 'flat',
 			text_color: showLight,
@@ -704,7 +804,7 @@ jQuery(function ($) {
 		classic: { color_scheme: 'light', card_style: 'shadow', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, accent_color: '#f5a623', star_color: '', card_bg_color: '#ffffff', border_color: '#d6d6d6', text_color: '#4b5563', meta_color: '#6b7280' },
 		minimal: { color_scheme: 'light', card_style: 'minimal', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 0, accent_color: '#1f2937', star_color: '#f5a623', card_bg_color: '#ffffff', border_color: '#e5e7eb', text_color: '#374151', meta_color: '#6b7280' },
 		outlined: { color_scheme: 'light', card_style: 'outlined', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 8, accent_color: '#2563eb', star_color: '#f5a623', card_bg_color: '#ffffff', border_color: '#cbd5e1', text_color: '#334155', meta_color: '#64748b' },
-		dark: { color_scheme: 'dark', card_style: 'flat', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, accent_color: '#fbbf24', star_color: '', dark_card_bg_color: '#1c1c1c', dark_border_color: '#333333', dark_text_color: '#e8e8e8', dark_meta_color: '#a6a6a6' },
+		dark: { color_scheme: 'dark', card_style: 'flat', density: 'comfortable', text_size: 'default', hover_lift: false, border_radius: 14, dark_accent_color: '#fbbf24', dark_star_color: '', dark_card_bg_color: '#1c1c1c', dark_border_color: '#333333', dark_text_color: '#e8e8e8', dark_meta_color: '#a6a6a6' },
 		compact: { color_scheme: 'light', card_style: 'outlined', density: 'compact', text_size: 'small', hover_lift: false, border_radius: 8, accent_color: '#f5a623', star_color: '', card_bg_color: '#ffffff', border_color: '#d6d6d6', text_color: '#4b5563', meta_color: '#6b7280' }
 	};
 
@@ -833,13 +933,17 @@ function if_reviews_render_style_preview() {
 	<div class="if-style-preview<?php echo 'dark' === $options['color_scheme'] ? ' if-preview-dark' : ''; ?>" aria-label="<?php esc_attr_e( 'Preview', 'if-reviews' ); ?>">
 		<div id="if-reviews-preview" class="<?php echo esc_attr( implode( ' ', $classes ) ); ?>">
 			<?php if_reviews_render_header( $stats, '', $options ); ?>
-			<div class="if-cards-outer">
-				<div class="if-cards">
-					<?php
-					foreach ( $samples as $sample ) {
-						if_reviews_render_card( $sample, array_merge( $options, array( 'show_import_label' => 1 ) ) );
-					}
-					?>
+			<div class="if-reviews-main">
+				<div class="if-cards-outer">
+					<div class="if-cards">
+						<?php
+						// Avatars are always rendered here so the preview can
+						// switch them back on; the shape class hides them.
+						foreach ( $samples as $sample ) {
+							if_reviews_render_card( $sample, array_merge( $options, array( 'show_import_label' => 1, 'avatar_shape' => 'circle' ) ) );
+						}
+						?>
+					</div>
 				</div>
 			</div>
 		</div>

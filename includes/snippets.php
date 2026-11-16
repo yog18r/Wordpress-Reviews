@@ -27,6 +27,7 @@ function if_review_single_shortcode( $atts = array() ) {
 			'scheme'     => '',
 			'card_style' => '',
 			'density'    => '',
+			'card_align' => '',
 		),
 		$atts,
 		'if_review'
@@ -59,6 +60,7 @@ function if_review_single_shortcode( $atts = array() ) {
 			'color_scheme' => sanitize_key( $atts['scheme'] ),
 			'card_style'   => sanitize_key( $atts['card_style'] ),
 			'density'      => sanitize_key( $atts['density'] ),
+			'card_align'   => sanitize_key( $atts['card_align'] ),
 		)
 	);
 

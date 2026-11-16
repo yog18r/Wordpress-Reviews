@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.8.0
+Stable tag: 2.9.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -45,7 +45,7 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **"Leave us a review" buttons** linking straight to your review page on each platform, with built-in guidance on where to find those links. Off until you tick "Show buttons" and add a link.
 * **Categories** to group reviews by service or product and show the right ones on each page, **pinned reviews** that stay at the top, and **numbered pagination** for large sets.
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
-* **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes, each with card colours you can change; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
+* **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes, each with its own card, star and accent colours; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; summary above, below or beside the reviews; left, centred or right alignment; avatar shapes; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests apart from the update check, unless you connect Google.
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
@@ -73,6 +73,7 @@ Add `[if_reviews]` to any page, post, widget or block. Defaults come from Review
 * `[if_reviews category="mortgages"]` — only reviews in a category (by slug; comma-separate several). The header describes that subset.
 * `[if_reviews paginate="12"]` — numbered pages of twelve instead of "Show more". Use one paginated shortcode per page.
 * `[if_reviews scheme="dark" card_style="outlined" density="compact"]` — style for this instance only: scheme `theme`, `light`, `dark` or `auto`; card style `shadow`, `outlined`, `flat` or `minimal`; density `compact`, `comfortable` or `spacious`.
+* `[if_reviews summary="left" summary_align="center" card_align="center"]` — for this instance only: summary `top`, `bottom`, `left` or `right`; alignment `start` (left), `center` or `end` (right).
 * `[if_reviews layout="carousel" autoplay="6"]` — the carousel moves on every six seconds; `0` disables it.
 * `[if_review id="42"]` — one review on its own as a featured quote. The ID is in the address bar when editing the review. Also takes `scheme`, `card_style` and `density`.
 * `[if_reviews_rating]` — inline "★★★★★ 4.8 from 120 reviews" badge. Accepts `source` and `category`; `stars="no"` or `count="no"` trims it.
@@ -213,9 +214,13 @@ A carousel keeps the page short: `[if_reviews layout="carousel"]`. If you prefer
 
 Yes, with the colour scheme "Match my theme" (the default on new sites). The reviews then have no fixed colours of their own: text uses your page's text colour, and cards are a faint tint of it over whatever is behind them. When your theme switches between light and dark, whether from the visitor's device setting or a switch on your site, the reviews change with it instantly. Your star, accent and avatar colours stay as you set them. Dark-mode plugins that invert the whole page with a filter are the exception: they also invert the stars.
 
+= What is the difference between the star colour and the accent colour? =
+
+The star colour fills the star ratings. The accent colour is for small highlights: the border on buttons and carousel arrows when they are hovered or focused, and the current page number. Leave the star colour blank to use the accent colour for both. Each has a dark version for dark cards; leave it blank to use the light one.
+
 = Can I change the colours to match my site? =
 
-Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme ("Match my theme", light, dark, or follow the visitor's device), card style, spacing, text size, star and accent colours, card colours (separate light and dark sets), corner radius and avatar colours. Only the settings that apply to your choices are shown. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews and Featured Review blocks.
+Yes. Reviews → Display Settings → Appearance starts with a live preview and a "Start from a style" list (Classic, Minimal, Outlined, Dark, Compact) that fills in the settings for you. From there you can change the colour scheme ("Match my theme", light, dark, or follow the visitor's device), card style, spacing, text size, star, accent and card colours (separate light and dark sets), where the summary sits and how it and the reviews are aligned, avatar shape, corner radius and avatar colours. Only the settings that apply to your choices are shown. For one widget only, use `scheme="dark"`, `card_style="outlined"` or `density="compact"` on the shortcode, or the Style panel in the Reviews and Featured Review blocks.
 
 = What happens to my reviews if I delete the plugin? =
 
@@ -234,6 +239,15 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.9.0 =
+* New: **dark star and accent colours**, so stars and highlights can differ on dark cards. Blank uses the light colour. With "Match my theme" they apply when your theme is in dark mode; the new "Theme dark mode" setting says how to tell, with a default that covers common themes and dark mode plugins.
+* New: **summary position**: above, below, or to the left or right of the reviews. Beside the reviews, it moves above them when there isn't room, such as on phones.
+* New: **alignment** for the summary and for the text inside each review (left, centre or right). Centred puts the avatar above the name.
+* New: **avatar shape** (circle, rounded square, square) or no avatars.
+* New: switches to hide the review date and the review source under the reviewer's name.
+* New: `summary`, `summary_align` and `card_align` shortcode attributes, and matching options in the Reviews block's Style panel; the Featured Review block and `[if_review]` take `card_align`.
+* Improved: the star and accent settings explain what each colour is for.
 
 = 2.8.0 =
 * New: **editable dark colours**. The Dark scheme's card background, border, text and date colours can now be changed and saved, like the light ones. "Light or dark, following the visitor's device" uses both sets.
@@ -364,6 +378,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.9.0 =
+Dark star and accent colours, summary above, below or beside the reviews, alignment and avatar options. Your site looks the same after updating.
 
 = 2.8.0 =
 Dark colours you can edit, a settings screen that shows only what applies, and style options for the Featured Review block. Your site looks the same after updating.

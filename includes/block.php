@@ -69,8 +69,16 @@ function if_reviews_render_block( $attributes ) {
 		}
 	}
 
-	if ( ! empty( $attributes['cardStyle'] ) ) {
-		$atts['card_style'] = $attributes['cardStyle'];
+	$renamed = array(
+		'cardStyle'       => 'card_style',
+		'summaryPosition' => 'summary',
+		'summaryAlign'    => 'summary_align',
+		'cardAlign'       => 'card_align',
+	);
+	foreach ( $renamed as $attribute => $att ) {
+		if ( ! empty( $attributes[ $attribute ] ) ) {
+			$atts[ $att ] = $attributes[ $attribute ];
+		}
 	}
 
 	if ( ! empty( $attributes['columns'] ) ) {
@@ -133,6 +141,7 @@ function if_reviews_render_featured_block( $attributes ) {
 			'id'         => $id,
 			'scheme'     => isset( $attributes['scheme'] ) ? $attributes['scheme'] : '',
 			'card_style' => isset( $attributes['cardStyle'] ) ? $attributes['cardStyle'] : '',
+			'card_align' => isset( $attributes['cardAlign'] ) ? $attributes['cardAlign'] : '',
 			'density'    => isset( $attributes['density'] ) ? $attributes['density'] : '',
 		)
 	);

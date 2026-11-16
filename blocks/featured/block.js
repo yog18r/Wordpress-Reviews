@@ -134,6 +134,17 @@
 								{ label: __('Spacious', 'if-reviews'), value: 'spacious' }
 							],
 							onChange: function (value) { set({ density: value }); }
+						}),
+						el(SelectControl, {
+							label: __('Review alignment', 'if-reviews'),
+							value: a.cardAlign,
+							options: [
+								{ label: DEFAULT_LABEL, value: '' },
+								{ label: __('Left', 'if-reviews'), value: 'start' },
+								{ label: __('Centre', 'if-reviews'), value: 'center' },
+								{ label: __('Right', 'if-reviews'), value: 'end' }
+							],
+							onChange: function (value) { set({ cardAlign: value }); }
 						})
 					)
 				),

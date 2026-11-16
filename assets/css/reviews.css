@@ -790,6 +790,87 @@
   }
 }
 
+/* Summary beside the reviews. The reviews keep at least 60% of the width;
+   when the summary no longer fits beside them it moves above, so narrow
+   columns and phones need no breakpoint. */
+.if-has-side-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 24px 40px;
+}
+
+.if-has-side-summary.if-summary-right {
+  flex-direction: row-reverse;
+}
+
+.if-has-side-summary > .if-reviews-header {
+  flex: 1 1 200px;
+  margin-bottom: 0;
+}
+
+.if-has-side-summary > .if-reviews-main {
+  flex: 999 1 0;
+  min-width: min(100%, 60%);
+}
+
+/* Summary below the reviews. */
+.if-summary-bottom > .if-reviews-header {
+  margin: 24px 0 0;
+}
+
+/* Summary alignment. */
+.if-summary-align-center .if-reviews-header,
+.if-summary-align-center .if-reviews-summary {
+  justify-content: center;
+  text-align: center;
+}
+
+.if-summary-align-end .if-reviews-header,
+.if-summary-align-end .if-reviews-summary {
+  justify-content: flex-end;
+  text-align: end;
+}
+
+/* Review card alignment. Centred puts the avatar above the name. */
+.if-align-center .if-review-card {
+  text-align: center;
+}
+
+.if-align-center .if-card-top {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.if-align-center .if-review-date {
+  justify-content: center;
+}
+
+.if-align-end .if-review-card {
+  text-align: end;
+}
+
+.if-align-end .if-card-top {
+  flex-direction: row-reverse;
+}
+
+.if-align-end .if-review-date {
+  justify-content: flex-end;
+}
+
+/* Avatar shape. */
+.if-avatar-shape-rounded .if-avatar {
+  border-radius: 25%;
+}
+
+.if-avatar-shape-square .if-avatar {
+  border-radius: 0;
+}
+
+.if-avatar-shape-none .if-avatar {
+  display: none;
+}
+
 /* ------------------------------------------------------------------
  * Windows high-contrast (forced colours): keep filled and empty stars
  * distinguishable, since they differ only by colour.
