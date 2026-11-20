@@ -127,6 +127,12 @@ function if_reviews_crypto_keys() {
 		$materials[] = (string) IF_REVIEWS_ENCRYPTION_KEY;
 	}
 
+	// While changing the dedicated key: the old one, so saved values can be
+	// read once and moved to the new key.
+	if ( defined( 'IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS' ) && '' !== (string) IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS ) {
+		$materials[] = (string) IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS;
+	}
+
 	if ( if_reviews_crypto_config_keys_set() ) {
 		$materials[] = SECURE_AUTH_KEY . SECURE_AUTH_SALT;
 	}

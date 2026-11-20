@@ -98,12 +98,18 @@ How the sync behaves:
 - Linked reviews take Google's reviewer name, rating, text and date, and follow later edits. Hidden, pinned and category settings are never touched.
 - A review that disappears from Google is kept and marked "No longer on Google" in the Reviews list.
 - If the connection stops working, the page shows a Reconnect button.
-- The Client ID, Client Secret, token and account identifiers are stored encrypted with libsodium, keyed from the site's wp-config.php security keys (or `IF_REVIEWS_ENCRYPTION_KEY`). Encryption fails closed, connecting is blocked while the key would live in the database, and values move to a new key automatically when one is added. `IF_REVIEWS_GOOGLE_CLIENT_ID` and `IF_REVIEWS_GOOGLE_CLIENT_SECRET` in wp-config.php keep the credentials out of the database entirely.
+- The Client ID, Client Secret, token and account identifiers are stored encrypted with libsodium, keyed from the site's wp-config.php security keys (or `IF_REVIEWS_ENCRYPTION_KEY`). Encryption fails closed, connecting is blocked while the key would live in the database, and values move to a new key automatically when one is added. `IF_REVIEWS_GOOGLE_CLIENT_ID` and `IF_REVIEWS_GOOGLE_CLIENT_SECRET` in wp-config.php keep the credentials out of the database entirely. Values saved unencrypted by versions before 2.4.3 are moved into encrypted storage, and are never used while the server can't encrypt. Generate `IF_REVIEWS_ENCRYPTION_KEY` per site with at least 32 random characters (for example `wp eval 'echo bin2hex( random_bytes( 32 ) );'`); the Google import page warns about shorter keys.
 - Daily sync is a checkbox; it runs about once a day after you have applied a first preview.
 
 ## Updates
 
-The plugin bundles [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (MIT) and watches this repository's releases. New versions show up on the Plugins screen like any other plugin. Only the `if-reviews.zip` asset of a published release is ever installed; there is no fallback to tags or the main branch, and releases are immutable once published. To opt out on a site:
+The plugin bundles [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) (MIT) and watches this repository's releases. New versions show up on the Plugins screen like any other plugin. Only the `if-reviews.zip` asset of a published release is ever installed; there is no fallback to tags or the main branch, and releases are immutable once published. GitHub signs each release; to check a downloaded file:
+
+```bash
+gh release verify-asset v2.9.1 if-reviews.zip -R yog18r/Wordpress-Reviews
+```
+
+To opt out on a site:
 
 ```php
 add_filter( 'if_reviews_update_checker_enabled', '__return_false' );

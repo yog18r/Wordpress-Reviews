@@ -22,6 +22,9 @@ add_filter(
 if ( getenv( 'IFR_ENCRYPTION_KEY' ) ) {
 	define( 'IF_REVIEWS_ENCRYPTION_KEY', getenv( 'IFR_ENCRYPTION_KEY' ) );
 }
+if ( getenv( 'IFR_ENCRYPTION_KEY_PREVIOUS' ) ) {
+	define( 'IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS', getenv( 'IFR_ENCRYPTION_KEY_PREVIOUS' ) );
+}
 if ( getenv( 'IFR_CONSTANT_CREDENTIALS' ) ) {
 	define( 'IF_REVIEWS_GOOGLE_CLIENT_ID', 'const-id.apps.googleusercontent.com' );
 	define( 'IF_REVIEWS_GOOGLE_CLIENT_SECRET', 'CONST-SECRET' );

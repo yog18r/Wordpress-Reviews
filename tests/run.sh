@@ -58,6 +58,8 @@ phase main
 phase dedicated-key IFR_ENCRYPTION_KEY=first-dedicated-key
 phase wrong-key IFR_ENCRYPTION_KEY=a-different-key
 phase key-back IFR_ENCRYPTION_KEY=first-dedicated-key
+phase key-rotate IFR_ENCRYPTION_KEY=second-dedicated-key-with-at-least-32-chars IFR_ENCRYPTION_KEY_PREVIOUS=first-dedicated-key
+phase key-rotated IFR_ENCRYPTION_KEY=second-dedicated-key-with-at-least-32-chars
 phase constant-credentials IFR_CONSTANT_CREDENTIALS=1
 
 # A site whose wp-config.php still has the sample placeholder keys.

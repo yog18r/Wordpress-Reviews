@@ -170,9 +170,17 @@ If the server cannot encrypt, the plugin stores nothing private rather than stor
 For more control, add these to wp-config.php:
 
 * `define( 'IF_REVIEWS_GOOGLE_CLIENT_ID', '...' );` and `define( 'IF_REVIEWS_GOOGLE_CLIENT_SECRET', '...' );` keep the credentials out of the database entirely.
-* `define( 'IF_REVIEWS_ENCRYPTION_KEY', '...' );` (any long random string) sets a dedicated encryption key. Use this if a security plugin changes your WordPress security keys from time to time: when the keys change and the old ones are gone, the saved connection cannot be read and you have to enter the Client Secret and connect again.
+* `define( 'IF_REVIEWS_ENCRYPTION_KEY', '...' );` sets a dedicated encryption key. Use this if a security plugin changes your WordPress security keys from time to time: when the keys change and the old ones are gone, the saved connection cannot be read and you have to enter the Client Secret and connect again. Make it at least 32 random characters, different on every site: copy one value from api.wordpress.org/secret-key/1.1/salt/, use a password manager's generator, or run `wp eval 'echo bin2hex( random_bytes( 32 ) );'`. Never reuse a key between sites or put it in version control. To change it later without connecting again, put the old value in `define( 'IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS', '...' );`, open the Google import page once, then remove that line.
+
+For client sites, the strongest setup is all three: the Client ID and Client Secret as constants, and a dedicated encryption key that is unique to the site.
 
 Connect with a Google account that is a Manager of the profile rather than its Owner, so a misused connection could never remove the owner or transfer the profile.
+
+Google's sign-in returns to your site with a one-time code in the address. It expires within minutes and is useless without the Client Secret, but treat your web server's access logs as private all the same. The plugin tells browsers not to cache that page or pass its address on.
+
+= How do I know an update really came from the developer? =
+
+Updates are installed only from the `if-reviews.zip` file of a published GitHub release, and releases cannot be changed once published. Each release is signed by GitHub, and you can check a downloaded file with the GitHub command line tool: `gh release verify-asset v2.9.1 if-reviews.zip -R yog18r/Wordpress-Reviews`. On sites where you want to review every release first, turn automatic plugin updates off for WP Reviews and update by hand.
 
 = How do I hide a bad review without affecting the rating? =
 
@@ -252,6 +260,9 @@ Checked against Chrome's Modern Web Guidance; fixes from that review:
 * Improved: titles and review text wrap more evenly; the current page number stays visible in Windows high-contrast mode.
 * Fixed: after scrolling a carousel back to the start, Previous could stay enabled.
 * Admin: Google import's "Link to another review" uses the browser's own form check instead of a pop-up; Preview, Sync, Apply and CSV import can't be sent twice by a double click.
+* Security: Google details saved unencrypted by versions before 2.4.3 are never used while the server can't encrypt (they are encrypted automatically once it can); the page says why syncing stopped.
+* Security: the Google sign-in return page is never cached and never passes its address (which holds a one-time code) to another site; error text from Google is shown as plain text, shortened.
+* Security: a warning when IF_REVIEWS_ENCRYPTION_KEY is shorter than 32 characters, and a new IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS constant for changing that key without connecting again. The FAQ explains how to generate a key and how to verify a release with GitHub.
 
 = 2.9.0 =
 * New: **dark star and accent colours**, so stars and highlights can differ on dark cards. Blank uses the light colour. With "Match my theme" they apply when your theme is in dark mode; the new "Theme dark mode" setting says how to tell, with a default that covers common themes and dark mode plugins.
@@ -393,7 +404,7 @@ Checked against Chrome's Modern Web Guidance; fixes from that review:
 == Upgrade Notice ==
 
 = 2.9.1 =
-Accessibility and modern-browser fixes from a Modern Web Guidance review. No settings change.
+Accessibility and modern-browser fixes, plus hardening of how Google credentials are handled. No settings change.
 
 = 2.9.0 =
 Dark star and accent colours, summary above, below or beside the reviews, alignment and avatar options. Your site looks the same after updating.

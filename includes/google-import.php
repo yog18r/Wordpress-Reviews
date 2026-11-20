@@ -56,6 +56,7 @@ function if_reviews_google_defaults() {
 		'last_sync'       => 0,
 		'last_result'     => array(),
 		'key_changed'     => 0,
+		'plain_blocked'   => 0,
 	);
 }
 
@@ -99,7 +100,19 @@ function if_reviews_google_get() {
 	$g     = wp_parse_args( is_array( $saved ) ? $saved : array(), if_reviews_google_defaults() );
 
 	foreach ( if_reviews_google_private_keys() as $key ) {
-		$plain = if_reviews_decrypt( $g[ $key ] );
+		$stored = (string) $g[ $key ];
+
+		// Saved by a version before encryption. While this server can
+		// encrypt, it is read once and moved into encrypted storage (see
+		// if_reviews_google_migrate_encryption()); while it can't, it is
+		// never used, so a plain credential can't keep working unprotected.
+		if ( '' !== $stored && ! if_reviews_is_encrypted( $stored ) && ! if_reviews_crypto_available() ) {
+			$g[ $key ]          = '';
+			$g['plain_blocked'] = 1;
+			continue;
+		}
+
+		$plain = if_reviews_decrypt( $stored );
 		if ( false === $plain ) {
 			$plain            = '';
 			$g['key_changed'] = 1;
@@ -138,7 +151,8 @@ function if_reviews_google_update( $changes ) {
 	}
 
 	// Worked out on every read; never stored.
-	$store['key_changed'] = 0;
+	$store['key_changed']   = 0;
+	$store['plain_blocked'] = 0;
 
 	// Credentials from wp-config.php stay out of the database.
 	foreach ( array_keys( if_reviews_google_constants() ) as $key ) {
@@ -281,18 +295,41 @@ add_action( 'admin_menu', 'if_reviews_google_add_page', 12 );
  */
 function if_reviews_google_print_security_notices( $g ) {
 
+	if ( defined( 'IF_REVIEWS_ENCRYPTION_KEY' ) && is_string( IF_REVIEWS_ENCRYPTION_KEY ) && '' !== IF_REVIEWS_ENCRYPTION_KEY && strlen( IF_REVIEWS_ENCRYPTION_KEY ) < 32 ) {
+		echo '<div class="notice notice-warning inline"><p>' . esc_html__( 'IF_REVIEWS_ENCRYPTION_KEY in wp-config.php is shorter than 32 characters, which makes it easier to guess. Replace it with at least 32 random characters, unique to this site. To keep the saved connection, also add define( \'IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS\', \'the old key\' ); then open this page once (saved details move to the new key) and remove that line.', 'if-reviews' ) . '</p></div>';
+	}
+
 	if ( $g['key_changed'] ) {
 		echo '<div class="notice notice-error inline"><p>' . esc_html__( 'The saved Google connection could not be decrypted, usually because this site\'s security keys in wp-config.php have changed. Enter the Client ID and Client Secret again, then connect. Your reviews are not affected.', 'if-reviews' ) . '</p></div>';
 	}
 
 	if ( ! if_reviews_crypto_available() ) {
-		echo '<div class="notice notice-error inline"><p><strong>' . esc_html__( 'Connecting is turned off: this server cannot encrypt data.', 'if-reviews' ) . '</strong> ' . esc_html__( 'PHP\'s sodium functions are missing, so the plugin will not store your Google credentials or connection. Ask your host to enable the sodium extension.', 'if-reviews' ) . '</p></div>';
+		echo '<div class="notice notice-error inline"><p><strong>' . esc_html__( 'Connecting is turned off: this server cannot encrypt data.', 'if-reviews' ) . '</strong> ' . esc_html__( 'PHP\'s sodium functions are missing, so the plugin will not store your Google credentials or connection. Ask your host to enable the sodium extension.', 'if-reviews' )
+			. ( ! empty( $g['plain_blocked'] ) ? ' ' . esc_html__( 'Google details saved by an older version of the plugin are not encrypted, so they are not being used and syncing has stopped. Once sodium is enabled they are encrypted automatically and syncing resumes.', 'if-reviews' ) : '' )
+			. '</p></div>';
 	} elseif ( 'database' === if_reviews_crypto_key_source() ) {
 		echo '<div class="notice notice-error inline"><p><strong>' . esc_html__( 'Connecting is turned off until this site has security keys in wp-config.php.', 'if-reviews' ) . '</strong> ' . esc_html__( 'Without them, the key that encrypts your Google credentials would sit in the database beside them, so a leaked backup could reveal them. To fix it:', 'if-reviews' ) . '</p><ol>'
 			. '<li>' . wp_kses_post( __( 'Open <a href="https://api.wordpress.org/secret-key/1.1/salt/" target="_blank" rel="noopener">api.wordpress.org/secret-key/1.1/salt/</a>. It shows eight lines of new random keys.', 'if-reviews' ) ) . '</li>'
 			. '<li>' . esc_html__( 'Paste them into wp-config.php, replacing any lines that say "put your unique phrase here". (Or add one line instead: define( \'IF_REVIEWS_ENCRYPTION_KEY\', \'any long random text\' );)', 'if-reviews' ) . '</li>'
 			. '</ol><p>' . esc_html__( 'New keys sign everyone out once. Anything already saved here is moved to the new key automatically; you do not need to connect again. An existing connection keeps syncing in the meantime.', 'if-reviews' ) . '</p></div>';
 	}
+}
+
+/**
+ * Error text from Google, made safe to keep and show: plain text on one
+ * line, at most 300 characters. (It is escaped again when shown.)
+ *
+ * @param mixed $text Text from Google's response.
+ * @return string
+ */
+function if_reviews_google_clean_detail( $text ) {
+	$text = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( is_scalar( $text ) ? (string) $text : '' ) ) );
+
+	if ( function_exists( 'mb_strlen' ) ) {
+		return mb_strlen( $text ) > 300 ? mb_substr( $text, 0, 299 ) . '…' : $text;
+	}
+
+	return strlen( $text ) > 300 ? substr( $text, 0, 299 ) . '…' : $text;
 }
 
 /**
@@ -730,6 +767,13 @@ add_action( 'admin_post_if_reviews_google_connect', 'if_reviews_google_handle_co
  * Google sends the owner back here with a code (or an error).
  */
 function if_reviews_google_handle_callback() {
+
+	// The address carries a one-time sign-in code: keep it out of caches and
+	// out of the Referer header of anything this response leads to.
+	nocache_headers();
+	if ( ! headers_sent() ) {
+		header( 'Referrer-Policy: no-referrer' );
+	}
 
 	if ( ! current_user_can( 'manage_options' ) ) {
 		wp_die( esc_html__( 'You do not have permission to do that.', 'if-reviews' ) );
@@ -1339,7 +1383,7 @@ function if_reviews_google_token_request( $body ) {
 
 	if ( is_wp_error( $response ) ) {
 		/* translators: %s: error message */
-		return new WP_Error( 'if_google_http', sprintf( __( 'Could not reach Google: %s', 'if-reviews' ), $response->get_error_message() ) );
+		return new WP_Error( 'if_google_http', sprintf( __( 'Could not reach Google: %s', 'if-reviews' ), if_reviews_google_clean_detail( $response->get_error_message() ) ) );
 	}
 
 	$data = json_decode( wp_remote_retrieve_body( $response ), true );
@@ -1347,6 +1391,7 @@ function if_reviews_google_token_request( $body ) {
 
 	if ( 200 !== $code || ! is_array( $data ) || empty( $data['access_token'] ) ) {
 		$detail = is_array( $data ) && ! empty( $data['error'] ) ? $data['error'] . ( ! empty( $data['error_description'] ) ? ': ' . $data['error_description'] : '' ) : (string) $code;
+		$detail = if_reviews_google_clean_detail( $detail );
 		/* translators: %s: error detail from Google */
 		return new WP_Error( 'if_google_token', sprintf( __( 'Google rejected the sign-in (%s). Check the Client ID, Client Secret and redirect URI.', 'if-reviews' ), $detail ), array( 'detail' => $detail ) );
 	}
@@ -1430,14 +1475,14 @@ function if_reviews_google_api_get( $url, $query = array() ) {
 
 	if ( is_wp_error( $response ) ) {
 		/* translators: %s: error message */
-		return new WP_Error( 'if_google_http', sprintf( __( 'Could not reach Google: %s', 'if-reviews' ), $response->get_error_message() ) );
+		return new WP_Error( 'if_google_http', sprintf( __( 'Could not reach Google: %s', 'if-reviews' ), if_reviews_google_clean_detail( $response->get_error_message() ) ) );
 	}
 
 	$code = (int) wp_remote_retrieve_response_code( $response );
 	$data = json_decode( wp_remote_retrieve_body( $response ), true );
 
 	if ( 200 !== $code ) {
-		$message = is_array( $data ) && isset( $data['error']['message'] ) ? $data['error']['message'] : '';
+		$message = is_array( $data ) && isset( $data['error']['message'] ) ? if_reviews_google_clean_detail( $data['error']['message'] ) : '';
 
 		if ( 403 === $code && '' === $message ) {
 			$message = __( 'Permission denied. Check that the APIs are enabled and the project has been approved for Business Profile access.', 'if-reviews' );

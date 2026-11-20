@@ -452,6 +452,21 @@ switch ( $phase ) {
 		ifr_check( false !== strpos( ifr_page(), 'this server cannot encrypt data' ), 'cannot-encrypt message shown' );
 		remove_filter( 'if_reviews_crypto_available', '__return_false' );
 
+		/* Security review hardening (2.9.1). */
+		$clean = if_reviews_google_clean_detail( "<b>invalid_client</b>:
+  bad " . str_repeat( 'x', 400 ) );
+		ifr_check( 0 === strpos( $clean, 'invalid_client: bad x' ) && false === strpos( $clean, '<' ) && 300 === mb_strlen( $clean ), 'Google error text is plain, one line, at most 300 characters' );
+		update_option( 'if_reviews_google', array_merge( (array) get_option( 'if_reviews_google', array() ), array( 'client_secret' => 'plain-legacy-secret', 'refresh_token' => 'plain-legacy-token' ) ) );
+		add_filter( 'if_reviews_crypto_available', '__return_false' );
+		$g = if_reviews_google_get();
+		ifr_check( '' === $g['client_secret'] && '' === $g['refresh_token'] && 1 === (int) $g['plain_blocked'], 'old unencrypted credentials are not used while encryption is unavailable' );
+		ifr_check( false !== strpos( ifr_page(), 'are not encrypted, so they are not being used' ), 'the page explains why syncing stopped' );
+		remove_filter( 'if_reviews_crypto_available', '__return_false' );
+		$g = if_reviews_google_get();
+		ifr_check( 'plain-legacy-secret' === $g['client_secret'] && ! $g['plain_blocked'], 'readable again once encryption works (so they can be migrated)' );
+		if_reviews_google_migrate_encryption();
+		ifr_check( if_reviews_is_encrypted( ifr_raw()['client_secret'] ) && 0 === (int) ifr_raw()['plain_blocked'], 'then moved into encrypted storage' );
+
 		/* Leave a connection sealed with the wp-config.php keys for the next phase. */
 		ifr_connection();
 		break;
@@ -484,6 +499,22 @@ switch ( $phase ) {
 		$g = if_reviews_google_get();
 		ifr_check( 'rt-1' === $g['refresh_token'] && 'GOCSPX-test-secret' === $g['client_secret'] && ! $g['key_changed'], 'values readable again when the key returns' );
 		ifr_check( if_reviews_google_is_connected(), 'still connected' );
+		ifr_check( false !== strpos( ifr_page(), 'shorter than 32 characters' ), 'warns that the dedicated key is short' );
+		break;
+
+	case 'key-rotate':
+		// A new, longer dedicated key, with the old one as IF_REVIEWS_ENCRYPTION_KEY_PREVIOUS.
+		$page = ifr_page(); // Opening the page moves saved values to the new key.
+		ifr_check( false === strpos( $page, 'shorter than 32 characters' ) && false === strpos( $page, 'could not be decrypted' ), 'long new key: no warnings' );
+		if_reviews_crypto_used_old_key( false );
+		$g = if_reviews_google_get();
+		ifr_check( 'rt-1' === $g['refresh_token'] && ! if_reviews_crypto_used_old_key(), 'values moved to the new key' );
+		break;
+
+	case 'key-rotated':
+		// The previous key has been removed: the new key alone reads everything.
+		$g = if_reviews_google_get();
+		ifr_check( 'rt-1' === $g['refresh_token'] && 'GOCSPX-test-secret' === $g['client_secret'] && ! $g['key_changed'], 'readable with the new key alone after rotating' );
 		break;
 
 	case 'constant-credentials':
