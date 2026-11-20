@@ -104,21 +104,38 @@
 		}
 
 		var label = button.textContent;
+		var errorText = button.getAttribute('data-error') || label;
+
+		// Screen readers hear "N more reviews loaded" or the error from here.
+		// It sits outside the button's paragraph, which is removed at the end.
+		var status = document.createElement('span');
+		status.className = 'if-sr-only';
+		status.setAttribute('role', 'status');
+		wrap.appendChild(status);
+
+		function ready(text) {
+			// aria-disabled rather than disabled, so the button keeps focus
+			// while it loads.
+			button.removeAttribute('aria-disabled');
+			button.textContent = text;
+		}
 
 		button.addEventListener('click', function () {
-			button.disabled = true;
-			button.setAttribute('aria-busy', 'true');
+			if (state.loading) {
+				return;
+			}
+			button.setAttribute('aria-disabled', 'true');
 			button.textContent = button.getAttribute('data-loading') || label;
+			status.textContent = '';
 
 			loadMore(wrap, state, function (added) {
-				button.disabled = false;
-				button.removeAttribute('aria-busy');
-				button.textContent = label;
+				ready(label);
+				status.textContent = (button.getAttribute(1 === added.length ? 'data-loaded-one' : 'data-loaded') || '').replace('%d', added.length);
 
 				// Keyboard and screen-reader users land on the first new card.
 				if (added.length) {
 					added[0].setAttribute('tabindex', '-1');
-					added[0].focus({ preventScroll: true });
+					added[0].focus();
 				}
 
 				if (!hasMore(state)) {
@@ -126,9 +143,8 @@
 					holder.parentNode.removeChild(holder);
 				}
 			}, function () {
-				button.disabled = false;
-				button.removeAttribute('aria-busy');
-				button.textContent = button.getAttribute('data-error') || label;
+				ready(errorText);
+				status.textContent = errorText;
 			});
 		});
 	}
@@ -136,6 +152,11 @@
 	/* ------------------------------------------------------------------
 	 * Read more
 	 * ---------------------------------------------------------------- */
+
+	// Where supported, the hidden rest of a review stays findable: the
+	// browser's find in page reveals it (hidden="until-found"). Elsewhere it
+	// is plain hidden, as the page sends it.
+	var untilFound = 'onbeforematch' in document.documentElement;
 
 	function initReadMore(scope) {
 		var buttons = scope.querySelectorAll('.if-read-more');
@@ -145,20 +166,37 @@
 			var paragraph = button.parentNode;
 			var rest = paragraph.querySelector('.if-text-rest');
 			var ellipsis = paragraph.querySelector('.if-text-ellipsis');
+			var label = button.querySelector('.if-read-more-label') || button;
 
 			if (!rest) {
 				return;
 			}
 
-			button.addEventListener('click', function () {
-				var expanded = button.getAttribute('aria-expanded') === 'true';
-
-				rest.hidden = expanded;
-				if (ellipsis) {
-					ellipsis.hidden = !expanded;
+			function setOpen(open) {
+				if (open) {
+					rest.removeAttribute('hidden');
+				} else if (untilFound) {
+					rest.setAttribute('hidden', 'until-found');
+				} else {
+					rest.hidden = true;
 				}
-				button.setAttribute('aria-expanded', expanded ? 'false' : 'true');
-				button.textContent = expanded ? button.getAttribute('data-more') : button.getAttribute('data-less');
+				if (ellipsis) {
+					ellipsis.hidden = open;
+				}
+				button.setAttribute('aria-expanded', open ? 'true' : 'false');
+				label.textContent = button.getAttribute(open ? 'data-less' : 'data-more');
+			}
+
+			if (untilFound) {
+				rest.setAttribute('hidden', 'until-found');
+				// Find in page opened it: keep the button and ellipsis in step.
+				rest.addEventListener('beforematch', function () {
+					setOpen(true);
+				});
+			}
+
+			button.addEventListener('click', function () {
+				setOpen(button.getAttribute('aria-expanded') !== 'true');
 			});
 		}
 
@@ -206,27 +244,43 @@
 		}
 
 		function update() {
+			// Read the layout first, then write, so the browser lays out once.
 			var max = maxPosition();
+			var pos = position();
+			var step = stepSize();
+			// A few pixels of slack: snapping and zoom can stop just short.
+			var atStart = pos <= 2;
+			var atEnd = pos >= max - 2 && !hasMore(state);
 
-			prev.disabled = position() <= 0;
-			next.disabled = position() >= max && !hasMore(state);
+			// A disabled button loses keyboard focus: hand it to the other one.
+			if (atStart && !atEnd && document.activeElement === prev) {
+				next.focus();
+			}
+			if (atEnd && !atStart && document.activeElement === next) {
+				prev.focus();
+			}
+			prev.disabled = atStart;
+			next.disabled = atEnd;
 			wrap.classList.toggle('if-carousel-scrollable', max > 0 || hasMore(state));
 
 			// Fetch the next batch while there are still a few cards to go.
-			if (hasMore(state) && max - position() < stepSize() * 3) {
+			if (hasMore(state) && max - pos < step * 3) {
 				loadMore(wrap, state, update);
 			}
 		}
 
+		// No behavior option: the track's CSS scroll-behavior decides, so
+		// visitors who prefer reduced motion get an instant jump.
 		prev.addEventListener('click', function () {
-			track.scrollBy({ left: -stepSize() * dir, behavior: 'smooth' });
+			track.scrollBy({ left: -stepSize() * dir });
 		});
 
 		next.addEventListener('click', function () {
-			track.scrollBy({ left: stepSize() * dir, behavior: 'smooth' });
+			track.scrollBy({ left: stepSize() * dir });
 		});
 
-		track.addEventListener('scroll', function () {
+		// At most one update per frame, however many scroll or resize events.
+		function schedule() {
 			if (frame) {
 				return;
 			}
@@ -234,9 +288,17 @@
 				frame = null;
 				update();
 			});
-		}, { passive: true });
+		}
 
-		window.addEventListener('resize', update);
+		track.addEventListener('scroll', schedule, { passive: true });
+
+		// The track can change width without the window resizing (a summary
+		// moving above the cards, a theme's sidebar opening).
+		if ('ResizeObserver' in window) {
+			new window.ResizeObserver(schedule).observe(track);
+		} else {
+			window.addEventListener('resize', schedule);
+		}
 		update();
 
 		initAutoplay(wrap, track, stepSize, dir, position, maxPosition, state);
@@ -249,6 +311,7 @@
 		var timer = null;
 		var userPaused = false;
 		var engaged = false;
+		var offscreen = false;
 
 		if (seconds <= 0 || reduced) {
 			if (button) {
@@ -273,7 +336,7 @@
 		}
 
 		function start() {
-			if (timer || userPaused || engaged || document.hidden) {
+			if (timer || userPaused || engaged || offscreen || document.hidden) {
 				return;
 			}
 			timer = window.setInterval(tick, seconds * 1000);
@@ -282,7 +345,7 @@
 		function setPaused(paused) {
 			userPaused = paused;
 			if (button) {
-				button.setAttribute('aria-pressed', paused ? 'true' : 'false');
+				// The label says what the button will do, so no aria-pressed.
 				button.setAttribute('aria-label', paused ? button.getAttribute('data-label-play') : button.getAttribute('data-label-pause'));
 			}
 			wrap.classList.toggle('if-autoplay-paused', paused);
@@ -323,6 +386,19 @@
 				start();
 			}
 		});
+
+		// Off screen, nobody is watching: don't move, and don't fetch more
+		// cards in the background.
+		if ('IntersectionObserver' in window) {
+			new window.IntersectionObserver(function (entries) {
+				offscreen = !entries[entries.length - 1].isIntersecting;
+				if (offscreen) {
+					stop();
+				} else {
+					start();
+				}
+			}).observe(wrap);
+		}
 
 		if (button) {
 			button.addEventListener('click', function () {

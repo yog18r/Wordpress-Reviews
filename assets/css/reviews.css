@@ -7,6 +7,10 @@
  */
 
 .if-reviews-wrap {
+  /* Font sizes are multiples of this: 1px, or more when the visitor has
+     set a larger default text size in their browser. Themes that shrink
+     the root font size (62.5%) still get 1px, so text never gets smaller. */
+  --if-px: max(1px, 0.0625rem);
   --if-gap: 20px;
   --if-card-pad: 20px 22px;
   --if-avatar-size: 42px;
@@ -22,12 +26,13 @@
 /* Visually hidden, still read by screen readers. */
 .if-sr-only {
   position: absolute !important;
-  width: 1px;
-  height: 1px;
+  width: 1px !important;
+  height: 1px !important;
   padding: 0;
   margin: -1px;
   overflow: hidden;
   clip: rect(0, 0, 0, 0);
+  clip-path: inset(50%);
   white-space: nowrap;
   border: 0;
 }
@@ -56,9 +61,10 @@
 
 .if-reviews-title {
   margin: 0 0 2px;
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.3;
+  text-wrap: balance;
 }
 
 .if-reviews-summary {
@@ -68,7 +74,7 @@
 }
 
 .if-reviews-score {
-  font-size: calc(26px * var(--if-text-scale, 1));
+  font-size: calc(26 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 700;
   line-height: 1;
 }
@@ -76,7 +82,7 @@
 .if-reviews-meta {
   margin: 4px 0 0;
   color: inherit; /* On the page background, so the page's text colour reads on light and dark themes. */
-  font-size: calc(13px * var(--if-text-scale, 1));
+  font-size: calc(13 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -86,7 +92,7 @@
 .if-stars {
   position: relative;
   display: inline-block;
-  font-size: calc(18px * var(--if-text-scale, 1));
+  font-size: calc(18 * var(--if-px, 1px) * var(--if-text-scale, 1));
   line-height: 1;
   letter-spacing: 2px;
   white-space: nowrap;
@@ -107,7 +113,7 @@
 }
 
 .if-stars-small {
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -165,7 +171,7 @@
 }
 
 .if-layout-list .if-review-text {
-  font-size: calc(15px * var(--if-text-scale, 1));
+  font-size: calc(15 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 /* ------------------------------------------------------------------
@@ -186,9 +192,11 @@
   overflow-x: auto;
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
+  overscroll-behavior-x: contain; /* Swiping past the end doesn't go back a page. */
+  touch-action: manipulation;
   padding: 4px 2px 12px;
+  scroll-padding-inline: 2px; /* Snap the first card to the very start, not 2px in. */
   scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
 }
 
 .if-layout-carousel .if-cards::-webkit-scrollbar {
@@ -255,9 +263,10 @@
   height: 18px;
 }
 
-@media (max-width: 600px) {
+@media (max-width: 600px) and (pointer: coarse) {
   /* Swiping is natural on touch screens; give the cards the full width.
-     The pause button stays, so autoplay can always be stopped. */
+     Mouse users in a narrow or zoomed window keep the buttons. The pause
+     button stays, so autoplay can always be stopped. */
   .if-carousel-prev,
   .if-carousel-next { display: none !important; }
 }
@@ -307,7 +316,7 @@
   height: var(--if-avatar-size, 42px);
   border-radius: 50%;
   font-weight: 600;
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   color: #fff;
   background: linear-gradient(135deg, #4285f4, #1a73e8);
 }
@@ -319,7 +328,7 @@
 .if-reviewer-name {
   margin: 0;
   font-weight: 600;
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   line-height: 1.3;
 }
 
@@ -329,7 +338,7 @@
   align-items: center;
   gap: 2px 6px;
   margin: 2px 0 0;
-  font-size: calc(12px * var(--if-text-scale, 1));
+  font-size: calc(12 * var(--if-px, 1px) * var(--if-text-scale, 1));
   color: var(--if-meta-color, #5f6368);
 }
 
@@ -356,17 +365,24 @@
 
 .if-review-text {
   margin: 0;
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   line-height: 1.65;
   color: var(--if-text-color, #4b5563);
   white-space: pre-line;
   overflow-wrap: anywhere;
+  text-wrap: pretty; /* After white-space, which reset text-wrap in older Chrome. */
 }
 
-/* "Read more" inside a long review */
-.if-text-rest[hidden],
+/* "Read more" inside a long review. Where the script can, the rest is
+   hidden="until-found" so the browser's find in page still reaches it;
+   that needs a box the browser can hide, not display: none. */
+.if-text-rest[hidden]:not([hidden="until-found"]),
 .if-text-ellipsis[hidden] {
   display: none;
+}
+
+.if-text-rest[hidden="until-found"] {
+  display: inline-block !important;
 }
 
 .if-read-more {
@@ -376,7 +392,7 @@
   background: none;
   color: var(--if-meta-color, #6b7280);
   font: inherit;
-  font-size: calc(13px * var(--if-text-scale, 1));
+  font-size: calc(13 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 2px;
@@ -391,7 +407,7 @@
 /* Link to the original review */
 .if-review-link {
   margin: 10px 0 0;
-  font-size: calc(13px * var(--if-text-scale, 1));
+  font-size: calc(13 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 .if-review-link a {
@@ -422,11 +438,15 @@
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
   font: inherit;
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   cursor: pointer;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.if-show-more[aria-disabled="true"] {
+  cursor: progress;
 }
 
 .if-show-more:hover,
@@ -464,11 +484,11 @@
 .if-featured .if-featured-card .if-avatar {
   width: 52px;
   height: 52px;
-  font-size: calc(17px * var(--if-text-scale, 1));
+  font-size: calc(17 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 .if-featured .if-featured-card .if-review-text {
-  font-size: calc(17px * var(--if-text-scale, 1));
+  font-size: calc(17 * var(--if-px, 1px) * var(--if-text-scale, 1));
   line-height: 1.7;
 }
 
@@ -480,23 +500,23 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-size: calc(15px * var(--if-text-scale, 1));
+  font-size: calc(15 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   white-space: nowrap;
 }
 
 .if-rating-badge .if-stars {
-  font-size: calc(16px * var(--if-text-scale, 1));
+  font-size: calc(16 * var(--if-px, 1px) * var(--if-text-scale, 1));
 }
 
 .if-rating-count {
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 400;
   color: inherit; /* On the page background: follow the page's text colour. */
 }
 
 .if-rating-count .if-rating-value {
-  font-size: calc(15px * var(--if-text-scale, 1));
+  font-size: calc(15 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
 }
 
@@ -531,7 +551,7 @@
   border-radius: 999px;
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-align: center;
@@ -571,7 +591,8 @@
 
 .if-cta-heading {
   margin: 0 0 12px;
-  font-size: calc(15px * var(--if-text-scale, 1));
+  text-wrap: balance;
+  font-size: calc(15 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
 }
 
@@ -591,7 +612,7 @@
   border-radius: 999px;
   background: var(--if-card-bg-color, #fff);
   color: var(--if-text-color, #4b5563);
-  font-size: calc(14px * var(--if-text-scale, 1));
+  font-size: calc(14 * var(--if-px, 1px) * var(--if-text-scale, 1));
   font-weight: 600;
   line-height: 1.2;
   text-decoration: none;
@@ -778,7 +799,7 @@
 /* "Imported from Google" under synced reviews. */
 .if-review-provenance {
   margin: 8px 0 0;
-  font-size: calc(12px * var(--if-text-scale, 1));
+  font-size: calc(12 * var(--if-px, 1px) * var(--if-text-scale, 1));
   color: var(--if-meta-color, #6b7280);
 }
 
@@ -885,6 +906,15 @@
   .if-stars-fill {
     color: CanvasText;
   }
+
+  /* The current page is otherwise marked only by the accent background,
+     which forced colours remove. */
+  .if-pagination .page-numbers.current {
+    forced-color-adjust: none;
+    border-color: Highlight;
+    background: Highlight;
+    color: HighlightText;
+  }
 }
 
 /* ------------------------------------------------------------------
@@ -910,7 +940,8 @@
   }
 
   .if-text-rest[hidden] {
-    display: inline;
+    display: inline !important;
+    content-visibility: visible;
   }
 
   .if-review-card {

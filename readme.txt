@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.0
+Stable tag: 2.9.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -240,6 +240,19 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.9.1 =
+Checked against Chrome's Modern Web Guidance; fixes from that review:
+
+* Accessibility: text in the reviews now grows when a visitor has set a larger default text size in their browser (it never gets smaller, including on themes that shrink the root font size).
+* Accessibility: "Read more" buttons say whose review they open, "Show more" announces how many reviews it added (or why it couldn't), and keeps focus while loading.
+* Accessibility: carousel Previous and Next hand focus to each other at the ends instead of losing it, respect reduced motion, and stay available to mouse users in narrow or zoomed windows. The pause button no longer announces itself as "pressed".
+* Accessibility: every setting on Display Settings is a labelled field with its help text read out; the review editor's help text is linked to its fields too.
+* Improved: the hidden part of a long review can be found with the browser's find in page (Chrome, Edge, Firefox), which opens it.
+* Improved: carousel autoplay pauses while the carousel is off screen, so it no longer loads more reviews nobody is looking at.
+* Improved: titles and review text wrap more evenly; the current page number stays visible in Windows high-contrast mode.
+* Fixed: after scrolling a carousel back to the start, Previous could stay enabled.
+* Admin: Google import's "Link to another review" uses the browser's own form check instead of a pop-up; Preview, Sync, Apply and CSV import can't be sent twice by a double click.
+
 = 2.9.0 =
 * New: **dark star and accent colours**, so stars and highlights can differ on dark cards. Blank uses the light colour. With "Match my theme" they apply when your theme is in dark mode; the new "Theme dark mode" setting says how to tell, with a default that covers common themes and dark mode plugins.
 * New: **summary position**: above, below, or to the left or right of the reviews. Beside the reviews, it moves above them when there isn't room, such as on phones.
@@ -378,6 +391,9 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.9.1 =
+Accessibility and modern-browser fixes from a Modern Web Guidance review. No settings change.
 
 = 2.9.0 =
 Dark star and accent colours, summary above, below or beside the reviews, alignment and avatar options. Your site looks the same after updating.

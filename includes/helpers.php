@@ -906,3 +906,66 @@ function if_reviews_theme_palette() {
 
 	return array_slice( array_values( array_unique( $colours ) ), 0, 12 );
 }
+
+/**
+ * Small script for the plugin's admin screens:
+ *  - forms with class "if-reviews-once" (sync, apply, CSV import) send
+ *    once: a second click while the page is still loading is ignored, so
+ *    a slow action can't run twice;
+ *  - forms with class "if-reviews-confirm" ask their data-confirm question
+ *    first (instead of an inline onsubmit handler).
+ */
+function if_reviews_print_form_guard() {
+
+	// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- only picks the screen.
+	$page = isset( $_GET['page'] ) ? sanitize_key( wp_unslash( $_GET['page'] ) ) : '';
+
+	if ( 0 !== strpos( $page, 'if-reviews' ) ) {
+		return;
+	}
+	?>
+	<script>
+	( function () {
+		document.addEventListener( 'submit', function ( event ) {
+			var form = event.target;
+			if ( form.classList.contains( 'if-reviews-confirm' ) && ! window.confirm( form.getAttribute( 'data-confirm' ) ) ) {
+				event.preventDefault();
+				return;
+			}
+			if ( ! form.classList.contains( 'if-reviews-once' ) ) {
+				return;
+			}
+			if ( form.getAttribute( 'data-busy' ) ) {
+				event.preventDefault();
+				return;
+			}
+			// Another handler (validation) may have stopped this submit.
+			window.setTimeout( function () {
+				if ( event.defaultPrevented ) {
+					return;
+				}
+				form.setAttribute( 'data-busy', '1' );
+				Array.prototype.forEach.call( form.querySelectorAll( '[type="submit"]' ), function ( button ) {
+					// Not the disabled attribute: the clicked button's value must still be sent.
+					button.classList.add( 'disabled' );
+					button.setAttribute( 'aria-disabled', 'true' );
+				} );
+			} );
+		} );
+		// Coming back to the page from the browser's history: ready again.
+		window.addEventListener( 'pageshow', function ( event ) {
+			if ( event.persisted ) {
+				Array.prototype.forEach.call( document.querySelectorAll( 'form[data-busy]' ), function ( form ) {
+					form.removeAttribute( 'data-busy' );
+					Array.prototype.forEach.call( form.querySelectorAll( '[type="submit"]' ), function ( button ) {
+						button.classList.remove( 'disabled' );
+						button.removeAttribute( 'aria-disabled' );
+					} );
+				} );
+			}
+		} );
+	} )();
+	</script>
+	<?php
+}
+add_action( 'admin_footer', 'if_reviews_print_form_guard' );

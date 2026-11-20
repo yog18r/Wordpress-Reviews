@@ -157,7 +157,7 @@ function if_reviews_render_import_export_page() {
 			);
 			?>
 		</p>
-		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data">
+		<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" enctype="multipart/form-data" class="if-reviews-once">
 			<input type="hidden" name="action" value="if_reviews_import">
 			<?php wp_nonce_field( 'if_reviews_import' ); ?>
 			<table class="form-table" role="presentation">

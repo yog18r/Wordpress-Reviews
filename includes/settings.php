@@ -315,6 +315,7 @@ function if_reviews_register_settings() {
 		array(
 			'key'         => 'theme_dark_selector',
 			'type'        => 'text',
+			'code'        => true,
 			'description' => __( 'How the reviews tell that your theme is in dark mode, so the dark star and accent colours apply: CSS selectors that match the page, or a section, in dark mode. The default covers common themes and dark mode plugins. Leave it empty if your theme switches with the visitor\'s device setting.', 'if-reviews' ),
 		)
 	);
@@ -403,6 +404,19 @@ function if_reviews_register_settings() {
 			'description' => __( 'Off by default so an accidental uninstall cannot destroy your reviews. Settings are always removed on uninstall.', 'if-reviews' ),
 		)
 	);
+
+	// Fields with a single input get a real <label> on their title, so
+	// screen readers name the input (checkboxes and the tables label their own).
+	global $wp_settings_fields;
+	if ( isset( $wp_settings_fields['if-reviews-settings'] ) ) {
+		foreach ( $wp_settings_fields['if-reviews-settings'] as $section => $fields ) {
+			foreach ( $fields as $field_id => $field ) {
+				if ( isset( $field['args']['type'] ) && in_array( $field['args']['type'], array( 'text', 'number', 'select', 'color' ), true ) ) {
+					$wp_settings_fields['if-reviews-settings'][ $section ][ $field_id ]['args']['label_for'] = 'if-reviews-' . str_replace( '_', '-', $field['args']['key'] );
+				}
+			}
+		}
+	}
 }
 add_action( 'admin_init', 'if_reviews_register_settings' );
 
@@ -420,12 +434,17 @@ function if_reviews_render_field( $args ) {
 	$name     = IF_REVIEWS_OPTION_KEY . '[' . $key . ']';
 	$id       = 'if-reviews-' . str_replace( '_', '-', $key );
 
+	// Help text below the field is linked to it, so it is read with the input.
+	$described = ! empty( $args['description'] ) ? ' aria-describedby="' . esc_attr( $id . '-description' ) . '"' : '';
+	// Selectors and similar code: no spellcheck or autocorrect.
+	$code = ! empty( $args['code'] ) ? ' spellcheck="false" autocapitalize="none" autocorrect="off"' : '';
+
 	switch ( $args['type'] ) {
 
 		case 'checkbox':
 			?>
 			<label for="<?php echo esc_attr( $id ); ?>">
-				<input type="checkbox" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="1" <?php checked( (int) $value, 1 ); ?>>
+				<input type="checkbox" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="1" <?php checked( (int) $value, 1 ); ?><?php echo $described; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_attr above. ?>>
 				<?php echo esc_html( isset( $args['text'] ) ? $args['text'] : '' ); ?>
 			</label>
 			<?php
@@ -433,19 +452,19 @@ function if_reviews_render_field( $args ) {
 
 		case 'text':
 			?>
-			<input type="text" class="regular-text" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( isset( $args['placeholder'] ) ? $args['placeholder'] : '' ); ?>">
+			<input type="text" class="regular-text" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" placeholder="<?php echo esc_attr( isset( $args['placeholder'] ) ? $args['placeholder'] : '' ); ?>"<?php echo $described . $code; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- fixed strings and esc_attr. ?>>
 			<?php
 			break;
 
 		case 'number':
 			?>
-			<input type="number" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" min="<?php echo esc_attr( isset( $args['min'] ) ? $args['min'] : 0 ); ?>" max="<?php echo esc_attr( isset( $args['max'] ) ? $args['max'] : '' ); ?>" step="1" style="width: 90px;">
+			<input type="number" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" min="<?php echo esc_attr( isset( $args['min'] ) ? $args['min'] : 0 ); ?>" max="<?php echo esc_attr( isset( $args['max'] ) ? $args['max'] : '' ); ?>" step="1" style="width: 90px;"<?php echo $described; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_attr above. ?>>
 			<?php
 			break;
 
 		case 'select':
 			?>
-			<select id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>">
+			<select id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>"<?php echo $described; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_attr above. ?>>
 				<?php foreach ( $args['choices'] as $choice => $label ) : ?>
 					<option value="<?php echo esc_attr( $choice ); ?>" <?php selected( $value, $choice ); ?>><?php echo esc_html( $label ); ?></option>
 				<?php endforeach; ?>
@@ -455,7 +474,7 @@ function if_reviews_render_field( $args ) {
 
 		case 'color':
 			?>
-			<input type="text" class="if-reviews-color-picker" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" data-default-color="<?php echo esc_attr( $defaults[ $key ] ); ?>">
+			<input type="text" class="if-reviews-color-picker" id="<?php echo esc_attr( $id ); ?>" name="<?php echo esc_attr( $name ); ?>" value="<?php echo esc_attr( $value ); ?>" data-default-color="<?php echo esc_attr( $defaults[ $key ] ); ?>"<?php echo $described; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- built with esc_attr above. ?>>
 			<?php
 			break;
 
@@ -494,7 +513,7 @@ function if_reviews_render_field( $args ) {
 								</label>
 							</td>
 							<td>
-								<input type="text" class="widefat" id="<?php echo esc_attr( $row_id ); ?>-text" name="<?php echo esc_attr( $row_name ); ?>[text]" value="<?php echo esc_attr( $row_text ); ?>" placeholder="<?php echo esc_attr( $default ); ?>">
+								<input type="text" class="widefat" id="<?php echo esc_attr( $row_id ); ?>-text" name="<?php echo esc_attr( $row_name ); ?>[text]" value="<?php echo esc_attr( $row_text ); ?>" placeholder="<?php echo esc_attr( $default ); ?>" aria-label="<?php echo esc_attr( sprintf( /* translators: %s: platform name, e.g. Google */ __( 'Button text for %s', 'if-reviews' ), $source['label'] ) ); ?>">
 							</td>
 							<td>
 								<input type="url" class="widefat" id="<?php echo esc_attr( $row_id ); ?>-url" name="<?php echo esc_attr( $row_name ); ?>[url]" value="<?php echo esc_attr( $row_url ); ?>" placeholder="https://">
@@ -521,14 +540,14 @@ function if_reviews_render_field( $args ) {
 				<div class="if-swatch-list">
 					<?php foreach ( $colors as $hex ) : ?>
 						<div class="if-swatch-row">
-							<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="#<?php echo esc_attr( $hex ); ?>">
+							<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="#<?php echo esc_attr( $hex ); ?>" aria-label="<?php esc_attr_e( 'Avatar colour', 'if-reviews' ); ?>">
 							<button type="button" class="button-link if-swatch-remove" aria-label="<?php esc_attr_e( 'Remove this colour', 'if-reviews' ); ?>"><?php esc_html_e( 'Remove', 'if-reviews' ); ?></button>
 						</div>
 					<?php endforeach; ?>
 				</div>
 				<template class="if-swatch-template">
 					<div class="if-swatch-row">
-						<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="">
+						<input type="text" class="if-reviews-color-picker" name="<?php echo esc_attr( $list_name ); ?>" value="" aria-label="<?php esc_attr_e( 'Avatar colour', 'if-reviews' ); ?>">
 						<button type="button" class="button-link if-swatch-remove" aria-label="<?php esc_attr_e( 'Remove this colour', 'if-reviews' ); ?>"><?php esc_html_e( 'Remove', 'if-reviews' ); ?></button>
 					</div>
 				</template>
@@ -544,7 +563,7 @@ function if_reviews_render_field( $args ) {
 	}
 
 	if ( ! empty( $args['description'] ) ) {
-		echo '<p class="description">' . esc_html( $args['description'] ) . '</p>';
+		echo '<p class="description" id="' . esc_attr( $id . '-description' ) . '">' . esc_html( $args['description'] ) . '</p>';
 	}
 }
 

@@ -294,6 +294,25 @@ switch ( $phase ) {
 		ifr_check( false !== strpos( $card, 'example.com/r/1' ) && false === strpos( $card, 'review by' ), 'no reviewer suffix when the name is empty' );
 		ifr_check( false !== strpos( file_get_contents( IF_REVIEWS_PATH . 'assets/css/reviews.css' ), 'currentColor 90%, transparent' ), 'theme scheme meta text at 90% strength' );
 
+		/* Modern Web Guidance fixes (2.9.1). */
+		$long = array_merge( $sample, array( 'name' => 'Suzy H', 'text' => str_repeat( 'Lovely service and clear advice throughout. ', 12 ) ) );
+		ob_start();
+		if_reviews_render_card( $long, array_merge( $card_opts, array( 'excerpt_length' => 80 ) ) );
+		$card = ob_get_clean();
+		ifr_check( false !== strpos( $card, '<span class="if-read-more-label">Read more</span><span class="if-sr-only">, review by Suzy H</span>' ), '"Read more" names the reviewer for screen readers' );
+		$html = do_shortcode( '[if_reviews layout="carousel" autoplay="5" limit="0"]' ) . do_shortcode( '[if_reviews limit="2"]' );
+		ifr_check( false === strpos( $html, 'aria-pressed' ), 'pause button has no aria-pressed (its label changes instead)' );
+		ifr_check( false !== strpos( do_shortcode( '[if_reviews limit="1"]' ), 'data-loaded-one="%d more review loaded" data-loaded="%d more reviews loaded"' ), '"Show more" carries the loaded announcement' );
+		if_reviews_register_settings(); // admin_init doesn't run under WP-CLI.
+		ob_start();
+		do_settings_sections( 'if-reviews-settings' );
+		$fields = ob_get_clean();
+		unregister_setting( 'if_reviews_settings_group', IF_REVIEWS_OPTION_KEY ); // Its save filter would change later tests.
+		ifr_check( false !== strpos( $fields, '<label for="if-reviews-color-scheme">' ) && false !== strpos( $fields, '<label for="if-reviews-star-color">' ), 'settings titles are labels for their inputs' );
+		ifr_check( false !== strpos( $fields, 'aria-describedby="if-reviews-theme-dark-selector-description"' ) && false !== strpos( $fields, 'id="if-reviews-theme-dark-selector-description"' ) && false !== strpos( $fields, 'spellcheck="false"' ), 'help text linked to its field; selector field without spellcheck' );
+		$css = file_get_contents( IF_REVIEWS_PATH . 'assets/css/reviews.css' );
+		ifr_check( false === strpos( $css, 'px * var(--if-text-scale' ) && false !== strpos( $css, '--if-px: max(1px, 0.0625rem);' ), 'font sizes follow a larger browser default' );
+
 		/* Editable dark card colours (2.8.0). */
 		$clean = if_reviews_sanitize_options( array( 'dark_card_bg_color' => '#102030', 'dark_text_color' => 'nope' ) );
 		ifr_check( '#102030' === $clean['dark_card_bg_color'] && '#e8e8e8' === $clean['dark_text_color'], 'dark colours sanitised (bad values fall back to defaults)' );

@@ -709,7 +709,7 @@ function if_reviews_shortcode( $atts = array() ) {
 						<svg viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7.5 4l6 6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
 					</button>
 					<?php if ( $autoplay > 0 ) : ?>
-						<button type="button" class="if-carousel-btn if-carousel-pause" aria-pressed="false" aria-label="<?php esc_attr_e( 'Pause automatic scrolling', 'if-reviews' ); ?>" data-label-pause="<?php esc_attr_e( 'Pause automatic scrolling', 'if-reviews' ); ?>" data-label-play="<?php esc_attr_e( 'Resume automatic scrolling', 'if-reviews' ); ?>">
+						<button type="button" class="if-carousel-btn if-carousel-pause" aria-label="<?php esc_attr_e( 'Pause automatic scrolling', 'if-reviews' ); ?>" data-label-pause="<?php esc_attr_e( 'Pause automatic scrolling', 'if-reviews' ); ?>" data-label-play="<?php esc_attr_e( 'Resume automatic scrolling', 'if-reviews' ); ?>">
 							<svg class="if-icon-pause" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M6 4h3v12H6zM11 4h3v12h-3z" fill="currentColor"/></svg>
 							<svg class="if-icon-play" viewBox="0 0 20 20" aria-hidden="true" focusable="false"><path d="M7 4l9 6-9 6z" fill="currentColor"/></svg>
 						</button>
@@ -720,7 +720,7 @@ function if_reviews_shortcode( $atts = array() ) {
 
 			<?php if ( $step > 0 && 'carousel' !== $layout ) : ?>
 				<p class="if-show-more-wrap">
-					<button type="button" class="if-show-more" data-loading="<?php esc_attr_e( 'Loading…', 'if-reviews' ); ?>" data-error="<?php esc_attr_e( 'Could not load more reviews. Try again.', 'if-reviews' ); ?>">
+					<button type="button" class="if-show-more" data-loading="<?php esc_attr_e( 'Loading…', 'if-reviews' ); ?>" data-error="<?php esc_attr_e( 'Could not load more reviews. Try again.', 'if-reviews' ); ?>" data-loaded-one="<?php echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 1, 'if-reviews' ) ); ?>" data-loaded="<?php /* translators: %d: number of reviews just added (keep %d) */ echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 2, 'if-reviews' ) ); ?>">
 						<?php
 						/**
 						 * Filter the "Show more" button label.
@@ -1089,7 +1089,7 @@ function if_reviews_render_card( $review, $options, $hidden = false, $extra_clas
 			// Kept on one line on purpose: the text uses white-space: pre-line,
 			// so a newline between these spans would render as a line break.
 			?>
-			<p class="if-review-text if-has-more"><span class="if-text-short"><?php echo esc_html( $short ); ?></span><span class="if-text-ellipsis" aria-hidden="true">…</span><span class="if-text-rest" hidden><?php echo esc_html( $rest ); ?></span> <button type="button" class="if-read-more" aria-expanded="false" data-more="<?php esc_attr_e( 'Read more', 'if-reviews' ); ?>" data-less="<?php esc_attr_e( 'Read less', 'if-reviews' ); ?>"><?php esc_html_e( 'Read more', 'if-reviews' ); ?></button></p>
+			<p class="if-review-text if-has-more"><span class="if-text-short"><?php echo esc_html( $short ); ?></span><span class="if-text-ellipsis" aria-hidden="true">…</span><span class="if-text-rest" hidden><?php echo esc_html( $rest ); ?></span> <button type="button" class="if-read-more" aria-expanded="false" data-more="<?php esc_attr_e( 'Read more', 'if-reviews' ); ?>" data-less="<?php esc_attr_e( 'Read less', 'if-reviews' ); ?>"><span class="if-read-more-label"><?php esc_html_e( 'Read more', 'if-reviews' ); ?></span><?php if ( '' !== trim( $review['name'] ) ) : ?><span class="if-sr-only"><?php echo esc_html( sprintf( /* translators: %s: reviewer name */ __( ', review by %s', 'if-reviews' ), $review['name'] ) ); ?></span><?php endif; ?></button></p>
 			<?php
 		endif;
 

@@ -383,19 +383,19 @@ function if_reviews_google_render_page() {
 				<?php if_reviews_google_render_last_result( $g ); ?>
 
 				<div style="display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-top: 12px;">
-					<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
+					<form method="post" action="<?php echo esc_url( $admin_post ); ?>" class="if-reviews-once">
 						<input type="hidden" name="action" value="if_reviews_google_preview">
 						<?php wp_nonce_field( 'if_reviews_google_preview' ); ?>
 						<?php submit_button( __( 'Preview sync', 'if-reviews' ), 'primary', 'submit', false ); ?>
 					</form>
 					<?php if ( $g['first_sync_done'] ) : ?>
-						<form method="post" action="<?php echo esc_url( $admin_post ); ?>">
+						<form method="post" action="<?php echo esc_url( $admin_post ); ?>" class="if-reviews-once">
 							<input type="hidden" name="action" value="if_reviews_google_sync">
 							<?php wp_nonce_field( 'if_reviews_google_sync' ); ?>
 							<?php submit_button( __( 'Sync now', 'if-reviews' ), 'secondary', 'submit', false ); ?>
 						</form>
 					<?php endif; ?>
-					<form method="post" action="<?php echo esc_url( $admin_post ); ?>" onsubmit="return confirm('<?php echo esc_js( __( 'Disconnect from Google? Imported reviews stay on this site; they just stop updating.', 'if-reviews' ) ); ?>');">
+					<form method="post" action="<?php echo esc_url( $admin_post ); ?>" class="if-reviews-confirm" data-confirm="<?php esc_attr_e( 'Disconnect from Google? Imported reviews stay on this site; they just stop updating.', 'if-reviews' ); ?>">
 						<input type="hidden" name="action" value="if_reviews_google_disconnect">
 						<?php wp_nonce_field( 'if_reviews_google_disconnect' ); ?>
 						<?php submit_button( __( 'Disconnect', 'if-reviews' ), 'link-delete', 'submit', false ); ?>
@@ -490,7 +490,7 @@ function if_reviews_google_render_page() {
 							<?php if ( defined( 'IF_REVIEWS_GOOGLE_CLIENT_ID' ) && '' !== (string) IF_REVIEWS_GOOGLE_CLIENT_ID ) : ?>
 								<p><?php esc_html_e( 'Set in wp-config.php (IF_REVIEWS_GOOGLE_CLIENT_ID).', 'if-reviews' ); ?></p>
 							<?php else : ?>
-								<input type="text" id="if_google_client_id" name="client_id" class="large-text code" value="<?php echo esc_attr( $g['client_id'] ); ?>" autocomplete="off">
+								<input type="text" id="if_google_client_id" name="client_id" class="large-text code" value="<?php echo esc_attr( $g['client_id'] ); ?>" autocomplete="off" spellcheck="false" autocapitalize="none" autocorrect="off">
 							<?php endif; ?>
 						</td>
 					</tr>
@@ -603,11 +603,11 @@ function if_reviews_google_render_location_picker() {
 		return;
 	}
 	?>
-	<h2><?php esc_html_e( 'Step 3: Choose the location', 'if-reviews' ); ?></h2>
+	<h2 id="if-google-location-heading"><?php esc_html_e( 'Step 3: Choose the location', 'if-reviews' ); ?></h2>
 	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
 		<input type="hidden" name="action" value="if_reviews_google_location">
 		<?php wp_nonce_field( 'if_reviews_google_location' ); ?>
-		<select name="location" style="min-width: 360px;">
+		<select name="location" style="min-width: 360px;" aria-labelledby="if-google-location-heading">
 			<?php foreach ( $locations as $index => $loc ) : ?>
 				<option value="<?php echo esc_attr( $index ); ?>">
 					<?php echo esc_html( $loc['title'] . ( '' !== $loc['address'] ? ' — ' . $loc['address'] : '' ) ); ?>
@@ -1092,7 +1092,7 @@ function if_reviews_google_render_preview() {
 		<?php esc_html_e( 'Check the matches, change any action, then apply.', 'if-reviews' ); ?>
 	</p>
 
-	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="if-google-apply-form">
+	<form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>" id="if-google-apply-form" class="if-reviews-once">
 		<input type="hidden" name="action" value="if_reviews_google_apply">
 		<?php wp_nonce_field( 'if_reviews_google_apply' ); ?>
 		<?php // Choices are sent as one field: one field per row would hit PHP's max_input_vars on large profiles. ?>
@@ -1228,9 +1228,22 @@ function if_reviews_google_render_preview() {
 		Array.prototype.forEach.call( selects, function ( select ) {
 			select.setAttribute( 'data-initial', select.value );
 			var other = select.parentNode.querySelector( '.if-google-link-other' );
+			if ( other ) {
+				// The browser's own validation asks for a review when the
+				// box is showing: required only while visible, or a hidden
+				// field would block the form without saying why.
+				other.pattern = '.*#\d+\s*';
+				other.addEventListener( 'input', function () {
+					other.setCustomValidity( '' );
+				} );
+				other.addEventListener( 'invalid', function () {
+					other.setCustomValidity( notChosen );
+				} );
+			}
 			select.addEventListener( 'change', function () {
 				if ( other ) {
 					other.hidden = select.value !== 'other';
+					other.required = ! other.hidden;
 					if ( ! other.hidden ) {
 						other.focus();
 					}
@@ -1257,9 +1270,10 @@ function if_reviews_google_render_preview() {
 				}
 			} );
 			if ( missing ) {
+				// Browsers that skipped validation: report it the same way.
 				event.preventDefault();
-				window.alert( notChosen );
-				missing.focus();
+				missing.setCustomValidity( notChosen );
+				missing.reportValidity();
 				return;
 			}
 			document.getElementById( 'if-google-decisions' ).value = JSON.stringify( decisions );

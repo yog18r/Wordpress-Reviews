@@ -84,12 +84,13 @@ function if_review_details_callback( $post ) {
 			<input
 				type="text"
 				id="if_reviewer_name"
+				aria-describedby="if_reviewer_name_description"
 				name="if_reviewer_name"
 				value="<?php echo esc_attr( $reviewer_name ); ?>"
 				placeholder="<?php esc_attr_e( 'e.g. Alex T', 'if-reviews' ); ?>"
 				style="width: 100%; max-width: 500px;"
 			>
-			<p class="description">
+			<p id="if_reviewer_name_description" class="description">
 				<?php esc_html_e( 'Shown on the card exactly as typed. Avatar initials are generated from it automatically. Use the same form the reviewer used publicly, e.g. first name and an initial.', 'if-reviews' ); ?>
 			</p>
 		</div>
@@ -101,10 +102,11 @@ function if_review_details_callback( $post ) {
 			<input
 				type="date"
 				id="if_review_date"
+				aria-describedby="if_review_date_description"
 				name="if_review_date"
 				value="<?php echo esc_attr( $review_date ); ?>"
 			>
-			<p class="description">
+			<p id="if_review_date_description" class="description">
 				<?php esc_html_e( 'Displayed as month and year, e.g. "August 2026".', 'if-reviews' ); ?>
 			</p>
 		</div>
@@ -129,7 +131,7 @@ function if_review_details_callback( $post ) {
 			<label for="if_source">
 				<strong><?php esc_html_e( 'Source', 'if-reviews' ); ?></strong>
 			</label>
-			<select id="if_source" name="if_source">
+			<select id="if_source" name="if_source" aria-describedby="if_source_description">
 				<?php foreach ( $sources as $key => $source ) : ?>
 					<option
 						value="<?php echo esc_attr( $key ); ?>"
@@ -155,12 +157,13 @@ function if_review_details_callback( $post ) {
 			<input
 				type="text"
 				id="if_source_label"
+				aria-describedby="if_source_label_description"
 				name="if_source_label"
 				value="<?php echo esc_attr( $source_label ); ?>"
 				placeholder="<?php esc_attr_e( 'e.g. Tripadvisor', 'if-reviews' ); ?>"
 				style="width: 100%; max-width: 300px;"
 			>
-			<p class="description">
+			<p id="if_source_label_description" class="description">
 				<?php esc_html_e( 'Shown on the badge when Source is "Other".', 'if-reviews' ); ?>
 			</p>
 		</div>
@@ -172,12 +175,13 @@ function if_review_details_callback( $post ) {
 			<input
 				type="url"
 				id="if_review_url"
+				aria-describedby="if_review_url_description"
 				name="if_review_url"
 				value="<?php echo esc_attr( $review_url ); ?>"
 				placeholder="https://"
 				style="width: 100%; max-width: 600px;"
 			>
-			<p class="description">
+			<p id="if_review_url_description" class="description">
 				<?php esc_html_e( 'When set, the card shows a "View on Google" style link so visitors can check the original. On Google, open the review, click the three-dot menu and choose "Share review" to get its link.', 'if-reviews' ); ?>
 			</p>
 		</div>
@@ -202,13 +206,14 @@ function if_review_details_callback( $post ) {
 				<input
 					type="checkbox"
 					id="if_display_on_website"
+					aria-describedby="if_display_on_website_description"
 					name="if_display_on_website"
 					value="1"
 					<?php checked( $display, '1' ); ?>
 				>
 				<strong style="margin:0;"><?php esc_html_e( 'Display this review on the website', 'if-reviews' ); ?></strong>
 			</label>
-			<p class="description" style="margin-left:24px;">
+			<p id="if_display_on_website_description" class="description" style="margin-left:24px;">
 				<?php esc_html_e( 'Untick to hide this review from the cards. It stays saved and still counts toward the rating and review count in the header.', 'if-reviews' ); ?>
 			</p>
 		</div>
@@ -218,13 +223,14 @@ function if_review_details_callback( $post ) {
 				<input
 					type="checkbox"
 					id="if_pinned"
+					aria-describedby="if_pinned_description"
 					name="if_pinned"
 					value="1"
 					<?php checked( $pinned, '1' ); ?>
 				>
 				<strong style="margin:0;"><?php esc_html_e( 'Pin to the top', 'if-reviews' ); ?></strong>
 			</label>
-			<p class="description" style="margin-left:24px;">
+			<p id="if_pinned_description" class="description" style="margin-left:24px;">
 				<?php esc_html_e( 'Pinned reviews are shown before all others, whatever the sort order.', 'if-reviews' ); ?>
 			</p>
 		</div>
