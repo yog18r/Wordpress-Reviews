@@ -421,16 +421,6 @@ function if_reviews_get_initials( $name ) {
 }
 
 /**
- * Back-compat alias for the 1.x function name.
- *
- * @param string $name Reviewer name.
- * @return string
- */
-function if_get_review_initials( $name ) {
-	return if_reviews_get_initials( $name );
-}
-
-/**
  * Format a stored Y-m-d review date for display ("August 2026").
  *
  * @param string $date Stored date string.
@@ -682,7 +672,7 @@ function if_reviews_begin_bulk() {
 	wp_defer_term_counting( true );
 	wp_raise_memory_limit( 'admin' );
 	if ( function_exists( 'set_time_limit' ) ) {
-		@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- may be disabled by the host.
+		@set_time_limit( 300 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, Squiz.PHP.DiscouragedFunctions.Discouraged -- only for CSV imports and Google syncs of thousands of reviews; hosts may disable it, hence the @.
 	}
 }
 

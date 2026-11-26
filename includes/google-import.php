@@ -691,6 +691,7 @@ function if_reviews_google_guard( $action ) {
  */
 function if_reviews_google_handle_credentials() {
 	if_reviews_google_guard( 'if_reviews_google_credentials' );
+	check_admin_referer( 'if_reviews_google_credentials' ); // Also checked by the guard; repeated where the form data is read.
 
 	$id     = isset( $_POST['client_id'] ) ? sanitize_text_field( wp_unslash( $_POST['client_id'] ) ) : '';
 	$secret = isset( $_POST['client_secret'] ) ? sanitize_text_field( wp_unslash( $_POST['client_secret'] ) ) : '';
@@ -873,6 +874,7 @@ add_action( 'admin_post_nopriv_if_reviews_google_callback', 'auth_redirect' );
  */
 function if_reviews_google_handle_location() {
 	if_reviews_google_guard( 'if_reviews_google_location' );
+	check_admin_referer( 'if_reviews_google_location' ); // Also checked by the guard; repeated where the form data is read.
 
 	$locations = if_reviews_google_load_locations();
 	$index     = isset( $_POST['location'] ) ? (int) $_POST['location'] : -1;
@@ -916,6 +918,7 @@ function if_reviews_google_select_location( $loc ) {
  */
 function if_reviews_google_handle_settings() {
 	if_reviews_google_guard( 'if_reviews_google_settings' );
+	check_admin_referer( 'if_reviews_google_settings' ); // Also checked by the guard; repeated where the form data is read.
 
 	$auto = ! empty( $_POST['auto_sync'] ) ? 1 : 0;
 	if_reviews_google_update( array( 'auto_sync' => $auto ) );

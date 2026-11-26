@@ -12,27 +12,27 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Register the meta box on the Review editor.
  */
-function if_add_review_meta_boxes() {
+function if_reviews_add_meta_boxes() {
 
 	add_meta_box(
 		'if_review_details',
 		__( 'Review Details', 'if-reviews' ),
-		'if_review_details_callback',
+		'if_reviews_details_meta_box',
 		'if_review',
 		'normal',
 		'high'
 	);
 }
-add_action( 'add_meta_boxes', 'if_add_review_meta_boxes' );
+add_action( 'add_meta_boxes', 'if_reviews_add_meta_boxes' );
 
 /**
  * Render the fields.
  *
  * @param WP_Post $post The review being edited.
  */
-function if_review_details_callback( $post ) {
+function if_reviews_details_meta_box( $post ) {
 
-	wp_nonce_field( 'if_save_review_details', 'if_review_details_nonce' );
+	wp_nonce_field( 'if_reviews_save_details', 'if_review_details_nonce' );
 
 	$reviewer_name = get_post_meta( $post->ID, '_if_reviewer_name', true );
 	$review_date   = get_post_meta( $post->ID, '_if_review_date', true );
@@ -288,7 +288,7 @@ add_action( 'admin_enqueue_scripts', 'if_reviews_meta_box_script' );
  *
  * @param int $post_id Review post ID.
  */
-function if_save_review_details( $post_id ) {
+function if_reviews_save_details( $post_id ) {
 
 	if ( ! isset( $_POST['if_review_details_nonce'] ) ) {
 		return;
@@ -296,7 +296,7 @@ function if_save_review_details( $post_id ) {
 
 	$nonce = sanitize_text_field( wp_unslash( $_POST['if_review_details_nonce'] ) );
 
-	if ( ! wp_verify_nonce( $nonce, 'if_save_review_details' ) ) {
+	if ( ! wp_verify_nonce( $nonce, 'if_reviews_save_details' ) ) {
 		return;
 	}
 
@@ -361,7 +361,7 @@ function if_save_review_details( $post_id ) {
 	/* Link to the original review ---------------------------------- */
 
 	if ( isset( $_POST['if_review_url'] ) ) {
-		update_post_meta( $post_id, '_if_review_url', if_reviews_sanitize_url( wp_unslash( $_POST['if_review_url'] ) ) );
+		update_post_meta( $post_id, '_if_review_url', if_reviews_sanitize_url( sanitize_url( wp_unslash( $_POST['if_review_url'] ) ) ) );
 	}
 
 	/* Review text -------------------------------------------------- */
@@ -384,7 +384,7 @@ function if_save_review_details( $post_id ) {
 
 	if ( $post && '' === trim( $post->post_title ) && '' !== $reviewer_name ) {
 
-		remove_action( 'save_post_if_review', 'if_save_review_details' );
+		remove_action( 'save_post_if_review', 'if_reviews_save_details' );
 
 		wp_update_post(
 			array(
@@ -393,7 +393,7 @@ function if_save_review_details( $post_id ) {
 			)
 		);
 
-		add_action( 'save_post_if_review', 'if_save_review_details' );
+		add_action( 'save_post_if_review', 'if_reviews_save_details' );
 	}
 }
-add_action( 'save_post_if_review', 'if_save_review_details' );
+add_action( 'save_post_if_review', 'if_reviews_save_details' );

@@ -1,19 +1,19 @@
-=== WP Reviews ===
+=== Candid Reviews ===
 Contributors: yog18r
 Donate link: https://github.com/sponsors/yog18r
 Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.1
+Stable tag: 2.9.2
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Show the reviews your business has already received, on your own site: per-review source badges, an honest summary header, grid, list or carousel layouts, CSV import, and a block.
+Show your business's real reviews on your site, with source badges, an honest summary, grid, list or carousel layouts, and Google import.
 
 == Description ==
 
-WP Reviews is a small, dependency-free way to display customer reviews on a WordPress site. Add each review in wp-admin, by hand, from a CSV file or with the optional Google import: the reviewer's name, the date, a star rating, the review text, and where it was left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode or block then shows them as a card grid, a list or a carousel, with the overall rating, the review count and a plain statement of where the reviews came from.
+Candid Reviews is a small, dependency-free way to display customer reviews on a WordPress site. Add each review in wp-admin, by hand, from a CSV file or with the optional Google import: the reviewer's name, the date, a star rating, the review text, and where it was left (Google, Facebook, Trustpilot, Yelp, ProductReview.com.au, directly to you, or any other platform). One shortcode or block then shows them as a card grid, a list or a carousel, with the overall rating, the review count and a plain statement of where the reviews came from.
 
 **Your reviews live on your own site.** By default the plugin contacts no review platform: you type, paste or import each review, so it keeps working if a platform changes its API, pricing or terms. The one exception is the optional Google Business Profile import, which stays off until you connect it.
 
@@ -47,7 +47,9 @@ Consumer protection law in many countries, including the Australian Consumer Law
 * **Featured Review** and **Rating Badge** blocks (and shortcodes) for landing pages, headers and footers.
 * **Styling without CSS**: one-click style presets with a live preview; a "Match my theme" colour scheme that follows your theme's colours and its light/dark switch, plus light, dark and follow-the-device schemes, each with its own card, star and accent colours; card styles (soft shadow, outlined, flat, minimal); spacing and text size; separate star and accent colours; summary above, below or beside the reviews; left, centred or right alignment; avatar shapes; corner radius and a cycling avatar palette. Scheme, card style and spacing can also be set per shortcode or block.
 * **Lightweight and scoped**: one small stylesheet and one small script, loaded only on pages that render the shortcode. No jQuery, no tracking, and no external requests apart from the update check, unless you connect Google.
+<!-- github -->
 * **Automatic updates** from the project's GitHub releases, shown on the Plugins screen like any other plugin.
+<!-- /github -->
 * **Translation-ready** (text domain `if-reviews`) and accessible: star ratings have text equivalents, badges announce their source, and the carousel and "Show more" work with a keyboard.
 
 = Sources and badges =
@@ -115,10 +117,12 @@ All reviews on the profile are imported, low ratings included. Hide any you do n
 
 The Client ID, Client Secret and Google connection are stored encrypted (see the FAQ on security).
 
+<!-- github -->
 = Updates =
 
 The plugin checks the project's GitHub releases and offers new versions on the Plugins and Updates screens, exactly like a plugin from the WordPress.org directory. No account or token is needed. It only ever installs the `if-reviews.zip` attached to a published release, never unreleased code from the repository. To opt out, add `add_filter( 'if_reviews_update_checker_enabled', '__return_false' );` to a small plugin or your theme.
 
+<!-- /github -->
 = For developers =
 
 * `if_reviews_sources` — add or rename sources. Each entry has a `label` and optional `description` and inline SVG `icon`.
@@ -131,7 +135,9 @@ The plugin checks the project's GitHub releases and offers new versions on the P
 * `if_reviews_cta_buttons` — alter the "Leave us a review" buttons.
 * `if_reviews_cta_help` — the "Where do I find this link?" help for each platform.
 * `if_reviews_google_fetched_reviews` — alter reviews fetched from Google before they are matched.
+<!-- github -->
 * `if_reviews_update_checker_enabled` — disable GitHub update checks.
+<!-- /github -->
 
 Reviews are stored as the `if_review` post type with meta keys `_if_reviewer_name`, `_if_review_date` (Y-m-d), `_if_rating` (1-5), `_if_review_text`, `_if_source`, `_if_source_label`, `_if_review_url`, `_if_pinned` and `_if_display_on_website` ('1' or '0'), plus the `if_review_category` taxonomy. Settings live in the `if_reviews_options` option and the Google connection in `if_reviews_google`. Google-synced reviews also carry `_if_google_review_id`, `_if_google_updated` and `_if_google_missing`.
 
@@ -139,19 +145,47 @@ Source code, issues and releases: https://github.com/yog18r/Wordpress-Reviews
 
 == Installation ==
 
+<!-- github -->
 1. Download `if-reviews.zip` from the latest release at https://github.com/yog18r/Wordpress-Reviews/releases
 2. In wp-admin go to Plugins → Add New Plugin → Upload Plugin, choose the zip and activate it.
+<!-- /github -->
+<!-- wporg
+1. In wp-admin go to Plugins → Add New Plugin, search for "Candid Reviews", then install and activate it.
+2. Or download it from WordPress.org and upload it under Plugins → Add New Plugin → Upload Plugin.
+-->
 3. Go to **Reviews → Add New** and enter your first review: name, date, rating, source and text.
 4. Optionally adjust colours and layout defaults under **Reviews → Display Settings**.
 5. Add `[if_reviews]` to a page.
 
+<!-- github -->
 Future versions appear on the Plugins screen automatically.
+
+<!-- /github -->
+
+== External services ==
+
+<!-- wporg
+The plugin contacts no outside service unless you choose to connect a Google Business Profile under Reviews → Google import. That optional feature uses Google's services as follows; nothing is sent until you start it, and only to Google.
+-->
+<!-- github -->
+This version checks GitHub for its own updates (below). Apart from that, the plugin contacts no outside service unless you choose to connect a Google Business Profile under Reviews → Google import, which uses Google's services as follows; nothing is sent to Google until you start it.
+
+* **GitHub (plugin updates):** `api.github.com` and `github.com`, about twice a day and whenever WordPress checks for updates, to look for a new release and to download it. Sent: only the request itself, whose standard WordPress user agent includes your site's address. Turn it off with the `if_reviews_update_checker_enabled` filter. GitHub's [Terms of Service](https://docs.github.com/site-policy/github-terms/github-terms-of-service) and [Privacy Statement](https://docs.github.com/site-policy/privacy-policies/github-general-privacy-statement) apply.
+<!-- /github -->
+
+* **Google sign-in (OAuth 2.0):** `accounts.google.com` and `oauth2.googleapis.com`. Used when you click Connect or Reconnect, to sign in to Google and obtain an access token, and later to refresh that token. Sent: your Google Cloud Client ID and Client Secret, the one-time sign-in code, and the saved refresh token. When you disconnect, or delete the plugin, the token is sent to `oauth2.googleapis.com/revoke` so Google forgets the connection.
+* **Google Business Profile APIs:** `mybusinessaccountmanagement.googleapis.com`, `mybusinessbusinessinformation.googleapis.com` and `mybusiness.googleapis.com`. Used when you choose a location, click Preview sync or Sync now, and once a day if you turn on automatic sync. Sent: the access token and your account and location identifiers. Received: your business locations and the reviews left on your profile.
+
+No information about your site's visitors is ever sent. Google's [Terms of Service](https://policies.google.com/terms), [Privacy Policy](https://policies.google.com/privacy) and [APIs Terms of Service](https://developers.google.com/terms) apply to this use.
 
 == Frequently Asked Questions ==
 
 = Does this pull reviews from Google or anywhere else automatically? =
 
-Not by default. Every review is entered by hand or imported from a CSV, and the plugin makes no network requests of its own apart from checking GitHub for plugin updates. If you own a Google Business Profile you can optionally connect it (Reviews → Google import) using your own Google Cloud project, after which the plugin reads your reviews from Google's Business Profile API and keeps them current. No other platform is pulled automatically.
+<!-- github -->
+Not by default. Every review is entered by hand or imported from a CSV, and the plugin makes no network requests of its own apart from checking GitHub for plugin updates. <!-- /github --><!-- wporg
+Not by default. Every review is entered by hand or imported from a CSV, and the plugin makes no network requests of its own.
+--> If you own a Google Business Profile you can optionally connect it (Reviews → Google import) using your own Google Cloud project, after which the plugin reads your reviews from Google's Business Profile API and keeps them current. No other platform is pulled automatically.
 
 = Why does the Google import need a Google Cloud project? Other plugins do not ask for one. =
 
@@ -178,10 +212,12 @@ Connect with a Google account that is a Manager of the profile rather than its O
 
 Google's sign-in returns to your site with a one-time code in the address. It expires within minutes and is useless without the Client Secret, but treat your web server's access logs as private all the same. The plugin tells browsers not to cache that page or pass its address on.
 
+<!-- github -->
 = How do I know an update really came from the developer? =
 
-Updates are installed only from the `if-reviews.zip` file of a published GitHub release, and releases cannot be changed once published. Each release is signed by GitHub, and you can check a downloaded file with the GitHub command line tool: `gh release verify-asset v2.9.1 if-reviews.zip -R yog18r/Wordpress-Reviews`. On sites where you want to review every release first, turn automatic plugin updates off for WP Reviews and update by hand.
+Updates are installed only from the `if-reviews.zip` file of a published GitHub release, and releases cannot be changed once published. Each release is signed by GitHub, and you can check a downloaded file with the GitHub command line tool: `gh release verify-asset v2.9.1 if-reviews.zip -R yog18r/Wordpress-Reviews`. On sites where you want to review every release first, turn automatic plugin updates off for Candid Reviews and update by hand.
 
+<!-- /github -->
 = How do I hide a bad review without affecting the rating? =
 
 Edit the review and untick "Display this review on the website". It leaves the cards but still counts toward the average and review count in the header; removing it from the maths would make the summary untrue. To hide or show many at once, use the bulk actions on the Reviews list.
@@ -234,10 +270,12 @@ Yes. Reviews → Display Settings → Appearance starts with a live preview and 
 
 They stay in the database unless you tick "Delete all reviews when the plugin is deleted" in Display Settings before uninstalling. Settings are always removed on uninstall.
 
+<!-- github -->
 = Will this conflict with a plugin of the same name on WordPress.org? =
 
 No. The plugin declares its own update source, so WordPress will never offer an unrelated plugin as an update for it.
 
+<!-- /github -->
 == Screenshots ==
 
 1. The shortcode rendered as a grid, with the summary header and source badges.
@@ -247,6 +285,11 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 5. Reviews → Display Settings.
 
 == Changelog ==
+
+= 2.9.2 =
+* Changed: renamed to **Candid Reviews**, a name of its own for the WordPress.org plugin directory. Only the name you see changes: the plugin folder, the `[if_reviews]` shortcodes, the blocks, your reviews and settings all stay as they are.
+* Developers: five internal functions now use the `if_reviews_` prefix (for example `if_reviews_single_shortcode()`), and the unused 1.x alias `if_get_review_initials()` is gone.
+* Docs: a section listing the outside services the optional Google import uses.
 
 = 2.9.1 =
 Checked against Chrome's Modern Web Guidance; fixes from that review:
@@ -403,6 +446,9 @@ Checked against Chrome's Modern Web Guidance; fixes from that review:
 
 == Upgrade Notice ==
 
+= 2.9.2 =
+WP Reviews is now called Candid Reviews. Nothing else changes: your reviews, settings, shortcodes and blocks carry over.
+
 = 2.9.1 =
 Accessibility and modern-browser fixes, plus hardening of how Google credentials are handled. No settings change.
 
@@ -455,4 +501,4 @@ The plugin is now called WP Reviews, and can show "Leave us a review" buttons (o
 Adds CSV import/export, a block, review links, "Read more" and an optional minimum-rating filter. All off or neutral by default; nothing changes on your site until you use them.
 
 = 2.0.0 =
-The header no longer shows a Google logo, and says "Google Reviews" only when every review is marked as a Google review. After updating, go to Reviews, select your existing reviews and use the bulk action "Set source: Google" (or the platform that applies). Existing reviews, settings and your shortcodes otherwise carry over unchanged.
+The header says "Google Reviews" only when every review is marked as Google. After updating, select your reviews and use the bulk action "Set source: Google" (or the right platform). Everything else carries over.

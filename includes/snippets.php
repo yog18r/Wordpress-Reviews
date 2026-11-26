@@ -19,7 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  * @param array|string $atts Shortcode attributes.
  * @return string
  */
-function if_review_single_shortcode( $atts = array() ) {
+function if_reviews_single_shortcode( $atts = array() ) {
 
 	$atts = shortcode_atts(
 		array(
@@ -72,7 +72,7 @@ function if_review_single_shortcode( $atts = array() ) {
 	<?php
 	return ob_get_clean();
 }
-add_shortcode( 'if_review', 'if_review_single_shortcode' );
+add_shortcode( 'if_review', 'if_reviews_single_shortcode' );
 
 /**
  * [if_reviews_rating] : "★★★★★ 4.8 from 120 reviews" as an inline badge.

@@ -1,6 +1,6 @@
-# WP Reviews
+# Candid Reviews
 
-<img src="assets/banner-1544x500.png" alt="WP Reviews: honest customer reviews, under your control" width="772">
+<img src="assets/banner-1544x500.png" alt="Candid Reviews: honest customer reviews, under your control" width="772">
 
 A small WordPress plugin for showing the reviews your business has already received, on your own site, under your own control.
 
@@ -169,12 +169,20 @@ readme.txt              WordPress.org-format readme, FAQ and changelog
 2. Commit, then tag and push:
 
    ```bash
-   git tag -a vX.Y.Z -m "WP Reviews X.Y.Z" && git push origin main --tags
+   git tag -a vX.Y.Z -m "Candid Reviews X.Y.Z" && git push origin main --tags
    ```
 
 3. The [release workflow](.github/workflows/release.yml) checks the three version numbers match the tag, lints the PHP, builds `if-reviews.zip` (everything except the files in `.distignore`) and publishes a GitHub Release with that version's changelog as the notes. Sites running the plugin see the update within twelve hours, or immediately after "Check again" on the Updates screen.
 
 Every push also runs `php -l` on PHP 7.4, 8.1 and 8.3, and the regression tests.
+
+### WordPress.org build
+
+```bash
+python tools/build-wporg.py
+```
+
+Writes `build/if-reviews-wporg-X.Y.Z.zip`: the same plugin without the GitHub updater (`vendor/`, `includes/updater.php` and the `Update URI` header), without the banner and icon files (those go in the directory's SVN `assets` folder), and with `readme.txt` in its WordPress.org form. In `readme.txt`, text between `<!-- github -->` and `<!-- /github -->` is GitHub-only, and text inside `<!-- wporg ... -->` appears only in the WordPress.org build. Check the zip with the [Plugin Check](https://wordpress.org/plugins/plugin-check/) plugin before uploading it.
 
 ### Tests
 

@@ -292,7 +292,7 @@ function if_reviews_handle_csv_template() {
 	$out = fopen( 'php://output', 'w' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen
 
 	fputcsv( $out, array_keys( if_reviews_csv_columns() ), ',', '"', '' );
-	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://maps.app.goo.gl/example', 'Mortgages', 'yes', 'yes', 'publish' ), ',', '"', '' );
+	fputcsv( $out, array( 'Alex T', '2026-08-14', '5', 'Clear advice and quick to respond.', 'google', '', 'https://www.google.com/maps/place/example', 'Mortgages', 'yes', 'yes', 'publish' ), ',', '"', '' );
 	fputcsv( $out, array( 'Sam Lee', '2026-06-02', '8/10', 'Very helpful through a complicated process.', 'Tripadvisor', '', '', 'Insurance|Mortgages', '', 'yes', 'publish' ), ',', '"', '' );
 
 	fclose( $out ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose

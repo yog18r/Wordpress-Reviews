@@ -27,7 +27,7 @@ function if_reviews_menu_icon() {
 /**
  * Register the post type.
  */
-function if_register_reviews_post_type() {
+function if_reviews_register_post_type() {
 
 	$labels = array(
 		'name'               => _x( 'Reviews', 'post type general name', 'if-reviews' ),
@@ -115,7 +115,7 @@ function if_register_reviews_post_type() {
 		)
 	);
 }
-add_action( 'init', 'if_register_reviews_post_type' );
+add_action( 'init', 'if_reviews_register_post_type' );
 
 
 /* ------------------------------------------------------------------

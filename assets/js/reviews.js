@@ -1,5 +1,5 @@
 /**
- * WP Reviews front-end behaviour. No dependencies.
+ * Candid Reviews front-end behaviour. No dependencies.
  *
  *  - "Show more" fetches the next batch of cards from the plugin's REST
  *    endpoint (only the first batch is in the page).

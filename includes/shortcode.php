@@ -720,7 +720,7 @@ function if_reviews_shortcode( $atts = array() ) {
 
 			<?php if ( $step > 0 && 'carousel' !== $layout ) : ?>
 				<p class="if-show-more-wrap">
-					<button type="button" class="if-show-more" data-loading="<?php esc_attr_e( 'Loading…', 'if-reviews' ); ?>" data-error="<?php esc_attr_e( 'Could not load more reviews. Try again.', 'if-reviews' ); ?>" data-loaded-one="<?php echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 1, 'if-reviews' ) ); ?>" data-loaded="<?php /* translators: %d: number of reviews just added (keep %d) */ echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 2, 'if-reviews' ) ); ?>">
+					<button type="button" class="if-show-more" data-loading="<?php esc_attr_e( 'Loading…', 'if-reviews' ); ?>" data-error="<?php esc_attr_e( 'Could not load more reviews. Try again.', 'if-reviews' ); ?>" data-loaded-one="<?php /* translators: %d: number of reviews just added (keep %d) */ echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 1, 'if-reviews' ) ); ?>" data-loaded="<?php /* translators: %d: number of reviews just added (keep %d) */ echo esc_attr( _n( '%d more review loaded', '%d more reviews loaded', 2, 'if-reviews' ) ); ?>">
 						<?php
 						/**
 						 * Filter the "Show more" button label.

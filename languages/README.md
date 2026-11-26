@@ -1,8 +1,9 @@
 # Translations
 
-Place `if-reviews-{locale}.mo` / `.po` files in this folder, for example
-`if-reviews-de_DE.mo`. The plugin loads them with `load_plugin_textdomain()`
-using the text domain `if-reviews`.
+WordPress loads translations for the `if-reviews` text domain by itself. Put
+`if-reviews-{locale}.mo` files (for example `if-reviews-de_DE.mo`) in
+`wp-content/languages/plugins/`; translations made on translate.wordpress.org
+arrive there automatically.
 
 To generate a fresh template:
 

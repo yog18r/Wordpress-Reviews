@@ -3,7 +3,7 @@ name: Release
 # Publishing a new version:
 #   1. Bump the version in if-reviews.php (header + IF_REVIEWS_VERSION),
 #      readme.txt (Stable tag) and add a changelog entry in readme.txt.
-#   2. Commit, then:  git tag -a vX.Y.Z -m "WP Reviews X.Y.Z" && git push origin main --tags
+#   2. Commit, then:  git tag -a vX.Y.Z -m "Candid Reviews X.Y.Z" && git push origin main --tags
 # This workflow builds if-reviews.zip and attaches it to a GitHub Release.
 # Sites running the plugin pick the update up from there.
 
@@ -66,5 +66,5 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" if-reviews.zip \
-            --title "WP Reviews $GITHUB_REF_NAME" \
+            --title "Candid Reviews $GITHUB_REF_NAME" \
             --notes-file RELEASE_NOTES.md

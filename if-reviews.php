@@ -1,9 +1,9 @@
 <?php
 /**
- * Plugin Name:       WP Reviews
+ * Plugin Name:       Candid Reviews
  * Plugin URI:        https://github.com/yog18r/Wordpress-Reviews
  * Description:       Manually curated customer reviews with per-review source badges, an honest summary header, grid / list / carousel layouts, CSV import/export, a block and an [if_reviews] shortcode.
- * Version:           2.9.1
+ * Version:           2.9.2
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:            yog18r
@@ -14,7 +14,7 @@
  * Domain Path:       /languages
  * Update URI:        https://github.com/yog18r/Wordpress-Reviews
  *
- * WP Reviews is free software: you can redistribute it and/or modify it
+ * Candid Reviews is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the
  * Free Software Foundation, either version 2 of the License, or (at your
  * option) any later version. See LICENSE for the full text.
@@ -30,7 +30,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'IF_REVIEWS_VERSION', '2.9.1' );
+define( 'IF_REVIEWS_VERSION', '2.9.2' );
 define( 'IF_REVIEWS_FILE', __FILE__ );
 define( 'IF_REVIEWS_PATH', plugin_dir_path( __FILE__ ) );
 define( 'IF_REVIEWS_URL', plugin_dir_url( __FILE__ ) );
@@ -53,10 +53,3 @@ require_once IF_REVIEWS_PATH . 'includes/import-export.php';
 require_once IF_REVIEWS_PATH . 'includes/google-import.php';
 require_once IF_REVIEWS_PATH . 'includes/updater.php';
 
-/**
- * Load translations from /languages.
- */
-function if_reviews_load_textdomain() {
-	load_plugin_textdomain( 'if-reviews', false, dirname( IF_REVIEWS_PLUGIN_BASENAME ) . '/languages' );
-}
-add_action( 'init', 'if_reviews_load_textdomain' );

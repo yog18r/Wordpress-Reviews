@@ -136,7 +136,7 @@ function if_reviews_render_featured_block( $attributes ) {
 			: '';
 	}
 
-	$html = if_review_single_shortcode(
+	$html = if_reviews_single_shortcode(
 		array(
 			'id'         => $id,
 			'scheme'     => isset( $attributes['scheme'] ) ? $attributes['scheme'] : '',
