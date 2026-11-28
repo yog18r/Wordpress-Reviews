@@ -5,7 +5,7 @@ Tags: reviews, testimonials, google reviews, shortcode, star rating
 Requires at least: 6.3
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 2.9.2
+Stable tag: 2.9.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -286,6 +286,10 @@ No. The plugin declares its own update source, so WordPress will never offer an 
 
 == Changelog ==
 
+= 2.9.3 =
+* Fixed: Google reviews could be imported twice when a sync ran between Preview sync and Apply (the daily sync, or Sync now in another tab), or when Apply was sent from two tabs. Apply now checks what is already on the site rather than trusting the preview, a preview can only be applied once, and only one sync or Apply runs at a time.
+* Improved: if a review can't be saved during a sync, the result now says how many, instead of leaving them out of the count.
+
 = 2.9.2 =
 * Changed: renamed to **Candid Reviews**, a name of its own for the WordPress.org plugin directory. Only the name you see changes: the plugin folder, the `[if_reviews]` shortcodes, the blocks, your reviews and settings all stay as they are.
 * Developers: five internal functions now use the `if_reviews_` prefix (for example `if_reviews_single_shortcode()`), and the unused 1.x alias `if_get_review_initials()` is gone.
@@ -445,6 +449,9 @@ Checked against Chrome's Modern Web Guidance; fixes from that review:
 * Initial release: Reviews custom post type, admin meta box, automatic initials and the `[if_reviews]` shortcode.
 
 == Upgrade Notice ==
+
+= 2.9.3 =
+Fixes Google reviews occasionally being imported twice when a sync and Apply overlapped.
 
 = 2.9.2 =
 WP Reviews is now called Candid Reviews. Nothing else changes: your reviews, settings, shortcodes and blocks carry over.

@@ -155,8 +155,33 @@ switch ( $phase ) {
 
 		/* Later sync: edit, removal, new review. */
 		update_option( 'ifr_mock_fixture', 2 );
+		$stale  = if_reviews_google_build_plan( if_reviews_google_fetch_reviews() ); // A preview made before the sync below.
 		$result = if_reviews_google_run_sync();
 		ifr_check( ! is_wp_error( $result ) && 1 === $result['updated'] && 1 === $result['imported'] && 1 === $result['missing'], 'second sync updates, imports and flags (' . wp_json_encode( $result ) . ')' );
+
+		/* 2.9.3: an out-of-date preview applied after a sync adds no copies. */
+		$again  = if_reviews_google_apply_plan( $stale, array() );
+		$copies = get_posts( array( 'post_type' => 'if_review', 'post_status' => 'any', 'fields' => 'ids', 'posts_per_page' => -1, 'meta_key' => '_if_google_review_id', 'meta_value' => 'g-new3' ) );
+		ifr_check( 0 === $again['imported'] && 1 === count( $copies ), 'stale preview imports nothing twice (' . wp_json_encode( $again ) . ', ' . count( $copies ) . ' copies)' );
+
+		/* 2.9.3: one sync at a time, across requests. */
+		ifr_check( if_reviews_google_lock() && ! if_reviews_google_lock(), 'sync lock can only be taken once' );
+		$blocked = if_reviews_google_run_sync();
+		ifr_check( is_wp_error( $blocked ) && 'if_google_locked' === $blocked->get_error_code(), 'a sync while another runs is refused' );
+		if_reviews_google_unlock();
+		ifr_check( if_reviews_google_lock(), 'lock free again once released' );
+		$GLOBALS['wpdb']->update( $GLOBALS['wpdb']->options, array( 'option_value' => (string) ( time() - HOUR_IN_SECONDS ) ), array( 'option_name' => 'if_reviews_google_sync_lock' ) );
+		ifr_check( if_reviews_google_lock(), 'a lock left by a sync that died is taken over' );
+		if_reviews_google_unlock();
+		ifr_check( ! is_wp_error( if_reviews_google_run_sync() ), 'sync runs, and releases the lock, after all that' );
+		ifr_check( if_reviews_google_lock(), 'lock released after a sync' );
+		if_reviews_google_unlock();
+
+		/* 2.9.3: failed imports are counted and reported. */
+		add_filter( 'wp_insert_post_empty_content', '__return_true' );
+		$failed = if_reviews_google_apply_plan( array( 'reviews' => array( array( 'id' => 'g-fails', 'name' => 'Nora', 'rating' => 5, 'text' => 'x', 'date' => '2026-01-01', 'updated' => '', 'default' => 'import' ) ), 'existing' => array(), 'matches' => array() ) );
+		remove_filter( 'wp_insert_post_empty_content', '__return_true' );
+		ifr_check( 1 === $failed['failed'] && 0 === $failed['imported'] && false !== strpos( if_reviews_google_describe_result( $failed ), '1 review could not be saved' ), 'failed import counted and reported' );
 		ifr_check( if_reviews_is_encrypted( ifr_raw()['access_token'] ), 'refreshed access token stored encrypted' );
 
 		/* Review cache. */

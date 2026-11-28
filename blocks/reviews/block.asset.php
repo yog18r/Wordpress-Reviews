@@ -16,5 +16,5 @@ return array(
 		'wp-components',
 		'wp-server-side-render',
 	),
-	'version'      => '2.9.2',
+	'version'      => '2.9.3',
 );

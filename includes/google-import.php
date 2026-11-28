@@ -608,7 +608,7 @@ function if_reviews_google_render_last_result( $g ) {
 				(int) $r['updated'],
 				(int) $r['linked'],
 				(int) $r['missing']
-			)
+			) . if_reviews_google_describe_failed( $r )
 		);
 	}
 
@@ -1063,8 +1063,20 @@ function if_reviews_google_handle_apply() {
 
 	$decisions = if_reviews_google_parse_decisions( $_POST ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- checked in if_reviews_google_guard().
 
-	$result = if_reviews_google_apply_plan( $plan, $decisions );
+	if ( ! if_reviews_google_lock() ) {
+		if_reviews_google_notice( 'error', if_reviews_google_locked_error()->get_error_message() );
+		wp_safe_redirect( if_reviews_google_page_url() );
+		exit;
+	}
+
+	// Claim the plan before using it, so it can only ever be applied once.
 	delete_transient( $key );
+
+	try {
+		$result = if_reviews_google_apply_plan( $plan, $decisions );
+	} finally {
+		if_reviews_google_unlock();
+	}
 
 	if_reviews_google_record_result( $result );
 	if_reviews_google_notice( 'success', if_reviews_google_describe_result( $result ) );
@@ -1987,9 +1999,15 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 	$g        = if_reviews_google_get();
 	$skipped  = array_flip( (array) $g['skipped'] );
 	$existing = $plan['existing'];
-	$result   = array( 'total' => count( $plan['reviews'] ), 'imported' => 0, 'updated' => 0, 'linked' => 0, 'skipped' => 0, 'missing' => 0, 'error' => '' );
+	$result   = array( 'total' => count( $plan['reviews'] ), 'imported' => 0, 'updated' => 0, 'linked' => 0, 'skipped' => 0, 'missing' => 0, 'failed' => 0, 'error' => '' );
 	$seen     = array();
 	$taken    = array();
+
+	// The plan may be out of date: a preview stays valid for an hour, and a
+	// sync may have imported or linked reviews since. Check the database, not
+	// the plan, for what is already here.
+	$on_site = if_reviews_google_linked_ids();
+	$linked  = array_flip( $on_site );
 
 	if_reviews_begin_bulk();
 
@@ -2024,13 +2042,23 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 
 		unset( $skipped[ $review['id'] ] );
 
+		// Already on the site (added since the plan was made): refresh that
+		// review instead of adding a second copy.
+		if ( isset( $on_site[ $review['id'] ] ) ) {
+			if_reviews_google_write_review( $on_site[ $review['id'] ], $review );
+			$result['updated']++;
+			continue;
+		}
+
 		if ( 0 === strpos( $decision, 'link:' ) ) {
 			$post_id = (int) substr( $decision, 5 );
 
 			// Any Google review on this site that is not linked yet can be
 			// linked (the preview lists them all), each to one Google review.
-			if ( isset( $existing[ $post_id ] ) && '' === $existing[ $post_id ]['google_id'] && ! isset( $taken[ $post_id ] ) && 'if_review' === get_post_type( $post_id ) ) {
-				$taken[ $post_id ] = true;
+			if ( isset( $existing[ $post_id ] ) && ! isset( $linked[ $post_id ] ) && ! isset( $taken[ $post_id ] ) && 'if_review' === get_post_type( $post_id ) ) {
+				$taken[ $post_id ]        = true;
+				$on_site[ $review['id'] ] = $post_id;
+				$linked[ $post_id ]       = $review['id'];
 				if_reviews_google_write_review( $post_id, $review );
 				$result['linked']++;
 				continue;
@@ -2064,8 +2092,12 @@ function if_reviews_google_apply_plan( $plan, $decisions = array() ) {
 				true
 			);
 
-			if ( ! is_wp_error( $post_id ) ) {
+			if ( is_wp_error( $post_id ) || ! $post_id ) {
+				$result['failed']++;
+			} else {
 				$result['imported']++;
+				$on_site[ $review['id'] ] = (int) $post_id;
+				$linked[ (int) $post_id ] = $review['id'];
 			}
 		}
 	}
@@ -2125,21 +2157,122 @@ function if_reviews_google_write_review( $post_id, $review ) {
  */
 function if_reviews_google_run_sync() {
 
-	if_reviews_google_migrate_encryption();
-
-	$reviews = if_reviews_google_fetch_reviews();
-
-	if ( is_wp_error( $reviews ) ) {
-		if_reviews_google_record_result( array( 'error' => $reviews->get_error_message() ) );
-		return $reviews;
+	if ( ! if_reviews_google_lock() ) {
+		return if_reviews_google_locked_error();
 	}
 
-	$plan   = if_reviews_google_build_plan( $reviews );
-	$result = if_reviews_google_apply_plan( $plan, array() );
+	try {
+		if_reviews_google_migrate_encryption();
 
-	if_reviews_google_record_result( $result );
+		$reviews = if_reviews_google_fetch_reviews();
 
-	return $result;
+		if ( is_wp_error( $reviews ) ) {
+			if_reviews_google_record_result( array( 'error' => $reviews->get_error_message() ) );
+			return $reviews;
+		}
+
+		$plan   = if_reviews_google_build_plan( $reviews );
+		$result = if_reviews_google_apply_plan( $plan, array() );
+
+		if_reviews_google_record_result( $result );
+
+		return $result;
+	} finally {
+		if_reviews_google_unlock();
+	}
+}
+
+/**
+ * Take the sync lock, so only one sync or Apply writes reviews at a time
+ * (the daily sync, "Sync now" and Apply in another tab could otherwise
+ * import the same Google reviews twice).
+ *
+ * The lock is a row in the options table, inserted with INSERT IGNORE:
+ * only one request can create it, even at the same instant. This is how
+ * WordPress locks its own upgrades (WP_Upgrader::create_lock()). The
+ * object cache can't be used: without a persistent cache it only lasts
+ * one request. A lock older than 15 minutes is from a sync that died and
+ * is taken over.
+ *
+ * @return bool True if this request now holds the lock.
+ */
+function if_reviews_google_lock() {
+	global $wpdb;
+
+	$name = 'if_reviews_google_sync_lock';
+
+	for ( $attempt = 0; $attempt < 2; $attempt++ ) {
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- an atomic insert is the lock; a cached read could not be.
+		if ( $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO `{$wpdb->options}` ( `option_name`, `option_value`, `autoload` ) VALUES ( %s, %s, 'no' )", $name, (string) time() ) ) ) {
+			return true;
+		}
+
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- must read the row itself, not a cached copy.
+		$since = (string) $wpdb->get_var( $wpdb->prepare( "SELECT `option_value` FROM `{$wpdb->options}` WHERE `option_name` = %s", $name ) );
+
+		if ( '' !== $since && (int) $since > time() - 15 * MINUTE_IN_SECONDS ) {
+			return false;
+		}
+
+		// Stale: remove it, but only if nobody has replaced it meanwhile.
+		// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- compare-and-delete on the lock row.
+		$wpdb->query( $wpdb->prepare( "DELETE FROM `{$wpdb->options}` WHERE `option_name` = %s AND `option_value` = %s", $name, $since ) );
+	}
+
+	return false;
+}
+
+/**
+ * Release the sync lock.
+ */
+function if_reviews_google_unlock() {
+	global $wpdb;
+
+	// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- the lock row is never cached (see if_reviews_google_lock()).
+	$wpdb->query( $wpdb->prepare( "DELETE FROM `{$wpdb->options}` WHERE `option_name` = %s", 'if_reviews_google_sync_lock' ) );
+}
+
+/**
+ * The error shown when another sync holds the lock.
+ *
+ * @return WP_Error
+ */
+function if_reviews_google_locked_error() {
+	return new WP_Error( 'if_google_locked', __( 'Another sync is running (the daily sync, or Sync now or Apply in another tab). Wait a minute, then try again.', 'if-reviews' ) );
+}
+
+/**
+ * Google review IDs already on this site, read fresh from the database.
+ *
+ * @return array<string, int> Google review ID => post ID.
+ */
+function if_reviews_google_linked_ids() {
+
+	$ids = get_posts(
+		array(
+			'post_type'      => 'if_review',
+			'post_status'    => 'any',
+			'posts_per_page' => -1,
+			'fields'         => 'ids',
+			'no_found_rows'  => true,
+			'meta_query'     => array( // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- admin-only, bounded by the review count.
+				array(
+					'key'     => '_if_google_review_id',
+					'value'   => '',
+					'compare' => '!=',
+				),
+			),
+		)
+	);
+
+	update_meta_cache( 'post', $ids );
+
+	$out = array();
+	foreach ( $ids as $id ) {
+		$out[ (string) get_post_meta( $id, '_if_google_review_id', true ) ] = (int) $id;
+	}
+
+	return $out;
 }
 
 /**
@@ -2151,7 +2284,7 @@ function if_reviews_google_record_result( $result ) {
 	if_reviews_google_update(
 		array(
 			'last_sync'   => time(),
-			'last_result' => wp_parse_args( $result, array( 'total' => 0, 'imported' => 0, 'updated' => 0, 'linked' => 0, 'skipped' => 0, 'missing' => 0, 'error' => '' ) ),
+			'last_result' => wp_parse_args( $result, array( 'total' => 0, 'imported' => 0, 'updated' => 0, 'linked' => 0, 'skipped' => 0, 'missing' => 0, 'failed' => 0, 'error' => '' ) ),
 		)
 	);
 }
@@ -2171,7 +2304,24 @@ function if_reviews_google_describe_result( $result ) {
 		(int) $result['linked'],
 		(int) $result['skipped'],
 		(int) $result['missing']
-	);
+	) . if_reviews_google_describe_failed( $result );
+}
+
+/**
+ * " N could not be saved..." when an import failed, else ''.
+ *
+ * @param array $result Counts.
+ * @return string
+ */
+function if_reviews_google_describe_failed( $result ) {
+	$failed = isset( $result['failed'] ) ? (int) $result['failed'] : 0;
+
+	if ( $failed < 1 ) {
+		return '';
+	}
+
+	/* translators: %d: number of reviews */
+	return ' ' . sprintf( _n( '%d review could not be saved; run the sync again to retry it.', '%d reviews could not be saved; run the sync again to retry them.', $failed, 'if-reviews' ), $failed );
 }
 
 /* ------------------------------------------------------------------
